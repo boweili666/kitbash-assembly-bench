@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kitbash Assembly Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="src/app.css">
+</head>
+<body>
+
+<canvas id="viewport"></canvas>
+
+<!-- 顶栏 -->
+<header id="topbar" class="float">
+  <div class="brand">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 7l6-3 6 3v6l-6 3-6-3z"/><path d="M4 7l6 3 6-3M10 10v6"/></svg>
+    <b>Kitbash</b>
+    <span>ASSEMBLY BENCH</span>
+  </div>
+
+  <div class="seg" role="group" aria-label="Transform mode">
+    <button id="mode-translate" title="Move (W)">Move <kbd>W</kbd></button>
+    <button id="mode-rotate" title="Rotate (E)">Rotate <kbd>E</kbd></button>
+    <button id="mode-scale" title="Scale (R)">Scale <kbd>R</kbd></button>
+  </div>
+
+  <button id="btnSpace" class="tool" title="World / local space (Q)">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3a11 11 0 0 1 0 14M10 3a11 11 0 0 0 0 14"/></svg>
+    <span class="lbl">World</span>
+  </button>
+  <button id="btnSnap" class="tool" title="Grid snap (V): move 0.25 · rotate 15° · scale 0.1">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor" stroke="none"><circle cx="4" cy="4" r="1.3"/><circle cx="10" cy="4" r="1.3"/><circle cx="16" cy="4" r="1.3"/><circle cx="4" cy="10" r="1.3"/><circle cx="10" cy="10" r="1.3"/><circle cx="16" cy="10" r="1.3"/><circle cx="4" cy="16" r="1.3"/><circle cx="10" cy="16" r="1.3"/><circle cx="16" cy="16" r="1.3"/></svg>
+    <span class="lbl">Snap</span>
+  </button>
+  <button id="btnGesture" class="tool" title="Camera gestures: pinch to grab · move to place · two hands rotate/scale · pinch empty space to orbit">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10V4.2a1.2 1.2 0 0 1 2.4 0V9M9.4 9V3.4a1.2 1.2 0 0 1 2.4 0V9M11.8 9V4.4a1.2 1.2 0 0 1 2.4 0V10.5"/><path d="M14.2 10.5l1.5-1.6a1.1 1.1 0 0 1 1.7 1.4l-3 4.4a5 5 0 0 1-4.2 2.3H9.4a4.4 4.4 0 0 1-3.6-1.9l-2.2-3.2a1.2 1.2 0 0 1 1.9-1.4L7 12.2"/></svg>
+    <span class="lbl">Gesture</span>
+  </button>
+
+  <div class="vsep"></div>
+
+  <button id="btnUndo" class="tool" title="Undo (Ctrl+Z)">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4L3 8l4 4"/><path d="M3 8h9a5 5 0 0 1 0 10h-3"/></svg>
+  </button>
+  <button id="btnRedo" class="tool" title="Redo (Ctrl+Shift+Z)">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l4 4-4 4"/><path d="M17 8H8a5 5 0 0 0 0 10h3"/></svg>
+  </button>
+
+  <div class="vsep"></div>
+
+  <button id="btnGroup" class="tool" title="Group selection (Ctrl+G)">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="3" y="3" width="9" height="9" rx="1.5"/><rect x="8" y="8" width="9" height="9" rx="1.5"/></svg>
+    <span class="lbl">Group</span>
+  </button>
+  <button id="btnUngroup" class="tool" title="Ungroup (Ctrl+Shift+G)">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="2.5" y="2.5" width="7" height="7" rx="1.5"/><rect x="10.5" y="10.5" width="7" height="7" rx="1.5"/><path d="M8 12l-3 3M12 8l3-3" stroke-linecap="round"/></svg>
+    <span class="lbl">Ungroup</span>
+  </button>
+  <button id="btnDup" class="tool" title="Duplicate (Ctrl+D)">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="6.5" y="6.5" width="10" height="10" rx="1.5"/><path d="M13.5 4.5v-1h-10v10h1" stroke-linecap="round"/></svg>
+  </button>
+  <button id="btnFocus" class="tool" title="Focus selection (F / double-click)">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 7V4a1 1 0 0 1 1-1h3M13 3h3a1 1 0 0 1 1 1v3M17 13v3a1 1 0 0 1-1 1h-3M7 17H4a1 1 0 0 1-1-1v-3"/><circle cx="10" cy="10" r="2.2"/></svg>
+  </button>
+  <button id="btnDel" class="tool danger" title="Delete (Del)">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5h13M8 5.5V4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.5M5.5 5.5l1 11a1 1 0 0 0 1 .9h5a1 1 0 0 0 1-.9l1-11M8.2 8.5l.3 6M11.8 8.5l-.3 6"/></svg>
+  </button>
+
+  <div class="spacer"></div>
+
+  <button id="btnNew" class="tool" title="Clear the scene">New</button>
+  <button id="btnDemo" class="tool" title="Load the Frame Bottom Assembly kit (24 parts)">Kit</button>
+  <button id="btnAnswer" class="tool" title="Answer: ghost animation of the assembly positions and order">Answer</button>
+  <div class="vsep"></div>
+  <button id="btnImport" class="tool" title="Load a scene JSON file">Import</button>
+  <button id="btnExportJson" class="tool" title="Export scene as JSON (re-importable)">JSON</button>
+  <button id="btnExportGlb" class="tool" title="Export GLB model (for Blender / web / engines)">GLB</button>
+</header>
+
+<!-- 右侧:属性 -->
+<aside id="panel" class="float">
+  <div class="panel-head">Properties</div>
+  <div id="inspector">
+    <div id="inspEmpty" class="insp-empty">Nothing selected<br>Click an object in the viewport<br><span style="font-size:11px">Shift+click for multi-select</span></div>
+    <div id="inspBody" class="insp-body">
+      <div id="inspMulti" class="insp-note" style="display:none"></div>
+
+      <div class="field">
+        <label for="propName">Name</label>
+        <input type="text" id="propName" autocomplete="off" spellcheck="false">
+      </div>
+
+      <div id="inspTransform">
+        <div class="field">
+          <label>Position</label>
+          <div class="vec3">
+            <span class="axis axis-x"><span>X</span><input type="number" id="prop-px" step="0.1"></span>
+            <span class="axis axis-y"><span>Y</span><input type="number" id="prop-py" step="0.1"></span>
+            <span class="axis axis-z"><span>Z</span><input type="number" id="prop-pz" step="0.1"></span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Rotation (°)</label>
+          <div class="vec3">
+            <span class="axis axis-x"><span>X</span><input type="number" id="prop-rx" step="5"></span>
+            <span class="axis axis-y"><span>Y</span><input type="number" id="prop-ry" step="5"></span>
+            <span class="axis axis-z"><span>Z</span><input type="number" id="prop-rz" step="5"></span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Scale</label>
+          <div class="vec3">
+            <span class="axis axis-x"><span>X</span><input type="number" id="prop-sx" step="0.1"></span>
+            <span class="axis axis-y"><span>Y</span><input type="number" id="prop-sy" step="0.1"></span>
+            <span class="axis axis-z"><span>Z</span><input type="number" id="prop-sz" step="0.1"></span>
+          </div>
+        </div>
+        <div class="field" style="padding-top:6px">
+          <button class="btn" id="btnResetXform" style="width:100%" title="Zero rotation, unit scale, settle on the ground (keeps X/Z)">Reset Transform</button>
+        </div>
+      </div>
+
+      <div class="insp-sep"></div>
+
+      <div class="color-row">
+        <label for="propColor">Color</label>
+        <code id="propColorCode">#c8cfd6</code>
+        <input type="color" id="propColor" value="#c8cfd6">
+      </div>
+      <div class="slider-row">
+        <label for="propMetal">Metalness</label>
+        <input type="range" id="propMetal" min="0" max="1" step="0.01" value="0.08">
+        <output>0.08</output>
+      </div>
+      <div class="slider-row">
+        <label for="propRough">Roughness</label>
+        <input type="range" id="propRough" min="0" max="1" step="0.01" value="0.60">
+        <output>0.60</output>
+      </div>
+      <div class="slider-row">
+        <label for="propOpacity">Opacity</label>
+        <input type="range" id="propOpacity" min="0.05" max="1" step="0.01" value="1.00">
+        <output>1.00</output>
+      </div>
+      <div class="field" style="padding-top:8px">
+        <button class="btn" id="btnResetMat" style="width:100%" title="Restore the original GLB material (incl. color)">Reset Material</button>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- 底部快捷键提示 -->
+<footer id="hints" class="float">
+  <b>Click</b> select
+  <span><kbd>Shift</kbd>+click multi-select</span>
+  <span>Drag object to move</span>
+  <span>Hold <kbd>Ctrl</kbd> assembly snap</span>
+  <span><kbd>Shift</kbd>+drag raise/lower</span>
+  <span>Drag empty space to orbit</span>
+  <span>Right-drag pan</span>
+  <span>Wheel zoom</span>
+  <span><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd> move/rotate/scale</span>
+  <span><kbd>Ctrl</kbd><kbd>G</kbd> group</span>
+  <span><kbd>F</kbd> focus</span>
+  <span><kbd>Del</kbd> delete</span>
+</footer>
+
+<!-- 手势模式:光标叠加层 + 摄像头画中画 -->
+<canvas id="gestureLayer"></canvas>
+<div id="gesturePip" class="float">
+  <div class="pip-video">
+    <video id="gestureVideo" playsinline muted></video>
+    <canvas id="gestureLm" width="176" height="132"></canvas>
+  </div>
+  <div id="gestureStatus">Show your hand to the camera</div>
+</div>
+
+<!-- 答案演示播放控制条 -->
+<div id="answerBar" class="float">
+  <button id="ansPlay" class="tool" title="Play / Pause">
+    <svg class="ic-play" width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4l10 6-10 6z"/></svg>
+    <svg class="ic-pause" width="15" height="15" viewBox="0 0 20 20" fill="currentColor" style="display:none"><path d="M5.5 4h3v12h-3zM11.5 4h3v12h-3z"/></svg>
+  </button>
+  <button id="ansSpeed" class="tool" title="Playback speed" style="min-width:40px;font-variant-numeric:tabular-nums">1×</button>
+  <div id="ansTrack">
+    <div id="ansFill"></div>
+    <div id="ansNodes"></div>
+  </div>
+  <div id="ansLabel">Ready</div>
+  <button id="ansClose" class="tool" title="Close the answer demo">
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
+  </button>
+</div>
+
+<div id="toast" role="status"></div>
+
+<div id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle"></h3>
+    <textarea id="modalText" readonly spellcheck="false"></textarea>
+    <div class="modal-actions">
+      <button class="btn" id="modalClose">Close</button>
+      <button class="btn primary" id="modalCopy">Copy</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="importFile" hidden accept=".json,application/json">
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/OrbitControls.js"></script>
+<script src="vendor/TransformControls.js"></script>
+<script src="vendor/GLTFExporter.js"></script>
+<script src="vendor/GLTFLoader.js"></script>
+<script src="src/app.js"></script>
+<script src="src/snap.js"></script>
+<!-- PARTS_EMBED -->
+<script src="src/parts.js"></script>
+<script src="src/answer.js"></script>
+<script src="src/gesture.js"></script>
+
+</body>
+</html>
