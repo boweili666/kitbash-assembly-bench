@@ -726,7 +726,7 @@
       });
     })(objectsRoot, 0);
     if (!total) {
-      treeEl.innerHTML = '<div class="tree-empty">场景是空的<br>从左侧部件架添加物体</div>';
+      treeEl.innerHTML = '<div class="tree-empty">Scene is empty</div>';
     }
     countEl.textContent = total;
   }
@@ -764,7 +764,7 @@
     if (n) {
       var single = n === 1 ? selection[0] : null;
       inspMulti.style.display = single ? 'none' : 'block';
-      inspMulti.textContent = '已选中 ' + n + ' 个对象 — 材质修改将应用到全部';
+      inspMulti.textContent = n + ' objects selected \u2014 material edits apply to all';
       inspTransform.style.display = single ? 'block' : 'none';
       nameInput.parentElement.style.display = single ? 'block' : 'none';
       if (single) {

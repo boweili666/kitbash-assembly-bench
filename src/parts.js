@@ -285,7 +285,7 @@
     pending.forEach(resolve);
     if (pending.length) KB.toast('Parts library loaded; restored ' + pending.length + ' part' + (pending.length > 1 ? 's' : ''));
   }).catch(function (err) {
-    console.warn('零件库加载失败', err);
+    console.warn('Failed to load parts library', err);
     KB.toast('Failed to load the parts library (run python3 serve.py and open localhost)');
   });
 })();
