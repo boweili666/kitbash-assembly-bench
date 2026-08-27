@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""本地开发服务器。手势模式(摄像头 + WASM)需要 localhost 安全上下文,
-file:// 直接打开时该功能不可用,其余功能不受影响。
+"""本地开发服务器(开发版 index.html 通过 fetch 加载零件,需要 http)。
+单文件版 dist/kitbash-standalone.html 无需服务器。
 
 用法:python3 serve.py [端口]   然后打开 http://localhost:8123
 """

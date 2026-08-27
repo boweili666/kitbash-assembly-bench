@@ -408,49 +408,6 @@ input[type="range"]::-moz-range-thumb {
   margin-right: 2px;
 }
 
-/* ---------- 手势模式 ---------- */
-#gestureLayer {
-  position: fixed;
-  inset: 0;
-  z-index: 12;              /* 在视口之上、面板之下 */
-  pointer-events: none;
-  display: none;
-}
-#gesturePip {
-  left: 12px;
-  bottom: 12px;
-  padding: 6px;
-  z-index: 15;
-  display: none;
-}
-.pip-video {
-  position: relative;
-  width: 176px;
-  height: 132px;
-  border-radius: 6px;
-  overflow: hidden;
-  background: #0c0f13;
-}
-.pip-video video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scaleX(-1);    /* 镜像预览,匹配 selfieMode 坐标 */
-  display: block;
-}
-.pip-video canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-#gestureStatus {
-  padding: 5px 2px 1px;
-  font-size: 10.5px;
-  color: var(--text-faint);
-  text-align: center;
-}
-
 /* ---------- 答案演示控制条 ---------- */
 #answerBar {
   display: none;

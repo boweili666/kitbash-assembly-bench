@@ -300,8 +300,7 @@
       var n0 = selection[0];
       // 零件吸在孔上时,把变换枢轴放到孔位:gizmo 显示在洞上,旋转即绕洞转。
       // 拖拽/手势抓取进行中不建枢轴(它们直接操纵节点本身)
-      var busy = (window.KBSnap && KBSnap.isMouseDragging && KBSnap.isMouseDragging()) ||
-                 (window.KBGesture && KBGesture.state && KBGesture.state().grabbing);
+      var busy = window.KBSnap && KBSnap.isMouseDragging && KBSnap.isMouseDragging();
       // 仅在按住 Ctrl(吸附模式)且与其他零件孔轴同轴时,枢轴才跳到孔位
       // 并沿孔轴取向(局部空间:Y箭头=插拔,Y环=绕孔转);平时留在零件原点
       var spec = null;
