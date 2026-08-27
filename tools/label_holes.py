@@ -23,15 +23,15 @@ FIT_TOL = 0.20            # 圆拟合相对残差上限(容纳低模螺纹)
 ARC_BINS, ARC_MIN = 12, 8  # 弧度覆盖:12 扇区至少占 9(≈270°)
 
 LABELS = {
-    "aluminum_x_lock": "X锁块",
-    "knurled_standoff": "螺柱",
-    "split_rear_plate": "后板",
-    "split_front_plate": "前板",
-    "arm_5in": "机臂",
-    "aluminum_arm_wedge_5mm": "楔块",
+    "aluminum_x_lock": "X-Lock",
+    "knurled_standoff": "Standoff",
+    "split_rear_plate": "Rear Plate",
+    "split_front_plate": "Front Plate",
+    "arm_5in": "Arm",
+    "aluminum_arm_wedge_5mm": "Arm Wedge",
     "screw_m3x6_pan": "M3×6",
     "screw_m3x16_pan": "M3×16",
-    "screw_m3x16_socket_cap": "M3×16杯",
+    "screw_m3x16_socket_cap": "M3×16 Cap",
     "screw_m3x22_pan": "M3×22",
 }
 
@@ -110,6 +110,7 @@ def detect_cylinders(mesh):
     # 后备通道:回转体(螺丝等)—— 螺纹把邻接聚类切碎,但所有侧壁点同轴心;
     # 仅在主通道一无所获时启用,按半径分带后逐带拟合
     if not found:
+        fallback = []
         for d in uniq:
             mask = np.abs(fn @ d) < 0.6
             if mask.sum() < 60:
@@ -142,11 +143,27 @@ def detect_cylinders(mesh):
                 inward = float((radial * n2).sum(axis=1).mean())
                 t = centroids[bf] @ d
                 c3 = u * bc[0] + v * bc[1] + d * (t.min() + t.max()) / 2
-                found.append({
+                fallback.append({
                     "kind": "hole" if inward < 0 else "peg",
                     "c": c3, "d": d.copy(), "r": r,
                     "depth": float(t.max() - t.min()), "n": len(bf),
                 })
+        # 回转体只有一根真实轴:按方向分组,只保留点数最多的主导方向,
+        # 丢弃其他方向上的幽灵圆柱(如盘头在侧视方向的伪拟合)
+        if fallback:
+            groups = {}
+            for f in fallback:
+                key = None
+                for k in groups:
+                    if abs(f["d"] @ groups[k][0]["d"]) > 0.98:
+                        key = k
+                        break
+                if key is None:
+                    key = len(groups)
+                    groups[key] = []
+                groups[key].append(f)
+            best = max(groups.values(), key=lambda g: max(f["depth"] for f in g))
+            found.extend(best)
 
     # 去重:轴平行且同轴、半径相近的只留面数最多的
     found.sort(key=lambda f: -f["n"])

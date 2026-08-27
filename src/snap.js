@@ -362,6 +362,10 @@
       // 旋转拖拽中途按下 Ctrl:此刻获取一次约束
       solve(KB.gizmo.object, KB.gizmo.object.position.clone());
     }
+    // Ctrl 切换时(非拖拽中)刷新变换枢轴:按下 → 跳到孔位,松开 → 回到零件原点
+    if (!(drag && drag.started) && !KB.gizmo.dragging && KB.rebuildAttachment) {
+      KB.rebuildAttachment();
+    }
   }
   window.addEventListener('keydown', function (e) { if (e.key === 'Control') setSnapKey(true); });
   window.addEventListener('keyup', function (e) { if (e.key === 'Control') setSnapKey(false); });
@@ -377,8 +381,15 @@
     node.updateMatrixWorld(true);
   }
 
-  /* node 的某轴当前与其他物体的轴同轴 → 返回铰链锚点(世界坐标),
-   * app.js 用它把变换枢轴(gizmo)放到孔位上 */
+  function upish(d) {
+    // 轴向无正负,统一取"朝上"的一侧,箭头方向稳定
+    var v = d.clone().normalize();
+    if (v.y < -1e-6 || (Math.abs(v.y) < 1e-6 && v.x + v.z < 0)) v.negate();
+    return v;
+  }
+
+  /* node 的某轴当前与其他物体的轴同轴 → 返回铰链锚点 {point, dir}(世界坐标),
+   * app.js 用它把变换枢轴(gizmo)放到孔位上并沿孔轴取向 */
   function hingeFor(node) {
     node.updateMatrixWorld(true);
     var mine = extract(node);
@@ -394,15 +405,33 @@
       others.axes.forEach(function (b) {
         var f = axisFit(a, b);
         if (f.cos < 0.985 || f.perp > 0.08) return;
-        if (!best || f.perp < best.perp) best = { perp: f.perp, point: a.c.clone() };
+        if (!best || f.perp < best.perp) {
+          best = { perp: f.perp, point: a.c.clone(), dir: upish(b.d) };
+        }
       });
     });
-    return best ? best.point : null;
+    return best;
+  }
+
+  /* 单轴零件(螺丝/螺柱/机臂/楔块等)的主轴:即使未吸附,
+   * gizmo 也直接落到它自己的轴线上并沿轴取向 */
+  function primaryAxis(node) {
+    node.updateMatrixWorld(true);
+    var feats = extract(node);
+    if (!feats.axes.length) return null;
+    var a0 = feats.axes[0];
+    for (var i = 1; i < feats.axes.length; i++) {
+      var f = axisFit(feats.axes[i], a0);
+      if (f.cos < 0.996 || f.perp > 0.05) return null; // 多根不同轴 → 不明确
+    }
+    return { point: a0.c.clone(), dir: upish(a0.d) };
   }
 
   window.KBSnap = { begin: begin, solve: solve, end: end,
     release: releaseActive,
     hingeFor: hingeFor,
+    primaryAxis: primaryAxis,
+    snapKeyActive: function () { return snapKeyDown; },
     isMouseDragging: function () { return !!(drag && drag.started); },
     isActive: function () { return !!active; } };
 

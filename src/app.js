@@ -274,9 +274,16 @@
   }
 
   /* ---------- 选择 ---------- */
+  var featureSpacePrev = null; // 特征枢轴激活期间临时强制局部空间,收回时还原
+
   function bakePivot() {
     if (!pivot) return;
     gizmo.detach();
+    if (featureSpacePrev !== null) {
+      if (gizmo.space === 'local') gizmo.setSpace(featureSpacePrev); // 用户没手动切过才还原
+      featureSpacePrev = null;
+      syncSpaceLabel();
+    }
     pivot.children.slice().forEach(function (child) {
       var parent = child.userData._prevParent || objectsRoot;
       delete child.userData._prevParent;
@@ -295,14 +302,24 @@
       // 拖拽/手势抓取进行中不建枢轴(它们直接操纵节点本身)
       var busy = (window.KBSnap && KBSnap.isMouseDragging && KBSnap.isMouseDragging()) ||
                  (window.KBGesture && KBGesture.state && KBGesture.state().grabbing);
-      var hinge = (!busy && window.KBSnap && KBSnap.hingeFor) ? KBSnap.hingeFor(n0) : null;
-      if (hinge) {
+      // 仅在按住 Ctrl(吸附模式)且与其他零件孔轴同轴时,枢轴才跳到孔位
+      // 并沿孔轴取向(局部空间:Y箭头=插拔,Y环=绕孔转);平时留在零件原点
+      var spec = null;
+      if (!busy && window.KBSnap && KBSnap.snapKeyActive && KBSnap.snapKeyActive()) {
+        spec = KBSnap.hingeFor(n0);
+      }
+      if (spec) {
         pivot = new THREE.Group();
-        pivot.position.copy(hinge);
+        pivot.position.copy(spec.point);
+        pivot.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), spec.dir);
         scene.add(pivot);
+        pivot.updateMatrixWorld(true);
         n0.userData._prevParent = n0.parent;
         pivot.attach(n0);
         gizmo.attach(pivot);
+        if (featureSpacePrev === null) featureSpacePrev = gizmo.space;
+        gizmo.setSpace('local');
+        syncSpaceLabel();
       } else {
         gizmo.attach(n0);
       }
@@ -532,11 +549,15 @@
     });
   }
 
-  function toggleSpace() {
-    var next = gizmo.space === 'world' ? 'local' : 'world';
-    gizmo.setSpace(next);
+  function syncSpaceLabel() {
     document.getElementById('btnSpace').querySelector('.lbl').textContent =
-      next === 'world' ? 'World' : 'Local';
+      gizmo.space === 'world' ? 'World' : 'Local';
+  }
+
+  function toggleSpace() {
+    gizmo.setSpace(gizmo.space === 'world' ? 'local' : 'world');
+    featureSpacePrev = null; // 用户手动选择后不再自动还原
+    syncSpaceLabel();
   }
 
   /* ---------- 导入 / 导出 ----------
