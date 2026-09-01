@@ -277,6 +277,14 @@
   }
   monStart.addEventListener('click', function () { mon.on ? monStop() : monBegin(); });
 
+  // URL 带 ?share 时自动开始直播(供一键启动整条链路)
+  if (new URLSearchParams(location.search).has('share')) {
+    setTimeout(function () {
+      panel.style.display = 'flex';
+      if (!mon.on) monStart.click();
+    }, 600);
+  }
+
   window.KBStream = {
     isStreaming: function () { return streaming; },
     frames: function () { return frames; },
