@@ -348,6 +348,7 @@
     });
     helpers = selection.map(function (n) {
       var h = new THREE.BoxHelper(n, 0xe8a33d);
+      h.userData.kbOverlay = true;
       h.material.transparent = true;
       h.material.opacity = 0.9;
       h.material.depthTest = false;
@@ -1059,8 +1060,16 @@
     pushSnapshot: pushSnapshot,
     saveFile: saveFile,
     /* 立即渲染一帧并缩放到 maxW 宽,返回 {canvas, blobPromise(JPEG)} —— 供 agent 推流 */
-    captureFrame: function (maxW, quality) {
+    captureFrame: function (maxW, quality, keepOverlays) {
+      // 干净画面:隐藏 gizmo / 选中框 / 孔位标签 / 吸附高亮 / 答案虚影,只留零件与地面
+      var hidden = [];
+      if (!keepOverlays) {
+        scene.children.forEach(function (o) {
+          if ((o === gizmo || o.userData.kbOverlay) && o.visible) { o.visible = false; hidden.push(o); }
+        });
+      }
       renderer.render(scene, camera);
+      hidden.forEach(function (o) { o.visible = true; });
       var w = canvas.width, h = canvas.height;
       var sc = Math.min(1, (maxW || 1024) / w);
       var off = captureCanvas || (captureCanvas = document.createElement('canvas'));

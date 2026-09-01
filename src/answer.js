@@ -52,6 +52,7 @@
       return false;
     }
     root = new THREE.Group();
+    root.userData.kbOverlay = true; // 抓帧时隐藏
     root.position.set(0, HOVER, 0);
     items = [];
     stepEnd = [];

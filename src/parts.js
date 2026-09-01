@@ -186,6 +186,7 @@
 
   /* ---------- 孔位标签可视化(选中零件时) ---------- */
   var labelRoot = new THREE.Group();
+  labelRoot.userData.kbOverlay = true; // 抓帧时隐藏
   labelRoot.matrixAutoUpdate = false;
   KB.scene.add(labelRoot);
   var labelled = [];   // [{wrapper, group}]

@@ -326,6 +326,7 @@
     hideViz();
     var group = new THREE.Group();
     group.userData.b = act.b;
+    group.userData.kbOverlay = true; // 抓帧时隐藏
     function makeLine(list) {
       var g = new THREE.BufferGeometry().setFromPoints(list);
       return new THREE.Line(g, new THREE.LineBasicMaterial({
