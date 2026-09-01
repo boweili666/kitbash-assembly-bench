@@ -73,6 +73,10 @@
     <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="6"/></svg>
     <span class="lbl">Rec</span>
   </button>
+  <button id="btnAgent" class="tool" title="Live view: share the viewport to another page / window, or stream it to the assembly agent">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M7 9.5h.01M13 9.5h.01M7.5 13h5"/></svg>
+    <span class="lbl">Agent</span>
+  </button>
   <div class="vsep"></div>
   <button id="btnImport" class="tool" title="Load a scene JSON file">Import</button>
   <button id="btnExportJson" class="tool" title="Export scene as JSON (re-importable)">JSON</button>
@@ -166,6 +170,49 @@
   <span><kbd>Del</kbd> delete</span>
 </footer>
 
+<!-- Agent 实时推流面板 -->
+<div id="agentPanel" class="float">
+  <div class="ag-head">
+    <span id="agDot" class="ag-dot"></span>
+    <span id="agStatus">Idle</span>
+    <button id="agClose" class="tool" title="Hide panel" style="margin-left:auto">
+      <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
+    </button>
+  </div>
+  <div class="ag-section">Live view <span class="ag-hint">watch from another page / device</span></div>
+  <div class="ag-fields">
+    <label>Relay <input type="text" id="monEndpoint" value="http://127.0.0.1:8124" spellcheck="false"></label>
+  </div>
+  <div class="ag-actions">
+    <button class="btn primary" id="monStart">Share view</button>
+    <a class="btn" id="monOpen" href="http://127.0.0.1:8124" target="_blank" rel="noopener" title="Open the live viewer page in a new tab">Open viewer ↗</a>
+  </div>
+  <div id="monStatus" class="ag-msg">Run <code>python3 monitor.py</code>, then Share view. The viewer page has a Pop-out (picture-in-picture) button.</div>
+
+  <div class="ag-section">Assembly agent <span class="ag-hint">agent_server.py</span></div>
+  <div class="ag-fields">
+    <label>Endpoint <input type="text" id="agEndpoint" value="http://127.0.0.1:8001" spellcheck="false"></label>
+    <label>Session <input type="text" id="agSession" value="" spellcheck="false"></label>
+    <label>Heartbeat
+      <select id="agHeartbeat">
+        <option value="0">only on change</option>
+        <option value="5">every 5 s</option>
+        <option value="10" selected>every 10 s</option>
+        <option value="30">every 30 s</option>
+      </select>
+    </label>
+  </div>
+  <div class="ag-actions">
+    <button class="btn primary" id="agStart">Start</button>
+    <button class="btn" id="agReset" title="Clear the agent's baseline for this session">Reset session</button>
+  </div>
+  <div class="ag-result">
+    <div id="agStage" class="ag-stage">—</div>
+    <div id="agMsg" class="ag-msg">Frames are sent only when the viewport changes (plus heartbeat).</div>
+  </div>
+  <div id="agLog" class="ag-log"></div>
+</div>
+
 <!-- 答案演示播放控制条 -->
 <div id="answerBar" class="float">
   <button id="ansPlay" class="tool" title="Play / Pause">
@@ -209,6 +256,7 @@
 <script src="src/parts.js"></script>
 <script src="src/answer.js"></script>
 <script src="src/record.js"></script>
+<script src="src/stream.js"></script>
 
 </body>
 </html>

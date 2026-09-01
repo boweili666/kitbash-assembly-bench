@@ -423,6 +423,64 @@ input[type="range"]::-moz-range-thumb {
   margin-right: 2px;
 }
 
+/* ---------- Agent 推流面板 ---------- */
+#agentPanel {
+  display: none;
+  left: 12px;
+  bottom: 52px;
+  width: 300px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  z-index: 18;
+  font-size: 12px;
+}
+.ag-head { display: flex; align-items: center; gap: 8px; color: var(--text-dim); }
+.ag-section {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-dim); margin-top: 4px; display: flex; align-items: baseline; gap: 8px;
+}
+.ag-section .ag-hint { font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text-faint); font-size: 11px; }
+.ag-actions a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.ag-msg code { font-family: var(--font-mono); font-size: 10.5px; background: rgba(12,15,19,0.6); padding: 0 4px; border-radius: 3px; }
+.ag-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); flex: none; }
+.ag-dot.on { background: #6fbf73; box-shadow: 0 0 0 3px rgba(111, 191, 115, 0.2); }
+.ag-dot.err { background: var(--danger); }
+.ag-fields { display: flex; flex-direction: column; gap: 6px; }
+.ag-fields label {
+  display: grid;
+  grid-template-columns: 68px 1fr;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.ag-fields input, .ag-fields select {
+  width: 100%;
+  background: rgba(12, 15, 19, 0.55);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+  padding: 4px 8px;
+}
+.ag-actions { display: flex; gap: 8px; }
+.ag-actions .btn { flex: 1; padding: 6px 8px; }
+.ag-result {
+  background: rgba(12, 15, 19, 0.45);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.ag-stage { font-weight: 600; color: var(--accent); margin-bottom: 3px; }
+.ag-msg { color: var(--text-dim); line-height: 1.5; max-height: 4.5em; overflow: hidden; }
+.ag-log { display: flex; flex-direction: column; gap: 2px; max-height: 120px; overflow-y: auto; }
+.ag-row { display: flex; gap: 8px; font-size: 11px; color: var(--text-faint); }
+.ag-row.ok .ag-text { color: var(--text-dim); }
+.ag-row.err .ag-text { color: var(--danger); }
+.ag-time { font-family: var(--font-mono); flex: none; }
+
 /* ---------- 答案演示控制条 ---------- */
 #answerBar {
   display: none;
@@ -652,6 +710,10 @@ input[type="range"]::-moz-range-thumb {
     <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="6"/></svg>
     <span class="lbl">Rec</span>
   </button>
+  <button id="btnAgent" class="tool" title="Live view: share the viewport to another page / window, or stream it to the assembly agent">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M7 9.5h.01M13 9.5h.01M7.5 13h5"/></svg>
+    <span class="lbl">Agent</span>
+  </button>
   <div class="vsep"></div>
   <button id="btnImport" class="tool" title="Load a scene JSON file">Import</button>
   <button id="btnExportJson" class="tool" title="Export scene as JSON (re-importable)">JSON</button>
@@ -744,6 +806,49 @@ input[type="range"]::-moz-range-thumb {
   <span><kbd>F</kbd> focus</span>
   <span><kbd>Del</kbd> delete</span>
 </footer>
+
+<!-- Agent 实时推流面板 -->
+<div id="agentPanel" class="float">
+  <div class="ag-head">
+    <span id="agDot" class="ag-dot"></span>
+    <span id="agStatus">Idle</span>
+    <button id="agClose" class="tool" title="Hide panel" style="margin-left:auto">
+      <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
+    </button>
+  </div>
+  <div class="ag-section">Live view <span class="ag-hint">watch from another page / device</span></div>
+  <div class="ag-fields">
+    <label>Relay <input type="text" id="monEndpoint" value="http://127.0.0.1:8124" spellcheck="false"></label>
+  </div>
+  <div class="ag-actions">
+    <button class="btn primary" id="monStart">Share view</button>
+    <a class="btn" id="monOpen" href="http://127.0.0.1:8124" target="_blank" rel="noopener" title="Open the live viewer page in a new tab">Open viewer ↗</a>
+  </div>
+  <div id="monStatus" class="ag-msg">Run <code>python3 monitor.py</code>, then Share view. The viewer page has a Pop-out (picture-in-picture) button.</div>
+
+  <div class="ag-section">Assembly agent <span class="ag-hint">agent_server.py</span></div>
+  <div class="ag-fields">
+    <label>Endpoint <input type="text" id="agEndpoint" value="http://127.0.0.1:8001" spellcheck="false"></label>
+    <label>Session <input type="text" id="agSession" value="" spellcheck="false"></label>
+    <label>Heartbeat
+      <select id="agHeartbeat">
+        <option value="0">only on change</option>
+        <option value="5">every 5 s</option>
+        <option value="10" selected>every 10 s</option>
+        <option value="30">every 30 s</option>
+      </select>
+    </label>
+  </div>
+  <div class="ag-actions">
+    <button class="btn primary" id="agStart">Start</button>
+    <button class="btn" id="agReset" title="Clear the agent's baseline for this session">Reset session</button>
+  </div>
+  <div class="ag-result">
+    <div id="agStage" class="ag-stage">—</div>
+    <div id="agMsg" class="ag-msg">Frames are sent only when the viewport changes (plus heartbeat).</div>
+  </div>
+  <div id="agLog" class="ag-log"></div>
+</div>
 
 <!-- 答案演示播放控制条 -->
 <div id="answerBar" class="float">
@@ -9522,6 +9627,7 @@ input[type="range"]::-moz-range-thumb {
   var undoStack = [], redoStack = [];
   var nameCounter = 0;
   var focusAnim = null;
+  var captureCanvas = null;    // agent 推流用的离屏画布
 
   /* ---------- 几何工厂 ---------- */
   function makeGeometry(type) {
@@ -10489,6 +10595,21 @@ input[type="range"]::-moz-range-thumb {
     setSelection: setSelection,
     pushSnapshot: pushSnapshot,
     saveFile: saveFile,
+    /* 立即渲染一帧并缩放到 maxW 宽,返回 {canvas, blobPromise(JPEG)} —— 供 agent 推流 */
+    captureFrame: function (maxW, quality) {
+      renderer.render(scene, camera);
+      var w = canvas.width, h = canvas.height;
+      var sc = Math.min(1, (maxW || 1024) / w);
+      var off = captureCanvas || (captureCanvas = document.createElement('canvas'));
+      off.width = Math.round(w * sc); off.height = Math.round(h * sc);
+      off.getContext('2d').drawImage(canvas, 0, 0, off.width, off.height);
+      return {
+        canvas: off,
+        blobPromise: new Promise(function (res, rej) {
+          off.toBlob(function (b) { b ? res(b) : rej(new Error('toBlob failed')); }, 'image/jpeg', quality || 0.82);
+        })
+      };
+    },
     syncInspector: syncInspectorFromSelection,
     toast: toast,
     isSnap: function () { return snapOn; },
@@ -11751,6 +11872,299 @@ input[type="range"]::-moz-range-thumb {
 
   btn.addEventListener('click', function () { rec ? stop() : start(); });
   window.KBRecord = { isRecording: function () { return !!rec; }, stop: stop };
+})();
+
+</script>
+<script>
+/* ============================================================
+ * Agent 实时推流 — 把 3D 视口画面持续发送给装配 agent
+ *
+ * 对接 animation_new/agent_server.py(FastAPI,默认 http://localhost:8001):
+ *   POST /predict  multipart {image, session}  → 第一帧作为基线,
+ *                  之后返回 {stage_index, stage_name, parts_moved, message, status}
+ *   POST /reset    form {session}
+ *   GET  /health   {ok, model, key_loaded}
+ *
+ * 客户端策略:每 0.5s 抓一张小缩略图做变化检测,画面有变化(或到达心跳
+ * 间隔)时才把 JPEG 帧 POST 给 agent;同一时间只有一帧在途。
+ * agent 的判定结果显示在左下角 Agent 面板里。
+ * ============================================================ */
+(function () {
+  'use strict';
+
+  var KB = window.KB;
+  var btn = document.getElementById('btnAgent');
+  var panel = document.getElementById('agentPanel');
+  if (!btn || !panel) return;
+
+  var elEndpoint = document.getElementById('agEndpoint');
+  var elSession = document.getElementById('agSession');
+  var elHeartbeat = document.getElementById('agHeartbeat');
+  var elStart = document.getElementById('agStart');
+  var elReset = document.getElementById('agReset');
+  var elClose = document.getElementById('agClose');
+  var elStatus = document.getElementById('agStatus');
+  var elDot = document.getElementById('agDot');
+  var elStage = document.getElementById('agStage');
+  var elMsg = document.getElementById('agMsg');
+  var elLog = document.getElementById('agLog');
+
+  var PREF_KEY = 'kitbash-agent-v1';
+  var THUMB_W = 64, THUMB_H = 36;
+  var CHANGE_THRESHOLD = 6;      // 缩略图平均灰度差(0-255)
+  var MIN_SEND_GAP = 1500;       // 两次发送最小间隔 ms
+
+  var streaming = false, inflight = false, timer = 0;
+  var lastThumb = null, lastSentAt = 0, frames = 0, stagesTotal = 22;
+  var thumbCanvas = document.createElement('canvas');
+  thumbCanvas.width = THUMB_W; thumbCanvas.height = THUMB_H;
+  var thumbCtx = thumbCanvas.getContext('2d', { willReadFrequently: true });
+
+  /* ---------- 偏好 ---------- */
+  try {
+    var pref = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
+    if (pref.endpoint) elEndpoint.value = pref.endpoint;
+    if (pref.session) elSession.value = pref.session;
+    if (pref.heartbeat) elHeartbeat.value = pref.heartbeat;
+  } catch (e) { /* 忽略 */ }
+  if (!elSession.value) elSession.value = 'kitbash-' + Math.random().toString(36).slice(2, 6);
+  function savePref() {
+    try {
+      localStorage.setItem(PREF_KEY, JSON.stringify({
+        endpoint: elEndpoint.value, session: elSession.value, heartbeat: elHeartbeat.value
+      }));
+    } catch (e) { /* 忽略 */ }
+  }
+  [elEndpoint, elSession, elHeartbeat].forEach(function (el) { el.addEventListener('change', savePref); });
+
+  function base() { return elEndpoint.value.replace(/\/+$/, ''); }
+
+  /* ---------- 日志 / 状态 ---------- */
+  function log(text, kind) {
+    var row = document.createElement('div');
+    row.className = 'ag-row' + (kind ? ' ' + kind : '');
+    var t = new Date();
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    row.innerHTML = '<span class="ag-time"></span><span class="ag-text"></span>';
+    row.querySelector('.ag-time').textContent = pad(t.getHours()) + ':' + pad(t.getMinutes()) + ':' + pad(t.getSeconds());
+    row.querySelector('.ag-text').textContent = text;
+    elLog.insertBefore(row, elLog.firstChild);
+    while (elLog.children.length > 12) elLog.removeChild(elLog.lastChild);
+  }
+  function setStatus(text, state) {
+    elStatus.textContent = text;
+    elDot.className = 'ag-dot ' + (state || '');
+  }
+
+  /* ---------- 变化检测 ---------- */
+  function thumbOf(canvas) {
+    thumbCtx.drawImage(canvas, 0, 0, THUMB_W, THUMB_H);
+    var d = thumbCtx.getImageData(0, 0, THUMB_W, THUMB_H).data;
+    var out = new Uint8Array(THUMB_W * THUMB_H);
+    for (var i = 0, j = 0; i < d.length; i += 4, j++) out[j] = (d[i] * 3 + d[i + 1] * 6 + d[i + 2]) / 10;
+    return out;
+  }
+  function diff(a, b) {
+    if (!a || !b) return 255;
+    var s = 0;
+    for (var i = 0; i < a.length; i++) s += Math.abs(a[i] - b[i]);
+    return s / a.length;
+  }
+  /* 变化像素占比:对小物体移动 / 半透明动画比平均差更敏感 */
+  function changedRatio(a, b, tol) {
+    if (!a || !b) return 1;
+    var n = 0;
+    for (var i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > tol) n++;
+    return n / a.length;
+  }
+
+  /* ---------- 推流循环 ---------- */
+  function tick() {
+    if (!streaming || inflight) return;
+    var frame = KB.captureFrame(1024, 0.82); // {canvas, blobPromise}
+    var th = thumbOf(frame.canvas);
+    var now = performance.now();
+    var hb = parseFloat(elHeartbeat.value) * 1000;
+    var changed = diff(th, lastThumb) > CHANGE_THRESHOLD || changedRatio(th, lastThumb, 10) > 0.01;
+    var due = hb > 0 && (now - lastSentAt) > hb;
+    if (!changed && !due) return;
+    if (now - lastSentAt < MIN_SEND_GAP) return;
+    lastThumb = th;
+    lastSentAt = now;
+    inflight = true;
+    frame.blobPromise.then(send).catch(function (e) {
+      inflight = false;
+      log('Capture failed: ' + (e.message || e), 'err');
+    });
+  }
+
+  function send(blob) {
+    var fd = new FormData();
+    fd.append('image', blob, 'frame-' + Date.now() + '.jpg');
+    fd.append('session', elSession.value);
+    var t0 = performance.now();
+    fetch(base() + '/predict', { method: 'POST', body: fd }).then(function (r) {
+      if (!r.ok) return r.text().then(function (t) { throw new Error(r.status + ' ' + t.slice(0, 120)); });
+      return r.json();
+    }).then(function (res) {
+      frames += 1;
+      var ms = Math.round(performance.now() - t0);
+      setStatus('Streaming · ' + frames + ' frame' + (frames > 1 ? 's' : '') + ' · ' + ms + ' ms', 'on');
+      showResult(res);
+    }).catch(function (e) {
+      setStatus('Error: ' + (e.message || e), 'err');
+      log('predict failed: ' + (e.message || e), 'err');
+    }).then(function () { inflight = false; });
+  }
+
+  function showResult(res) {
+    if (res.is_first_image || res.status === 'baseline') {
+      elStage.textContent = 'Baseline captured';
+      elMsg.textContent = res.message || 'Now assemble — the agent will track your progress.';
+      log('Baseline set', 'ok');
+      return;
+    }
+    var moved = (res.parts_moved || res.moved || []).map(function (m) {
+      return typeof m === 'string' ? m : (m.count ? m.count + '× ' : '') + (m.type || '');
+    }).filter(Boolean);
+    if (res.stage_index !== null && res.stage_index !== undefined) {
+      elStage.textContent = 'Stage ' + (res.stage_index + 1) + '/' + stagesTotal +
+        (res.stage_name ? ' · ' + res.stage_name : '');
+      log('→ stage ' + (res.stage_index + 1) + (moved.length ? ': ' + moved.join(', ') : ''), 'ok');
+    } else {
+      elStage.textContent = res.status ? String(res.status) : 'No stage change';
+      if (moved.length) log('moved: ' + moved.join(', '));
+    }
+    elMsg.textContent = res.message || res.note || (moved.length ? 'Moved: ' + moved.join(', ') : 'Nothing moved');
+  }
+
+  /* ---------- 控制 ---------- */
+  function start() {
+    savePref();
+    setStatus('Connecting…', '');
+    fetch(base() + '/health').then(function (r) { return r.json(); }).then(function (h) {
+      stagesTotal = h.stages || 22;
+      log('Connected · model ' + (h.model || '?') + (h.key_loaded === false ? ' · NO API KEY' : ''), 'ok');
+      streaming = true;
+      inflight = false;
+      lastThumb = null;
+      lastSentAt = 0;
+      frames = 0;
+      elStart.textContent = 'Stop';
+      btn.classList.add('on');
+      setStatus('Streaming · waiting for first frame', 'on');
+      timer = setInterval(tick, 500);
+      tick();
+    }).catch(function (e) {
+      setStatus('Cannot reach agent at ' + base(), 'err');
+      log('Start the agent: python3 agent_server.py (port 8001)', 'err');
+    });
+  }
+
+  function stop() {
+    streaming = false;
+    clearInterval(timer);
+    elStart.textContent = 'Start';
+    if (!mon.on) btn.classList.remove('on');
+    setStatus('Stopped', '');
+    log('Streaming stopped');
+  }
+
+  elStart.addEventListener('click', function () { streaming ? stop() : start(); });
+  elReset.addEventListener('click', function () {
+    var fd = new FormData();
+    fd.append('session', elSession.value);
+    fetch(base() + '/reset', { method: 'POST', body: fd }).then(function () {
+      lastThumb = null;
+      elStage.textContent = 'Session reset';
+      elMsg.textContent = 'Next frame becomes the new baseline.';
+      log('Session reset', 'ok');
+    }).catch(function (e) { log('reset failed: ' + (e.message || e), 'err'); });
+  });
+  elClose.addEventListener('click', function () { panel.style.display = 'none'; });
+  btn.addEventListener('click', function () {
+    panel.style.display = panel.style.display === 'none' || !panel.style.display ? 'flex' : 'none';
+  });
+
+  /* ---------- Live view:把视口画面持续推给 monitor.py 中继 ---------- */
+  var monEndpoint = document.getElementById('monEndpoint');
+  var monStart = document.getElementById('monStart');
+  var monOpen = document.getElementById('monOpen');
+  var monStatus = document.getElementById('monStatus');
+  var MON_KEY = 'kitbash-monitor-v1';
+  var mon = { on: false, timer: 0, inflight: false, lastSent: 0, sent: 0, fails: 0 };
+  var MON_INTERVAL = 150, MON_HEARTBEAT = 1000, ACTIVE_WINDOW = 3000; // 操作中 ~6.6 fps;静止 1 fps
+  var lastInput = 0;
+  ['pointerdown', 'pointermove', 'wheel', 'keydown'].forEach(function (ev) {
+    window.addEventListener(ev, function () { lastInput = performance.now(); }, { passive: true });
+  });
+  function sceneActive(now) {
+    if (now - lastInput < ACTIVE_WINDOW) return true;
+    var a = window.KBAnswer && KBAnswer.info();
+    return !!(a && a.active && a.playing);
+  }
+
+  try {
+    var mp = JSON.parse(localStorage.getItem(MON_KEY) || '{}');
+    if (mp.endpoint) monEndpoint.value = mp.endpoint;
+  } catch (e) { /* 忽略 */ }
+  function monBase() { return monEndpoint.value.replace(/\/+$/, ''); }
+  function syncOpenLink() { monOpen.href = monBase() + '/'; }
+  monEndpoint.addEventListener('change', function () {
+    try { localStorage.setItem(MON_KEY, JSON.stringify({ endpoint: monEndpoint.value })); } catch (e) { /* 忽略 */ }
+    syncOpenLink();
+  });
+  syncOpenLink();
+
+  function monTick() {
+    if (!mon.on || mon.inflight) return;
+    var now = performance.now();
+    if (!sceneActive(now) && now - mon.lastSent < MON_HEARTBEAT) return; // 静止:心跳帧
+    var frame = KB.captureFrame(960, 0.72);
+    mon.lastSent = now;
+    mon.inflight = true;
+    frame.blobPromise.then(function (blob) {
+      return fetch(monBase() + '/frame', { method: 'POST', body: blob, headers: { 'Content-Type': 'image/jpeg' } });
+    }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      mon.sent += 1;
+      mon.fails = 0;
+      if (mon.sent % 8 === 1) monStatus.textContent = 'Sharing \u00b7 ' + mon.sent + ' frames sent \u00b7 open the viewer on any device: ' + monBase();
+    }).catch(function (e) {
+      mon.fails += 1;
+      monStatus.textContent = 'Relay unreachable at ' + monBase() + ' \u2014 run python3 monitor.py (' + (e.message || e) + ')';
+      if (mon.fails >= 20) monStop();
+    }).then(function () { mon.inflight = false; });
+  }
+
+  function monBegin() {
+    mon.on = true;
+    mon.sent = 0; mon.fails = 0; mon.lastSent = 0;
+    monStart.textContent = 'Stop sharing';
+    btn.classList.add('on');
+    monStatus.textContent = 'Sharing\u2026 open ' + monBase() + ' in another tab or device';
+    mon.timer = setInterval(monTick, MON_INTERVAL);
+    monTick();
+  }
+  function monStop() {
+    mon.on = false;
+    clearInterval(mon.timer);
+    monStart.textContent = 'Share view';
+    if (!streaming) btn.classList.remove('on');
+    monStatus.textContent = 'Stopped after ' + mon.sent + ' frames.';
+  }
+  monStart.addEventListener('click', function () { mon.on ? monStop() : monBegin(); });
+
+  window.KBStream = {
+    isStreaming: function () { return streaming; },
+    frames: function () { return frames; },
+    start: start, stop: stop,
+    monitor: { isOn: function () { return mon.on; }, sent: function () { return mon.sent; }, start: monBegin, stop: monStop,
+      debug: function () {
+        var now = performance.now();
+        return { inflight: mon.inflight, inputAgeMs: Math.round(now - lastInput), active: sceneActive(now) };
+      } }
+  };
 })();
 
 </script>

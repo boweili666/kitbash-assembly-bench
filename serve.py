@@ -6,6 +6,7 @@
 """
 import http.server
 import mimetypes
+import socket
 import sys
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8123
@@ -22,6 +23,20 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 
+class DualStackServer(http.server.ThreadingHTTPServer):
+    address_family = socket.AF_INET6
+
+    def server_bind(self):
+        try:
+            self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+        except (AttributeError, OSError):
+            pass
+        super().server_bind()
+
+
 if __name__ == "__main__":
-    print(f"三维组装台 → http://localhost:{PORT}")
-    http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
+    print(f"Kitbash → http://localhost:{PORT}")
+    try:
+        DualStackServer(("::", PORT), Handler).serve_forever()
+    except OSError:
+        http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()

@@ -90,6 +90,7 @@
   var undoStack = [], redoStack = [];
   var nameCounter = 0;
   var focusAnim = null;
+  var captureCanvas = null;    // agent 推流用的离屏画布
 
   /* ---------- 几何工厂 ---------- */
   function makeGeometry(type) {
@@ -1057,6 +1058,21 @@
     setSelection: setSelection,
     pushSnapshot: pushSnapshot,
     saveFile: saveFile,
+    /* 立即渲染一帧并缩放到 maxW 宽,返回 {canvas, blobPromise(JPEG)} —— 供 agent 推流 */
+    captureFrame: function (maxW, quality) {
+      renderer.render(scene, camera);
+      var w = canvas.width, h = canvas.height;
+      var sc = Math.min(1, (maxW || 1024) / w);
+      var off = captureCanvas || (captureCanvas = document.createElement('canvas'));
+      off.width = Math.round(w * sc); off.height = Math.round(h * sc);
+      off.getContext('2d').drawImage(canvas, 0, 0, off.width, off.height);
+      return {
+        canvas: off,
+        blobPromise: new Promise(function (res, rej) {
+          off.toBlob(function (b) { b ? res(b) : rej(new Error('toBlob failed')); }, 'image/jpeg', quality || 0.82);
+        })
+      };
+    },
     syncInspector: syncInspectorFromSelection,
     toast: toast,
     isSnap: function () { return snapOn; },
