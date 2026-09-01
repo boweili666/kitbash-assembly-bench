@@ -215,7 +215,7 @@
   var monStatus = document.getElementById('monStatus');
   var MON_KEY = 'kitbash-monitor-v1';
   var mon = { on: false, timer: 0, inflight: false, lastSent: 0, sent: 0, fails: 0 };
-  var MON_INTERVAL = 150, MON_HEARTBEAT = 1000, ACTIVE_WINDOW = 3000; // 操作中 ~6.6 fps;静止 1 fps
+  var MON_INTERVAL = 100, MON_HEARTBEAT = 1000, ACTIVE_WINDOW = 3000; // 操作中 10 fps;静止 1 fps
   var lastInput = 0;
   ['pointerdown', 'pointermove', 'wheel', 'keydown'].forEach(function (ev) {
     window.addEventListener(ev, function () { lastInput = performance.now(); }, { passive: true });

@@ -2,7 +2,7 @@
 """Live view relay — mirror the bench viewport into another page / window.
 
 The bench (index.html or the standalone file) POSTs JPEG frames here at
-~8 fps; any browser can watch them live:
+10 fps; any browser can watch them live:
 
   GET  /              viewer page (small live window, Pop-out PiP button)
   GET  /embed         bare <img> page for iframes / other UIs
