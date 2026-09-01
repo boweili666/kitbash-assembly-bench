@@ -131,6 +131,11 @@ html, body {
 .tool:disabled { opacity: 0.35; cursor: default; }
 .tool:disabled:hover { background: transparent; color: var(--text-dim); }
 .tool.danger:hover { background: rgba(224, 96, 79, 0.14); color: var(--danger); }
+.tool.rec-on { color: var(--danger); background: rgba(224, 96, 79, 0.12); }
+.tool.rec-on .lbl { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.tool.rec-on svg { animation: rec-blink 1s steps(2, start) infinite; }
+@keyframes rec-blink { to { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) { .tool.rec-on svg { animation: none; } }
 
 .vsep { width: 1px; height: 22px; background: var(--line-soft); flex: none; }
 .spacer { flex: 1; }

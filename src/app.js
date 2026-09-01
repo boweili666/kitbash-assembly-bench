@@ -1056,6 +1056,7 @@
     objectsRoot: objectsRoot,
     setSelection: setSelection,
     pushSnapshot: pushSnapshot,
+    saveFile: saveFile,
     syncInspector: syncInspectorFromSelection,
     toast: toast,
     isSnap: function () { return snapOn; },
