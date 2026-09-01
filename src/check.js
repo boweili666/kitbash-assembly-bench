@@ -43,6 +43,23 @@
     var d = Math.abs(qa.dot(qb));
     return THREE.MathUtils.radToDeg(2 * Math.acos(Math.min(1, d)));
   }
+  /* 零件的对称等价变换列表(局部):S_k = T(c)·R_k·T(-c),含恒等 */
+  var symCache = {};
+  function symTransforms(key) {
+    if (symCache[key]) return symCache[key];
+    var spec = KBParts.spec(key);
+    var list = [new THREE.Matrix4()];
+    if (spec && spec.sym && spec.sym.length) {
+      var c = new THREE.Vector3().fromArray(spec.sym_center || [0, 0, 0]);
+      spec.sym.forEach(function (sy) {
+        var R = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3().fromArray(sy.axis).normalize(), THREE.MathUtils.degToRad(sy.deg));
+        list.push(new THREE.Matrix4().makeTranslation(c.x, c.y, c.z).multiply(R).multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z)));
+      });
+    }
+    symCache[key] = list;
+    return list;
+  }
+
   /* 回转件:比较轴向。螺丝有头 → 用"杆→头"的有向向量(能识别装反);螺柱对称 → 无向 */
   function axisAngle(key, qa, qb) {
     var spec = KBParts.spec(key);
@@ -92,23 +109,37 @@
       return { node: n, key: n.userData.kbType.slice(5), pos: pos, q: q, slot: null };
     });
 
-    // 贪心分配:同类零件按位置误差最近;姿态大致对(或位置很准)才算"放在这里"
+    // 配对:同类零件与槽位的所有组合按误差升序全局贪心(相同零件可互换,不受槽位顺序影响);
+    // 每对取"对称等价姿态"中误差最小者 —— 楔块绕 z 转 180°、板绕长轴转 180° 都视为同一姿态
+    var pairs = [];
     targets.forEach(function (t) {
-      var best = null;
+      var syms = symTransforms(t.slot.key);
+      var M = new THREE.Matrix4().compose(t.pos, t.q, new THREE.Vector3(1, 1, 1));
       partInfo.forEach(function (pi) {
-        if (pi.slot || pi.key !== t.slot.key) return;
-        var d = pi.pos.distanceTo(t.pos);
-        if (!best || d < best.d) best = { pi: pi, d: d };
+        if (pi.key !== t.slot.key) return;
+        var best = null;
+        syms.forEach(function (S) {
+          var MC = new THREE.Matrix4().multiplyMatrices(M, S);
+          var cp = new THREE.Vector3(), cq = new THREE.Quaternion(), cs = new THREE.Vector3();
+          MC.decompose(cp, cq, cs);
+          var d = pi.pos.distanceTo(cp);
+          if (d >= NEAR) return;
+          var ang = REVOLVE[t.slot.key] ? axisAngle(t.slot.key, pi.q, cq) : { deg: angleBetween(pi.q, cq), signed: false };
+          var reversed = ang.signed && ang.deg > 90;
+          var nearAng = reversed ? (180 - ang.deg) : ang.deg;
+          if (!(d < POS_TOL || nearAng < NEAR_ANG)) return;
+          var score = d + (reversed ? 0.02 : nearAng / 180 * 0.05);
+          if (!best || score < best.score) best = { score: score, d: d, ang: ang.deg, reversed: reversed };
+        });
+        if (best) pairs.push({ t: t, pi: pi, err: best });
       });
-      if (!best || best.d >= NEAR) return;
-      var ang = REVOLVE[t.slot.key] ? axisAngle(t.slot.key, best.pi.q, t.q) : { deg: angleBetween(best.pi.q, t.q), signed: false };
-      var reversed = ang.signed && ang.deg > 90;
-      var nearAng = reversed ? (180 - ang.deg) : ang.deg;   // 装反的螺丝轴线仍对得上,只是头朝向相反
-      if (best.d < POS_TOL || nearAng < NEAR_ANG) {
-        t.part = best.pi; best.pi.slot = t;
-        t.err = { d: best.d, ang: ang.deg, reversed: reversed };
-        t.ok = best.d < POS_TOL && !reversed && ang.deg < ANG_TOL;
-      }
+    });
+    pairs.sort(function (a, b) { return a.err.score - b.err.score; });
+    pairs.forEach(function (pr) {
+      if (pr.t.part || pr.pi.slot) return;
+      pr.t.part = pr.pi; pr.pi.slot = pr.t;
+      pr.t.err = pr.err;
+      pr.t.ok = pr.err.d < POS_TOL && !pr.err.reversed && pr.err.ang < ANG_TOL;
     });
 
     var issues = [], correct = 0;

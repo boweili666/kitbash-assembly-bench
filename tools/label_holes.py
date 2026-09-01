@@ -214,6 +214,25 @@ def refine_extents(mesh, cyls):
             done.append(c)
 
 
+def detect_symmetries(mesh):
+    """网格自身的旋转对称:绕包围盒中心、绕 x/y/z 轴转 90/180/270° 后是否与自身重合。
+    返回 [{axis:[..], deg}],供比对时把对称等价姿态视为同一姿态(如楔块绕 z 转 180°)。"""
+    from trimesh.proximity import ProximityQuery
+    c = mesh.bounding_box.centroid
+    pts, _ = trimesh.sample.sample_surface(mesh, 1500)
+    pq = ProximityQuery(mesh)
+    tol = float(mesh.extents.max()) * 0.006
+    out = []
+    for name, axis in (("x", [1, 0, 0]), ("y", [0, 1, 0]), ("z", [0, 0, 1])):
+        for deg in (90, 180, 270):
+            R = trimesh.transformations.rotation_matrix(np.radians(deg), axis)
+            q = trimesh.transform_points(pts - c, R) + c
+            d = np.abs(pq.signed_distance(q))
+            if np.percentile(d, 95) < tol:
+                out.append({"axis": axis, "deg": deg})
+    return out, c
+
+
 def main():
     files = sorted(PARTS.glob("*.glb"))
     meshes = {f.stem: trimesh.load(f, force="mesh") for f in files}
@@ -232,6 +251,7 @@ def main():
 
         cyls = detect_cylinders(mesh)
         refine_extents(mesh, cyls)
+        syms, sym_center = detect_symmetries(mesh)
         holes = sorted([c for c in cyls if c["kind"] == "hole"], key=lambda c: c["r"])
         pegs = sorted([c for c in cyls if c["kind"] == "peg"], key=lambda c: -c["depth"])
         part = {
@@ -240,6 +260,8 @@ def main():
             "label": LABELS.get(key, key),
             "offset": [round(float(x), 5) for x in off],
             "bbox": {"min": X(bmin), "max": X(bmax)},
+            "sym": syms,                      # 旋转对称(绕 sym_center、零件局部轴)
+            "sym_center": X(sym_center),      # 编辑器局部坐标
             "holes": [{
                 "id": f"H{i+1}", "c": X(h["c"]),
                 "d": [round(float(x), 4) for x in h["d"]],
