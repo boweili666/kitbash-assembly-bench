@@ -73,7 +73,7 @@
     <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="6"/></svg>
     <span class="lbl">Rec</span>
   </button>
-  <button id="btnCheck" class="tool" title="Checks: failure detection — fit, screw length, wrong part / hole, order, and completion score">
+  <button id="btnCheck" class="tool" title="Checks: wrong part / hole, reversed screws, assembly order, and completion score">
     <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l7 3v4c0 4-3 6.5-7 7.5C6 16.5 3 14 3 10V6z"/><path d="M7.5 10l2 2 3.5-4"/></svg>
     <span class="lbl">Checks</span>
   </button>
@@ -221,10 +221,6 @@
 <div id="checkPanel" class="float">
   <div class="ag-head">
     <b style="font-size:12px">Checks</b>
-    <select id="ckMode" title="Strict: incompatible parts refuse to snap. Warn: they snap but get flagged.">
-      <option value="strict">Strict</option>
-      <option value="warn">Warn</option>
-    </select>
     <button id="ckNow" class="tool" title="Re-evaluate against the reference assembly">Check now</button>
     <button id="ckClose" class="tool" title="Hide panel" style="margin-left:auto">
       <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
