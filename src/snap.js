@@ -126,6 +126,7 @@
       var half = Math.max(f.depth * s * 1.4, 0.45);
       out.axes.push({
         c: c, d: d, r: rw,
+        kind: f.id.charAt(0) === 'H' ? 'hole' : 'peg', id: f.id, owner: wrapper, depth: f.depth * s,
         outline: [c.clone().addScaledVector(d, -half), c.clone().addScaledVector(d, half)],
         ring: ringPts(c, d, Math.max(rw * 1.6, 0.1))
       });
@@ -198,6 +199,150 @@
     return was;
   }
 
+  /* ---------- 失败检测:尺寸校验 / 插入限位 ---------- */
+  function mmDia(rWorld) {
+    var us = (window.KBParts && KBParts.unitScale && KBParts.unitScale()) || 24.77;
+    return (2 * rWorld / us * 1000).toFixed(1);
+  }
+  /* 销→孔 / 孔→销 配对的尺寸判定 */
+  function fitVerdict(a, b) {
+    var peg = null, hole = null;
+    if (a.kind === 'peg' && b.kind === 'hole') { peg = a; hole = b; }
+    else if (a.kind === 'hole' && b.kind === 'peg') { peg = b; hole = a; }
+    if (!peg || !hole || !peg.r || !hole.r) return { ok: true };
+    var ratio = peg.r / hole.r;
+    if (ratio > 1.06) {
+      return { ok: false, code: 'nofit',
+        msg: 'Does not fit: \u2300' + mmDia(peg.r) + ' mm peg into a \u2300' + mmDia(hole.r) + ' mm hole' };
+    }
+    if (ratio < 0.7) {
+      return { ok: true, code: 'loose',
+        msg: 'Loose fit: \u2300' + mmDia(peg.r) + ' mm peg in a \u2300' + mmDia(hole.r) + ' mm hole' };
+    }
+    return { ok: true };
+  }
+  function coaxial(x, y) {
+    var f = axisFit(x, y);
+    return f.cos > 0.99 && f.perp < 0.05;
+  }
+  function reportCheck(issue) {
+    if (window.KBCheck && KBCheck.report) KBCheck.report(issue);
+  }
+  /* 插入限位(沿整条共轴线):比孔粗的销/柱不能与该孔的轴向区间重叠 ——
+   * 螺丝头停在最近的细孔口(板面)、螺柱柱身停在板面、板套不进柱身;
+   * 并以最深的同轴孔为旋合目标做螺丝长度校验 */
+  function applyInsertLimits(node, a, b, mine) {
+    if (!a.kind || !b.kind) return;
+    var d = b.d;
+    var T = function (p) { return p.dot(d); };
+    var owner = a.owner || node;
+    var us = (window.KBParts && KBParts.unitScale && KBParts.unitScale()) || 24.77;
+    var mm = function (w) { return (w / us * 1000).toFixed(1); };
+
+    var minePegs = [], mineHoles = [], tgtPegs = [], tgtHoles = [];
+    mine.axes.forEach(function (x) {
+      if (!x.kind || !coaxial(x, a)) return;
+      (x.kind === 'peg' ? minePegs : mineHoles).push(x);
+    });
+    cache.axes.forEach(function (x) {              // 轴线上所有其他零件的同轴特征
+      if (!x.kind || !coaxial(x, b)) return;
+      (x.kind === 'peg' ? tgtPegs : tgtHoles).push(x);
+    });
+    function shiftNode(shift) {
+      node.position.addScaledVector(d, shift);
+      mine.axes.forEach(function (x) { x.c.addScaledVector(d, shift); });
+    }
+    if (window.KBSnap && KBSnap._debug) {
+      KBSnap._last = { a: a.id, b: b.id + '@' + (b.owner && b.owner.name),
+        mine: mine.axes.filter(function (x) { return x.kind && coaxial(x, a); }).map(function (x) { return x.id + ':' + x.kind + ' t=' + T(x.c).toFixed(3) + ' h=' + ((x.depth || 0) / 2).toFixed(3) + ' r=' + x.r.toFixed(3); }),
+        tgt: tgtHoles.concat(tgtPegs).map(function (x) { return x.id + ':' + x.kind + '@' + (x.owner && x.owner.name) + ' t=' + T(x.c).toFixed(3) + ' h=' + ((x.depth || 0) / 2).toFixed(3) + ' r=' + x.r.toFixed(3); }),
+        d: [d.x, d.y, d.z].map(function (v) { return +v.toFixed(2); }) };
+    }
+    function shaftOf(peg, pegs) {
+      var shaft = null;
+      pegs.forEach(function (x) { if (x !== peg && x.r < peg.r / 1.3) shaft = x; });
+      return shaft;
+    }
+
+    // 1) 本零件的销 vs 轴线上的细孔
+    minePegs.forEach(function (peg) {
+      var narrow = tgtHoles.filter(function (h) { return peg.r > h.r * 1.06; });
+      if (!narrow.length) return;
+      var shaft = shaftOf(peg, minePegs);
+      if (shaft) {
+        // 螺丝头:只要杆在孔里,头必须整体留在进入侧,且在最近的细孔之外
+        var side = T(peg.c) > T(shaft.c) ? 1 : -1;
+        var need = 0;
+        narrow.forEach(function (h) {
+          var entry = T(h.c) + side * (h.depth || 0) / 2;
+          var headBottom = T(peg.c) - side * (peg.depth || 0) / 2;
+          need = Math.max(need, side * (entry - headBottom));
+        });
+        if (need > 1e-6) shiftNode(side * need);   // 头坐到孔口 —— 正常拧入,不上报
+      } else {
+        narrow.forEach(function (h) {               // 柱身之类:不能与孔区间重叠
+          var tp = T(peg.c), hp = (peg.depth || 0) / 2, th = T(h.c), hh = (h.depth || 0) / 2;
+          if (tp + hp <= th - hh + 1e-6 || tp - hp >= th + hh - 1e-6) return;
+          var up = (th + hh) - (tp - hp), down = (th - hh) - (tp + hp);
+          shiftNode(Math.abs(up) < Math.abs(down) ? up : down);
+          reportCheck({ code: 'blocked', severity: 'warn', transient: true, node: owner,
+            msg: '⌀' + mmDia(peg.r) + ' mm ' + (owner.name || 'peg') + ' cannot enter the ⌀' +
+              mmDia(h.r) + ' mm hole of ' + ((h.owner && h.owner.name) || 'part') + ' — stopped at the surface' });
+        });
+      }
+    });
+    // 2) 轴线上别人的粗柱 vs 本零件的细孔(板套不进螺柱身)
+    tgtPegs.forEach(function (peg) {
+      mineHoles.forEach(function (h) {
+        if (peg.r <= h.r * 1.06) return;
+        var tp = T(peg.c), hp = (peg.depth || 0) / 2, th = T(h.c), hh = (h.depth || 0) / 2;
+        if (tp + hp <= th - hh + 1e-6 || tp - hp >= th + hh - 1e-6) return;
+        var up = (th + hh) - (tp - hp), down = (th - hh) - (tp + hp);
+        shiftNode(-(Math.abs(up) < Math.abs(down) ? up : down));
+        reportCheck({ code: 'blocked', severity: 'warn', transient: true, node: owner,
+          msg: '⌀' + mmDia(peg.r) + ' mm ' + ((peg.owner && peg.owner.name) || 'peg') +
+            ' cannot enter the ⌀' + mmDia(h.r) + ' mm hole of ' + (owner.name || 'part') + ' — stopped at the surface' });
+      });
+    });
+
+    // 3) 螺丝长度校验:头已坐到最近孔口时,杆尖必须旋入最深的同轴孔 ≥ 3 mm,且不能顶底
+    if (a.kind !== 'peg') return;
+    var head = null;
+    minePegs.forEach(function (x) { if (x !== a && x.r > a.r * 1.3) head = x; });
+    if (!head || !tgtHoles.length) return;
+    var ta = T(a.c), th2 = T(head.c);
+    var side2 = th2 > ta ? 1 : -1;
+    var headBottom2 = th2 - side2 * (head.depth || 0) / 2;
+    // 沿插入方向排序,从最近的孔开始把"相邻"(间隙 < 1.5 mm)的孔串成叠层;
+    // 旋合目标 = 叠层最后一个孔(远处不相邻的孔不算)
+    var ordered = tgtHoles.map(function (h) {
+      var hh = (h.depth || 0) / 2;
+      return { h: h, entry: T(h.c) + side2 * hh, far: T(h.c) - side2 * hh };
+    }).sort(function (p, q) { return side2 * (q.entry - p.entry); });   // 靠头的在前
+    if (!ordered.length) return;
+    var nearestEntry = ordered[0].entry;
+    if (side2 * (nearestEntry - headBottom2) < -0.02) return;           // 头未坐到孔口
+    var stack = [ordered[0]];
+    for (var k = 1; k < ordered.length; k++) {
+      var prev = stack[stack.length - 1];
+      if (side2 * (prev.far - ordered[k].entry) < 0.037) stack.push(ordered[k]); else break;
+    }
+    if (stack.length < 2) return;                                        // 只有一块板,无旋合目标
+    var deepest = stack[stack.length - 1].h;
+    var tip = ta - side2 * (a.depth || 0) / 2;
+    var dEntry = T(deepest.c) + side2 * (deepest.depth || 0) / 2;
+    var dFar = T(deepest.c) - side2 * (deepest.depth || 0) / 2;
+    var engage = side2 * (dEntry - tip), over = side2 * (dFar - tip);
+    var target = (deepest.owner && deepest.owner.name) || 'the last hole';
+    if (engage < 0.074) {   // 最小旋合深度 ≈ 1 倍直径(3 mm)
+      reportCheck({ code: 'short', severity: 'error', transient: true, node: owner,
+        msg: (owner.name || 'Screw') + ' is too short: only ' + mm(Math.max(engage, 0)) + ' mm into ' + target + ' — use a longer screw' });
+    } else if (over > 0.025) {
+      reportCheck({ code: 'long', severity: 'warn', transient: true, node: owner,
+        msg: (owner.name || 'Screw') + ' is too long: bottoms out ' + mm(over) + ' mm past ' + target });
+    }
+  }
+
   function axisFit(a, b) {
     var c = Math.abs(a.d.dot(b.d));
     var v = a.c.clone().sub(b.c);
@@ -254,6 +399,7 @@
         fit = axisFit(ka, active.b);
         if (fit.cos > AXIS_COS_OFF && fit.perp < AXIS_PERP_OFF) {
           applyAxis(node, ka, active.b);
+          applyInsertLimits(node, ka, active.b, mine);
           showViz(active);
           node.updateMatrixWorld(true);
           return active;
@@ -284,9 +430,12 @@
     }
 
     // 搜索新吸附:轴优先于面
-    var best = null;
+    var best = null, rejected = null;
+    var strict = !(window.KBCheck && KBCheck.strict && !KBCheck.strict());
     for (i = 0; i < mine.axes.length; i++) {
       for (j = 0; j < cache.axes.length; j++) {
+        // 销↔销(螺丝头对螺柱柱身)没有装配意义,不作为吸附配对
+        if (mine.axes[i].kind === 'peg' && cache.axes[j].kind === 'peg') continue;
         fit = axisFit(mine.axes[i], cache.axes[j]);
         if (fit.cos < AXIS_COS_ON || fit.perp > AXIS_PERP_ON) continue;
         var s = fit.perp + (1 - fit.cos) * 2;
@@ -294,7 +443,13 @@
         if (mine.axes[i].r && cache.axes[j].r) {
           s += Math.abs(mine.axes[i].r - cache.axes[j].r) * 3;
         }
-        if (!best || s < best.s) best = { s: s, kind: 'axis', ai: i, a: mine.axes[i], b: cache.axes[j] };
+        var verdict = fitVerdict(mine.axes[i], cache.axes[j]);
+        if (!verdict.ok && strict) {
+          // 严格模式:粗销进不了细孔 —— 拒绝配对,但记下来标红提示
+          if (!rejected || s < rejected.s) rejected = { s: s, a: mine.axes[i], b: cache.axes[j], v: verdict };
+          continue;
+        }
+        if (!best || s < best.s) best = { s: s, kind: 'axis', ai: i, a: mine.axes[i], b: cache.axes[j], v: verdict };
       }
     }
     if (!best) {
@@ -309,10 +464,23 @@
       }
     }
     if (best) {
-      active = { kind: best.kind, ai: best.ai, fi: best.fi, b: best.b };
-      if (best.kind === 'axis') applyAxis(node, best.a, best.b);
-      else applyFace(node, best.a, best.b);
+      active = { kind: best.kind, ai: best.ai, fi: best.fi, b: best.b, fit: best.v || { ok: true } };
+      if (best.kind === 'axis') {
+        applyAxis(node, best.a, best.b);
+        applyInsertLimits(node, best.a, best.b, mine);
+        if (best.v && best.v.code) {
+          reportCheck({ code: best.v.code, msg: best.v.msg, node: best.a.owner || node,
+            severity: best.v.ok ? 'warn' : 'error', transient: true });
+        }
+      } else {
+        applyFace(node, best.a, best.b);
+      }
       showViz(active);
+    } else if (rejected) {
+      // 被尺寸校验拒绝的最近候选:标红 + 上报
+      showViz({ kind: 'axis', b: rejected.b, fit: rejected.v });
+      reportCheck({ code: 'nofit', msg: rejected.v.msg, node: rejected.a.owner || node,
+        severity: 'error', transient: true });
     } else {
       hideViz();
     }
@@ -322,15 +490,19 @@
 
   /* ---------- 吸附高亮 ---------- */
   function showViz(act) {
-    if (viz && viz.userData.b === act.b) return; // 目标未变,沿用现有高亮
+    var color = (act.fit && !act.fit.ok) ? 0xe0604f          // 装不进:红
+      : (act.fit && act.fit.code === 'loose') ? 0xd9b84a      // 松配合:黄
+        : 0xe8a33d;                                           // 正常:琥珀
+    if (viz && viz.userData.b === act.b && viz.userData.color === color) return; // 目标未变
     hideViz();
     var group = new THREE.Group();
     group.userData.b = act.b;
+    group.userData.color = color;
     group.userData.kbOverlay = true; // 抓帧时隐藏
     function makeLine(list) {
       var g = new THREE.BufferGeometry().setFromPoints(list);
       return new THREE.Line(g, new THREE.LineBasicMaterial({
-        color: 0xe8a33d, transparent: true, opacity: 0.95, depthTest: false
+        color: color, transparent: true, opacity: 0.95, depthTest: false
       }));
     }
     group.add(makeLine(act.b.outline));

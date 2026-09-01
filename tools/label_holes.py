@@ -181,6 +181,39 @@ def detect_cylinders(mesh):
     return kept
 
 
+def refine_extents(mesh, cyls):
+    """用径向带内的全部顶点重算每个圆柱特征的轴向区间与中心:
+    聚类只覆盖侧壁的一部分(螺纹/滚花把面片切碎),质心跨度会严重低估
+    杆长、柱长、板厚;顶点带统计不受面片连通性影响。"""
+    V = mesh.vertices
+    done = []   # 已确定区间的销,按半径从大到小处理:头先于杆
+    for c in sorted(cyls, key=lambda x: (x["kind"] != "peg", -x["r"])):
+        d, r = c["d"], c["r"]
+        rel = V - c["c"]
+        t = rel @ d
+        radial = np.linalg.norm(rel - np.outer(t, d), axis=1)
+        tol = (0.30 if c["kind"] == "peg" else 0.15) * r   # 销:螺纹根/滚花起伏大
+        band = np.abs(radial - r) < tol + 1e-6
+        if c["kind"] == "peg":
+            # 剔除落在更粗同轴销(螺丝头)轴向区间内的顶点 —— 头顶十字槽会伪装成杆
+            for w in done:
+                if w["r"] > r * 1.3 and abs(w["d"] @ d) > 0.98:
+                    tw = (V - w["c"]) @ d
+                    band &= ~(np.abs(tw) <= w["depth"] / 2 + 1e-6)
+        if band.sum() < 6:
+            continue
+        tb = t[band]
+        # 带内顶点的整体轴向跨度(去掉 0.5% 离群点)。低模圆柱往往只有两端有顶点,
+        # 链式截断会把 22 mm 的杆截成一小段,这里直接取整体跨度
+        tmin, tmax = float(np.percentile(tb, 0.5)), float(np.percentile(tb, 99.5))
+        if tmax - tmin < 1e-9:
+            continue
+        c["depth"] = tmax - tmin
+        c["c"] = c["c"] + d * (tmin + tmax) / 2
+        if c["kind"] == "peg":
+            done.append(c)
+
+
 def main():
     files = sorted(PARTS.glob("*.glb"))
     meshes = {f.stem: trimesh.load(f, force="mesh") for f in files}
@@ -198,6 +231,7 @@ def main():
             return [round(float(x), 4) for x in (np.asarray(p) - off) * scale]
 
         cyls = detect_cylinders(mesh)
+        refine_extents(mesh, cyls)
         holes = sorted([c for c in cyls if c["kind"] == "hole"], key=lambda c: c["r"])
         pegs = sorted([c for c in cyls if c["kind"] == "peg"], key=lambda c: -c["depth"])
         part = {

@@ -220,8 +220,16 @@
     KB.toast('Answer demo: click nodes to jump \u00b7 drag the bar \u00b7 adjust speed');
   });
 
-  /* 测试 / 调试入口 */
+  /* 测试 / 调试入口 + 标准答案数据(供 Checks 对照) */
   window.KBAnswer = {
+    poses: function () {
+      return DATA.parts.map(function (d) {
+        var last = d.path[d.path.length - 1];
+        return { key: d.key, name: d.name, step: d.step, p: last.p, e: last.e };
+      });
+    },
+    stepLabel: function (i) { return (DATA.steps[i] && DATA.steps[i].label) || ('Step ' + (i + 1)); },
+    stepCount: function () { return DATA.steps.length; },
     seekStep: function (i) { t = stepEnd[i]; setPlaying(false); render(); },
     info: function () {
       return { active: !!root, t: t, maxT: maxT, playing: playing,

@@ -155,6 +155,25 @@ control bar offers play/pause, 0.5–2× speed, a clickable/scrubbable progress
 bar, and 21 step nodes — click one to jump to that step's completed state;
 hover shows the step name and its parts.
 
+## 6.5 Failure detection (src/check.js + snap.js)
+
+No physics simulation — an **assembly rule checker** built on the labeled geometry; every rule is demoable:
+
+| Rule | Basis | What you see |
+| --- | --- | --- |
+| Thick peg can't enter a thin hole | peg/hole radius comparison (⌀5.5 standoff vs ⌀3 hole) | Strict mode refuses the snap and flags red; Warn mode snaps but flags |
+| Screw head seats at the hole mouth | the head (⌀5.5) is wider than the hole → it must stay on the entry side | pushing further just stops at the surface |
+| Barrel stops at the plate / plate can't swallow a barrel | along the shared axis, any peg wider than a hole can't overlap that hole's extent | "⌀5.5 mm Standoff cannot enter the ⌀3.0 mm hole — stopped at the surface" |
+| Screw too short / too long | once seated, the tip must engage the last hole of the contiguous stack ≥ 3 mm (1×d) and must not bottom out | "M3×6 is too short: only 1.5 mm into Standoff" |
+| Wrong hole / wrong part | align the reference assembly to the user's rear plate and compare slot by slot (wrong-part only within the same family) | "Wrong part at M3×22 1's slot: found M3×16 1" |
+| Assembly order | hard dependencies X-Lock → arms → front plate | "Out of order: Front Plate placed before Arm 1" |
+| Completion score | slots within 3.2 mm and 12° out of 24 | panel progress bar |
+
+For this the labeler recomputes each feature's **axial extent** from all vertices in a radial band (not the
+centroid span of the clustered faces), and excludes the Phillips-recess vertices that fall inside the head's
+extent when measuring shafts — giving 22/16/6 mm shafts, 3 mm heads, 20 mm standoffs and 2 mm plates,
+which is what makes the limits and length checks millimetre-accurate.
+
 ## 7. Other implementation notes
 
 - **Undo**: snapshot-based — the whole scene is serialized after every
@@ -177,12 +196,14 @@ hover shows the step name and its parts.
 
 - Snapping corrects position and small orientation errors only: axes more
   than 20° apart won't engage (use the 15° grid snap to pre-orient).
-- No collision detection: parts can interpenetrate; insertion depth is
-  unbounded.
+- Collisions are handled only along hole axes (peg / hole / head / barrel
+  extents); parts can still interpenetrate sideways — full collision needs a
+  physics engine.
 - The arms' oblong slots are not circles and are currently not detected.
-- Possible next steps: assembly-correctness scoring against the answer,
-  a guided step mode (highlight only the parts for the current step),
-  multi-user collaboration, and a mobile layout.
+- Possible next steps: a guided step mode (highlight only the parts for the
+  current step), feeding Checks results to the agent for natural-language
+  coaching, full collision (Rapier + convex decomposition), multi-user
+  collaboration, and a mobile layout.
 
 ---
 

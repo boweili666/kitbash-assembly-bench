@@ -471,6 +471,45 @@ input[type="range"]::-moz-range-thumb {
 .ag-row.err .ag-text { color: var(--danger); }
 .ag-time { font-family: var(--font-mono); flex: none; }
 
+/* ---------- Checks 失败检测面板 ---------- */
+#checkPanel {
+  display: none;
+  right: 12px;
+  bottom: 52px;
+  width: 320px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  z-index: 18;
+  font-size: 12px;
+}
+#checkPanel select {
+  background: rgba(12, 15, 19, 0.55);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+  padding: 3px 6px;
+}
+.ck-score { display: flex; flex-direction: column; gap: 5px; color: var(--text-dim); }
+.ck-track { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.ck-bar { height: 100%; width: 0; background: var(--accent); transition: width 0.25s ease; }
+.ck-bar.done { background: #6fbf73; }
+.ck-list { display: flex; flex-direction: column; gap: 3px; max-height: 220px; overflow-y: auto; }
+.ck-empty { color: var(--text-faint); font-size: 11.5px; padding: 6px 2px; }
+.ck-row {
+  display: flex; align-items: flex-start; gap: 8px; width: 100%;
+  border: 0; border-radius: 6px; background: rgba(12, 15, 19, 0.45);
+  color: var(--text-dim); font: inherit; font-size: 11.5px; line-height: 1.45;
+  text-align: left; padding: 6px 8px; cursor: pointer;
+}
+.ck-row:hover { background: var(--line-soft); color: var(--text); }
+.ck-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; background: var(--danger); }
+.ck-row.warn .ck-dot { background: #d9b84a; }
+.tool.has-errors { color: var(--danger); }
+.tool.warn { background: rgba(224, 96, 79, 0.18); color: var(--danger); }
+
 /* ---------- 答案演示控制条 ---------- */
 #answerBar {
   display: none;

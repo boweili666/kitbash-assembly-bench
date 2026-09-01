@@ -140,6 +140,7 @@
 
   window.KBParts = {
     ready: function () { return ready; },
+    unitScale: function () { return manifest ? manifest.unitScale : 24.77; },
     spec: function (key) { return cache[key] ? cache[key].spec : null; },
     prims: function (key) { return cache[key] ? cache[key].prims : null; },
     instantiate: instantiate,

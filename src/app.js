@@ -248,6 +248,7 @@
     refreshTree();
     syncInspectorFromSelection();
     rebuildAttachment(); // 恢复多选枢轴 / gizmo
+    changeHooks.forEach(function (fn) { fn(); });
   }
 
   function undo() {
@@ -358,6 +359,7 @@
   }
 
   var selectionHooks = [];
+  var changeHooks = [];   // 场景变化(快照)回调,供 Checks 面板重算
   function setSelection(nodes) {
     bakePivot();
     selection = nodes.slice();
@@ -1088,6 +1090,7 @@
     isPart: isPartNode,
     rebuildAttachment: rebuildAttachment,
     onSelection: function (fn) { selectionHooks.push(fn); },
+    onChange: function (fn) { changeHooks.push(fn); },
     nextName: function (base) { nameCounter += 1; return base + ' ' + nameCounter; },
     /* 从屏幕坐标拾取顶层节点,返回 {node, point} 或 null */
     raycastTopAt: function (px, py) {

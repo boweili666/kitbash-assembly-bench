@@ -35,6 +35,7 @@ python3 serve.py        # 然后打开 http://localhost:8123
 | 录屏 | 顶栏「Rec」:浏览器内录制本页为 WebM(选"当前标签页",可混麦克风),再点停止并保存 |
 | 直播小窗 | 顶栏「Agent」→ Live view:`python3 monitor.py` 后点 Share view,任何浏览器/设备打开 http://127.0.0.1:8124 即可实时观看,支持画中画悬浮窗;`/embed` 可嵌入 iframe,`/frame.jpg` 供程序取帧 |
 | Agent 推流 | 同一面板 → Assembly agent:把视口帧按变化/心跳 POST 给 animation_new/agent_server.py 的 /predict,面板内显示识别到的装配阶段 |
+| 失败检测 | 顶栏「Checks」:规则引擎 —— 粗销进不了细孔(Strict 拒绝吸附 / Warn 标红)、螺丝头停在孔口、螺柱身停在板面、螺丝太短(旋合 < 3 mm)/太长(顶底)、对照标准答案的完成度评分、放错孔位、用错零件(如 M3×16 放在 M3×22 位)、装配顺序(前板先于机臂) |
 | 答案演示 | 顶栏「答案」:半透明虚影按装配顺序落位,循环演示最终装配位姿(位姿来自 aristos step_3d_paths.json);再点关闭 |
 
 ## 结构
@@ -48,6 +49,7 @@ src/parts.js        零件库(GLB 加载、孔位标签可视化、吸附特征�
 src/answer.js       答案虚影动画(步骤时间轴)
 src/record.js       网页内录屏(MediaRecorder)
 src/stream.js       直播推流(monitor.py)/ agent 推流(agent_server.py)
+src/check.js        失败检测面板(尺寸/长度/错件/错孔/顺序/评分)
 assets/parts/       无人机机架零件 GLB + manifest.json(孔位标注,来自 aristos)
 tools/label_holes.py  孔位检测标注:圆柱面聚类 + 圆拟合,孔 H1..Hn / 销 P1..Pn
 vendor/             three.js r147 (UMD) + 控制器/加载导出器

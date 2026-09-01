@@ -73,6 +73,10 @@
     <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="6"/></svg>
     <span class="lbl">Rec</span>
   </button>
+  <button id="btnCheck" class="tool" title="Checks: failure detection — fit, screw length, wrong part / hole, order, and completion score">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l7 3v4c0 4-3 6.5-7 7.5C6 16.5 3 14 3 10V6z"/><path d="M7.5 10l2 2 3.5-4"/></svg>
+    <span class="lbl">Checks</span>
+  </button>
   <button id="btnAgent" class="tool" title="Live view: share the viewport to another page / window, or stream it to the assembly agent">
     <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M7 9.5h.01M13 9.5h.01M7.5 13h5"/></svg>
     <span class="lbl">Agent</span>
@@ -213,6 +217,23 @@
   <div id="agLog" class="ag-log"></div>
 </div>
 
+<!-- Checks 失败检测面板 -->
+<div id="checkPanel" class="float">
+  <div class="ag-head">
+    <b style="font-size:12px">Checks</b>
+    <select id="ckMode" title="Strict: incompatible parts refuse to snap. Warn: they snap but get flagged.">
+      <option value="strict">Strict</option>
+      <option value="warn">Warn</option>
+    </select>
+    <button id="ckNow" class="tool" title="Re-evaluate against the reference assembly">Check now</button>
+    <button id="ckClose" class="tool" title="Hide panel" style="margin-left:auto">
+      <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
+    </button>
+  </div>
+  <div class="ck-score"><span id="ckScore">Not evaluated yet</span><div class="ck-track"><div id="ckBar" class="ck-bar"></div></div></div>
+  <div id="ckList" class="ck-list"></div>
+</div>
+
 <!-- 答案演示播放控制条 -->
 <div id="answerBar" class="float">
   <button id="ansPlay" class="tool" title="Play / Pause">
@@ -257,6 +278,7 @@
 <script src="src/answer.js"></script>
 <script src="src/record.js"></script>
 <script src="src/stream.js"></script>
+<script src="src/check.js"></script>
 
 </body>
 </html>
