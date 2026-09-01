@@ -12275,6 +12275,9 @@ input[type="range"]::-moz-range-thumb {
   var REVOLVE = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1, knurled_standoff: 1 };
   var SCREW = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1 };
   function family(key) { return key.indexOf('screw_') === 0 ? 'screw' : key.indexOf('split_') === 0 ? 'plate' : key; }
+  // 暂不区分头型:M3×16 盘头 与 M3×16 杯头 视为同一种零件
+  var SAME = { screw_m3x16_socket_cap: 'screw_m3x16_pan' };
+  function canon(key) { return SAME[key] || key; }
 
   var results = null;
 
@@ -12356,7 +12359,7 @@ input[type="range"]::-moz-range-thumb {
       n.updateMatrixWorld(true);
       var pos = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
       n.matrixWorld.decompose(pos, q, sc);
-      return { node: n, key: n.userData.kbType.slice(5), pos: pos, q: q, slot: null };
+      return { node: n, key: canon(n.userData.kbType.slice(5)), pos: pos, q: q, slot: null };
     });
 
     // 配对:同类零件与槽位的所有组合按误差升序全局贪心(相同零件可互换,不受槽位顺序影响);
@@ -12366,7 +12369,7 @@ input[type="range"]::-moz-range-thumb {
       var syms = symTransforms(t.slot.key);
       var M = new THREE.Matrix4().compose(t.pos, t.q, new THREE.Vector3(1, 1, 1));
       partInfo.forEach(function (pi) {
-        if (pi.key !== t.slot.key) return;
+        if (pi.key !== canon(t.slot.key)) return;
         var best = null;
         syms.forEach(function (S) {
           var MC = new THREE.Matrix4().multiplyMatrices(M, S);
@@ -12412,7 +12415,7 @@ input[type="range"]::-moz-range-thumb {
       }
       var wrong = null;   // 槽位空着:同族的别种零件占了这个位置 → 用错零件
       partInfo.forEach(function (pi) {
-        if (pi.key === t.slot.key || family(pi.key) !== family(t.slot.key)) return;
+        if (pi.key === canon(t.slot.key) || family(pi.key) !== family(t.slot.key)) return;
         var d = pi.pos.distanceTo(t.pos);
         if (d < POS_TOL * 1.5 && (!wrong || d < wrong.d)) wrong = { pi: pi, d: d };
       });
