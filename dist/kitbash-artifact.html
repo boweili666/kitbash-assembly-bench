@@ -12251,9 +12251,9 @@ input[type="range"]::-moz-range-thumb {
 /* ============================================================
  * Checks — 装配失败检测(对照标准答案)
  *
- * 每次场景变化后:以后板为基准把答案位姿对齐到用户装配,逐槽位比对 →
+ * 每次场景变化后:以 X-Lock 为基准把答案位姿对齐到用户装配,逐槽位比对 →
  *   完成度评分 · 放错孔位 / 位置偏差 · 用错零件(同族零件间,如 M3×16 放到 M3×22 位)
- *   · 螺丝方向装反(头朝向与答案相反)· 装配顺序(X-Lock → 机臂 → 前板)
+ *   · 螺丝方向装反(头朝向与答案相反)· 装配顺序(后板 → 机臂 → 前板)
  * ============================================================ */
 (function () {
   'use strict';
@@ -12270,8 +12270,8 @@ input[type="range"]::-moz-range-thumb {
   var elClose = document.getElementById('ckClose');
 
   var POS_TOL = 0.08, ANG_TOL = 12, NEAR = 0.5, NEAR_ANG = 45;   // 世界单位 / 度
-  // 顺序硬依赖:X-Lock → 机臂 → 前板(后板是对齐基准、楔块装在 X-Lock 侧面,不参与)
-  var STRUCT = { aluminum_x_lock: 1, arm_5in: 1, split_front_plate: 1 };
+  // 顺序硬依赖:后板 → 机臂 → 前板(X-Lock 是对齐基准、楔块装在 X-Lock 侧面,不参与)
+  var STRUCT = { split_rear_plate: 1, arm_5in: 1, split_front_plate: 1 };
   var REVOLVE = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1, knurled_standoff: 1 };
   var SCREW = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1 };
   function family(key) { return key.indexOf('screw_') === 0 ? 'screw' : key.indexOf('split_') === 0 ? 'plate' : key; }
@@ -12317,12 +12317,12 @@ input[type="range"]::-moz-range-thumb {
     if (!(window.KBParts && KBParts.ready() && window.KBAnswer)) return;
     var parts = collectParts();
     var slots = KBAnswer.poses();
-    var anchorKey = 'split_rear_plate';
+    var anchorKey = 'aluminum_x_lock';   // 从 X-Lock 开始装:答案对齐到用户放的 X-Lock
     var userPlate = null, plateSlot = null;
     parts.forEach(function (n) { if (!userPlate && n.userData.kbType === 'part:' + anchorKey) userPlate = n; });
     slots.forEach(function (s) { if (!plateSlot && s.key === anchorKey) plateSlot = s; });
     if (!userPlate || !plateSlot) {
-      results = { ready: false, issues: [], correct: 0, total: slots.length, note: 'Load the kit (needs the Rear Plate as reference)' };
+      results = { ready: false, issues: [], correct: 0, total: slots.length, note: 'Load the kit (needs the X-Lock as reference)' };
       render();
       return;
     }

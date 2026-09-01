@@ -128,10 +128,10 @@ Y 箭头 = 插拔方向,Y 环 = 绕孔旋转(铰链),松开 Ctrl 立即还原到
 
 | 规则 | 依据 | 表现 |
 | --- | --- | --- |
-| 放错孔位 / 位置偏差 | 以后板为基准把标准答案对齐到当前装配,同类零件按最近槽位分配 | "M3×22 1 is in the wrong hole / position: off by 12.4 mm" |
+| 放错孔位 / 位置偏差 | 以 X-Lock 为基准把标准答案对齐到当前装配(从 X-Lock 开始装),同类零件按最近槽位分配 | "M3×22 1 is in the wrong hole / position: off by 12.4 mm" |
 | 用错零件 | 槽位空着但同族别种零件占了位置(螺丝↔螺丝、前板↔后板) | "Wrong part at M3×22 1's slot: found M3×16 1" |
 | 螺丝方向装反 | 比较"杆→头"有向向量与答案是否反向 | "M3×22 1 is inserted backwards — the head faces the wrong way" |
-| 装配顺序 | X-Lock → 机臂 → 前板 的硬依赖 | "Out of order: Front Plate placed before Arm 1" |
+| 装配顺序 | 后板 → 机臂 → 前板 的硬依赖 | "Out of order: Front Plate placed before Arm 1" |
 | 完成度评分 | 24 个槽位中位置 < 3.2 mm、姿态 < 12° 且方向正确的数量 | 面板进度条 |
 
 标注脚本为此重算了特征的**轴向区间**:用径向带内的全部顶点统计跨度(而不是聚类面片的质心跨度),

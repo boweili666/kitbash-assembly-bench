@@ -161,10 +161,10 @@ No physics simulation — the user's assembly is compared slot by slot against t
 
 | Rule | Basis | What you see |
 | --- | --- | --- |
-| Wrong hole / position | align the reference assembly to the user's rear plate; assign parts of the same type to the nearest slot | "M3×22 1 is in the wrong hole / position: off by 12.4 mm" |
+| Wrong hole / position | align the reference assembly to the user's X-Lock (assembly starts there); assign parts of the same type to the nearest slot | "M3×22 1 is in the wrong hole / position: off by 12.4 mm" |
 | Wrong part | an empty slot occupied by another part of the same family (screw↔screw, front↔rear plate) | "Wrong part at M3×22 1's slot: found M3×16 1" |
 | Screw inserted backwards | compare the signed shaft→head vector with the reference | "M3×22 1 is inserted backwards — the head faces the wrong way" |
-| Assembly order | hard dependencies X-Lock → arms → front plate | "Out of order: Front Plate placed before Arm 1" |
+| Assembly order | hard dependencies rear plate → arms → front plate | "Out of order: Front Plate placed before Arm 1" |
 | Completion score | slots within 3.2 mm, 12°, and correctly oriented, out of 24 | panel progress bar |
 
 For this the labeler recomputes each feature's **axial extent** from all vertices in a radial band (not the
