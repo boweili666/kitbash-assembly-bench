@@ -672,3 +672,22 @@ input[type="range"]::-moz-range-thumb {
 @media (prefers-reduced-motion: reduce) {
   #toast { transition: none; }
 }
+
+
+/* ---------- 嵌入模式(?embed=1):适配 aristos 内的小窗 ---------- */
+.embed #hints { display: none; }
+.embed #topbar {
+  height: 40px; gap: 4px; padding: 0 6px; top: 8px; left: 8px; right: 8px;
+  overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+}
+.embed .brand, .embed .seg button kbd { display: none; }
+.embed .seg button { padding: 5px 7px; }
+.embed .tool { padding: 5px 7px; }
+.embed .tool .lbl { display: none; }
+.embed #btnNew .lbl, .embed #btnDemo, .embed #btnAnswer, .embed #btnCheck { display: inline-flex; }
+.embed #btnRecord, .embed #btnAgent, .embed #btnImport, .embed #btnExportJson, .embed #btnExportGlb,
+.embed #btnGroup, .embed #btnUngroup, .embed #btnDup, .embed #btnFocus { display: none; }
+.embed #panel { width: 216px; top: 56px; font-size: 12px; }
+.embed #panel:not(:has(.insp-body.show)) { display: none; }  /* only show when something is selected */
+.embed #agentPanel { display: none !important; }  /* sharing keeps running headless */
+.embed #answerBar { bottom: 10px; width: min(94vw, 560px); }

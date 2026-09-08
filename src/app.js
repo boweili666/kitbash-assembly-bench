@@ -1114,6 +1114,11 @@
     }
   };
 
+  /* ---------- 嵌入模式:?embed=1(aristos 内嵌小窗)---------- */
+  if (new URLSearchParams(location.search).has('embed')) {
+    document.body.classList.add('embed');
+  }
+
   /* ---------- 启动 ---------- */
   var restored = false;
   try {
