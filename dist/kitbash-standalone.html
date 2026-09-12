@@ -12604,7 +12604,10 @@ input[type="range"]::-moz-range-thumb {
     "846d88a9-a6d2-4db9-be31-9d312aded87c": "motor_nut_m5",
     "9c37da50-5c65-49c0-a81f-e62bf299691e": "screw_m3x8_socket_cap",
     "f3addb33-9034-48e3-8195-a51e5cb8dd74": "damper_m2",
-    "94ab9f35-e676-4ce6-9fdf-a63e8e3f30ff": "esc_4in1"
+    "94ab9f35-e676-4ce6-9fdf-a63e8e3f30ff": "esc_4in1",
+    "846d88a9a6d24db9be319d312aded87c": "motor_nut_m5",
+    "f3addb33903448e38195a51e5cb8dd74": "damper_m2",
+    "94ab9f35e6764ce69fdfa63e8e3f30ff": "esc_4in1"
   };
 
   var origin = '*';            // 首条宿主消息到达后记住其 origin
@@ -12648,11 +12651,15 @@ input[type="range"]::-moz-range-thumb {
     };
   }
 
+  // 模型 UUID 在不同数据源里有带连字符和不带两种写法,统一成 32 位裸 hex 再查
+  var MODEL_KEYS = {};
+  Object.keys(MODEL_MAP).forEach(function (u) { MODEL_KEYS[u.replace(/-/g, '').toLowerCase()] = MODEL_MAP[u]; });
+
   function keyFor(part) {
     if (part.key) return KBParts.spec(part.key) ? part.key : null;
     if (part.glb) {
-      var m = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i.exec(part.glb);
-      if (m && MODEL_MAP[m[1].toLowerCase()]) return MODEL_MAP[m[1].toLowerCase()];
+      var m = /([0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})/i.exec(part.glb);
+      if (m) return MODEL_KEYS[m[1].replace(/-/g, '').toLowerCase()] || null;
     }
     return null;
   }
