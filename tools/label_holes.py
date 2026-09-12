@@ -33,6 +33,11 @@ LABELS = {
     "screw_m3x16_pan": "M3×16",
     "screw_m3x16_socket_cap": "M3×16 Cap",
     "screw_m3x22_pan": "M3×22",
+    "screw_m3x8_socket_cap": "M3×8 Cap",
+    "motor_2207": "Motor 2207",
+    "motor_nut_m5": "M5 Nut",
+    "damper_m2": "M2 Damper",
+    "esc_4in1": "ESC 4-in-1",
 }
 
 
@@ -233,11 +238,16 @@ def detect_symmetries(mesh):
     return out, c
 
 
+MIN_FEATURE_DIA_MM = 1.5   # 小于此直径的圆柱视为噪声(绕组/线材)
+
+
 def main():
     files = sorted(PARTS.glob("*.glb"))
     meshes = {f.stem: trimesh.load(f, force="mesh") for f in files}
     global_max = max(float(m.extents.max()) for m in meshes.values())
     scale = TARGET_MAX / global_max
+    # 原始文件单位:最大零件超过 1 说明已是 mm,否则是米
+    mm_per_unit = 1.0 if global_max > 1 else 1000.0
     print(f"最大零件尺寸 {global_max:.2f}(原始单位)→ unitScale = {scale:.5f}\n")
 
     parts = []
@@ -251,6 +261,10 @@ def main():
 
         cyls = detect_cylinders(mesh)
         refine_extents(mesh, cyls)
+        # 丢掉比任何真实紧固件都细的特征:电机绕组、线束之类的曲面会被
+        # 回转体回退算法打碎成上百个 ⌀0.4mm 的假圆柱,它们既不是孔也不是
+        # 销,留着只会污染吸附。本套件最细的真实特征是 M2 减震柱 ⌀3.5mm。
+        cyls = [c for c in cyls if c["r"] * 2 * mm_per_unit >= MIN_FEATURE_DIA_MM]
         syms, sym_center = detect_symmetries(mesh)
         holes = sorted([c for c in cyls if c["kind"] == "hole"], key=lambda c: c["r"])
         pegs = sorted([c for c in cyls if c["kind"] == "peg"], key=lambda c: -c["depth"])
