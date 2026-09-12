@@ -31,7 +31,7 @@ python3 serve.py        # 然后打开 http://localhost:8123
 | 直接拖拽 | 鼠标按住物体拖动;Shift+拖 = 垂直升降;拖空白处转视角 |
 | 装配吸附 | **按住 Ctrl 生效**(默认自由移动):面-面贴平后沿面滑动;轴-轴(销入孔/孔对孔)对中后沿轴滑动,拖远脱开;直接拖拽与 gizmo 平移/旋转统一 |
 | 零件库 | aristos 无人机机架 10 个真实零件(碳板/机臂/螺丝/螺柱等),孔位与销轴已自动标注并参与吸附 |
-| 示例场景 | Frame Bottom Assembly 全套零件清单(24 件,数量取自装配任务图 BOM) |
+| 零件桌(Kit) | 从 ARISTOS task_graphs.db 生成的 82 件零件按类型成排摆在桌面上(板状件自动放平),每件带任务图实例 UUID |
 | 录屏 | 顶栏「Rec」:浏览器内录制本页为 WebM(选"当前标签页",可混麦克风),再点停止并保存 |
 | 直播小窗 | 顶栏「Agent」→ Live view:`python3 monitor.py` 后点 Share view,任何浏览器/设备打开 http://127.0.0.1:8124 即可实时观看,支持画中画悬浮窗;`/embed` 可嵌入 iframe,`/frame.jpg` 供程序取帧 |
 | Agent 推流 | 同一面板 → Assembly agent:把视口帧按变化/心跳 POST 给 animation_new/agent_server.py 的 /predict,面板内显示识别到的装配阶段 |
@@ -50,8 +50,12 @@ src/answer.js       答案虚影动画(步骤时间轴)
 src/record.js       网页内录屏(MediaRecorder)
 src/stream.js       直播推流(monitor.py)/ agent 推流(agent_server.py)
 src/check.js        失败检测面板(尺寸/长度/错件/错孔/顺序/评分)
-assets/parts/       无人机机架零件 GLB + manifest.json(孔位标注,来自 aristos)
-tools/label_holes.py  孔位检测标注:圆柱面聚类 + 圆拟合,孔 H1..Hn / 销 P1..Pn
+assets/parts/       零件 GLB + manifest.json(20 种零件的孔位/对称性/Kit 布局,由 ARISTOS task_graphs.db 生成)
+tools/features_db.py  孔位/销轴作为贡献者数据进 task_graphs.db(PartTypeFeatures / PartTypeSymmetries):
+                      detect 自动检测入库 → 贡献者复核 → manifest 从库生成(见 docs/FEATURE_SCHEMA.md)
+tools/scene_from_db.py 从 task_graphs.db 生成 <Simulator> 的 initialScene:--layout installed(装配位姿)/ kit(零件摆桌上)
+tools/label_holes.py  孔位检测算法本体(圆柱面聚类 + 圆拟合 + 回转体回退),被 features_db.py 调用
+integration/react/  <Simulator> React 组件(Dana 的签名:initialScene / onGrab / onMove / onPlace / onViewUpdate)+ 演示
 vendor/             three.js r147 (UMD) + 控制器/加载导出器
 build.py            打包脚本(零件库内嵌 base64):python3 build.py → dist/
 serve.py            本地开发服务器:python3 serve.py

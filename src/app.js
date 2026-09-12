@@ -699,8 +699,17 @@
     };
   })();
 
+  // Kit 布局优先来自零件库数据(manifest.kit,由任务图库生成);没有时退回手写的 KIT_SCENE
+  function kitSceneData() {
+    var kit = window.KBParts && KBParts.ready() && KBParts.kit();
+    if (!kit) return KIT_SCENE;
+    var objects = [];
+    kit.forEach(function (part) { var o = KBParts.sceneObject(part); if (o) objects.push(o); });
+    return { v: 1, counter: objects.length, camera: KIT_SCENE.camera, objects: objects };
+  }
+
   function buildDemoScene() {
-    loadSceneData(KIT_SCENE, false);
+    loadSceneData(kitSceneData(), false);
     if (window.KBParts && KBParts.ready()) {
       objectsRoot.children.slice().forEach(function (n) {
         if (n.userData.kbPending) KBParts.resolve(n);
@@ -1004,10 +1013,10 @@
     }
   });
   document.getElementById('btnDemo').addEventListener('click', function () {
-    if (confirm('Load the Frame Bottom Assembly kit? The current scene will be replaced (undoable).')) {
+    if (confirm('Load the assembly kit? The current scene will be replaced (undoable).')) {
       buildDemoScene();
       pushSnapshot();
-      toast('Frame Bottom Assembly kit loaded (24 parts)');
+      toast('Kit loaded (' + objectsRoot.children.length + ' parts)');
     }
   });
   document.getElementById('btnExportJson').addEventListener('click', exportJSON);

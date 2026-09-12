@@ -138,11 +138,71 @@
     });
   }
 
+  /* ---------- 与 ARISTOS 数据的换算(mm · Y 朝上 · XYZ 欧拉 · GLB 节点原点) ---------- */
+  function bare(u) { return String(u || '').replace(/-/g, '').toLowerCase(); }
+
+  // 装配图里的模型 UUID(manifest.parts[].models,连字符无关)→ 零件类型 key
+  function keyForModel(modelUuid) {
+    if (!manifest) return null;
+    var want = bare(modelUuid);
+    for (var i = 0; i < manifest.parts.length; i++) {
+      var ms = manifest.parts[i].models || [];
+      for (var j = 0; j < ms.length; j++) if (bare(ms[j]) === want) return manifest.parts[i].key;
+    }
+    return null;
+  }
+
+  // 零件节点 → 其 GLB 原点的世界位姿。烘焙时 v' = S·(v − offset),所以 GLB 原点在节点局部的 −offset·S
+  function poseOf(node) {
+    var key = node.userData.kbType.slice(5);
+    var spec = cache[key] ? cache[key].spec : null;
+    var S = manifest.unitScale, k = S / 1000;
+    node.updateMatrixWorld(true);
+    var originLocal = spec
+      ? new THREE.Vector3(-spec.offset[0] * S, -spec.offset[1] * S, -spec.offset[2] * S)
+      : new THREE.Vector3();
+    var p = node.localToWorld(originLocal);
+    var e = new THREE.Euler().setFromQuaternion(node.getWorldQuaternion(new THREE.Quaternion()), 'XYZ');
+    return { x: p.x / k, y: p.y / k, z: p.z / k, roll: e.x, pitch: e.y, yaw: e.z };
+  }
+
+  // GLB 原点位姿 → 挂在场景根下的零件节点的 position / rotation(t = R·(offset·S) + t_mm·k)
+  function nodeTransform(key, pose) {
+    var spec = cache[key] ? cache[key].spec : null;
+    var S = manifest.unitScale, k = S / 1000;
+    var e = new THREE.Euler(pose.roll || 0, pose.pitch || 0, pose.yaw || 0, 'XYZ');
+    var q = new THREE.Quaternion().setFromEuler(e);
+    var offW = spec
+      ? new THREE.Vector3(spec.offset[0] * S, spec.offset[1] * S, spec.offset[2] * S).applyQuaternion(q)
+      : new THREE.Vector3();
+    return { p: [(pose.x || 0) * k + offW.x, (pose.y || 0) * k + offW.y, (pose.z || 0) * k + offW.z],
+             r: [e.x, e.y, e.z] };
+  }
+
+  // ScenePart {id, key | glb, name?, pose} → 场景存档里的对象;认不出模型返回 null
+  function sceneObject(part) {
+    var key = part.key && cache[part.key] ? part.key : null;
+    if (!key && part.glb) {
+      var m = /([0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})/i.exec(part.glb);
+      if (m) key = keyForModel(m[1]);
+    }
+    if (!key) return null;
+    var t = nodeTransform(key, part.pose || {});
+    return { id: part.id, name: part.name || cache[key].spec.label, type: 'part:' + key, p: t.p, r: t.r, s: [1, 1, 1] };
+  }
+
   window.KBParts = {
     ready: function () { return ready; },
     unitScale: function () { return manifest ? manifest.unitScale : 24.77; },
     spec: function (key) { return cache[key] ? cache[key].spec : null; },
     prims: function (key) { return cache[key] ? cache[key].prims : null; },
+    keys: function () { return manifest ? manifest.parts.map(function (p) { return p.key; }) : []; },
+    /* 初始"零件摆在桌上"的布局(ScenePart[]),由 tools/scene_from_db.py --layout kit 从任务图库生成 */
+    kit: function () { return (manifest && manifest.kit) || null; },
+    keyForModel: keyForModel,
+    poseOf: poseOf,
+    nodeTransform: nodeTransform,
+    sceneObject: sceneObject,
     instantiate: instantiate,
     resolve: resolve,
     resetMaterial: resetMaterial,
