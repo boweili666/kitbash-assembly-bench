@@ -1,9 +1,9 @@
 /* ============================================================
  * 「答案」虚影动画 — Frame Bottom Assembly 装配演示(带播放控制)
  *
- * 数据:aristos 装配图 step_3d_paths.json —— 每个零件取其安装步骤内
- * 终点前的真实接近/插入轨迹点(螺丝沿轴插入、楔块侧向滑入等),
- * 已换算到编辑器单位。步骤名来自装配任务图。
+ * 数据:零件库 manifest.answer(features_db.py answer 从 task_graphs.db 的
+ * Step3DPaths / StepRequirements 生成)—— 步骤按装配时序排列,每个零件
+ * 取其安装步骤内 接近→落位 的真实轨迹点,打开时换算到场景单位。
  * 控制条:播放/暂停 · 速度 · 进度条(可点/拖)· 步骤节点(点击跳转)。
  * 虚影不可选中、不参与吸附、不进撤销/导出。
  * ============================================================ */
@@ -11,7 +11,32 @@
   'use strict';
 
   var KB = window.KB;
-  var DATA = {"steps":[{"i":0,"label":"Feed Screw through Arm Wedge (A)"},{"i":1,"label":"Feed Screw through Arm Wedge (B)"},{"i":2,"label":"Attach Arm Wedge Assembly to X-Lock (A)"},{"i":3,"label":"Place Assembly Aluminum X-Lock with Wedges on Rear Plate"},{"i":4,"label":"Feed Screw through X-Lock and Rear Plate (A)"},{"i":5,"label":"Feed Screw through X-Lock and Rear Plate (B)"},{"i":6,"label":"Feed Screw through X-Lock and Rear Plate (D)"},{"i":7,"label":"Insert Arm into X-Lock Assembly (A)"},{"i":8,"label":"Insert Arm into X-Lock Assembly (B)"},{"i":9,"label":"Insert Arm into X-Lock Assembly (C)"},{"i":10,"label":"Insert Arm into X-Lock Assembly (D)"},{"i":11,"label":"Place Front Plate on Rear Plate and Arm Assembly"},{"i":12,"label":"Attach Front Plate on Rear Plate and Arm Assembly"},{"i":13,"label":"Feed Standoff Screw through Frame Bottom (A)"},{"i":14,"label":"Attach Knurled Standoff to Frame Bottom (A)"},{"i":15,"label":"Feed Standoff Screw through Frame Bottom (B)"},{"i":16,"label":"Attach Knurled Standoff to Frame Bottom (B)"},{"i":17,"label":"Feed Standoff Screw through Frame Bottom (C)"},{"i":18,"label":"Attach Knurled Standoff to Frame Bottom (C)"},{"i":19,"label":"Feed Standoff Screw through Frame Bottom (D)"},{"i":20,"label":"Attach Knurled Standoff to Frame Bottom (D)"}],"parts":[{"key":"aluminum_arm_wedge_5mm","name":"Arm Wedge 1","step":0,"path":[{"p":[-1.407,0.545,0.087],"e":[0.0,-1.5708,0.0]},{"p":[-0.515,0.545,0.087],"e":[0.0,-1.5708,0.0]}]},{"key":"screw_m3x16_socket_cap","name":"M3×16 Cap 1","step":0,"path":[{"p":[-2.618,0.607,0.087],"e":[-0.0,0.0,1.5708]},{"p":[-0.141,0.607,0.087],"e":[-0.0,0.0,1.5708]}]},{"key":"aluminum_arm_wedge_5mm","name":"Arm Wedge 2","step":1,"path":[{"p":[1.421,0.553,0.087],"e":[0.0,1.5708,0.0]},{"p":[0.529,0.553,0.087],"e":[0.0,1.5708,0.0]}]},{"key":"screw_m3x16_socket_cap","name":"M3×16 Cap 2","step":1,"path":[{"p":[2.608,0.607,0.087],"e":[0.0,0.0,-1.5708]},{"p":[0.131,0.607,0.087],"e":[0.0,0.0,-1.5708]}]},{"key":"aluminum_x_lock","name":"X-Lock","step":2,"path":[{"p":[-0.005,1.437,0.078],"e":[-0.0,0.0,-0.0]},{"p":[-0.005,0.545,0.078],"e":[-0.0,0.0,-0.0]}]},{"key":"split_rear_plate","name":"Rear Plate","step":3,"path":[{"p":[-0.005,-0.396,0.748],"e":[-0.0,0.0,-0.0]},{"p":[-0.005,0.495,0.748],"e":[-0.0,0.0,-0.0]}]},{"key":"screw_m3x22_pan","name":"M3×22 1","step":4,"path":[{"p":[0.378,1.283,0.538],"e":[-1.5708,0.0,0.0]},{"p":[0.378,0.391,0.538],"e":[-1.5708,0.0,0.0]}]},{"key":"screw_m3x22_pan","name":"M3×22 2","step":5,"path":[{"p":[-0.388,1.283,0.538],"e":[-1.5708,0.0,0.0]},{"p":[-0.388,0.391,0.538],"e":[-1.5708,0.0,0.0]}]},{"key":"screw_m3x22_pan","name":"M3×22 3","step":5,"path":[{"p":[-0.388,1.283,-0.227],"e":[-1.5708,0.0,0.0]},{"p":[-0.388,0.391,-0.227],"e":[-1.5708,0.0,0.0]}]},{"key":"screw_m3x22_pan","name":"M3×22 4","step":6,"path":[{"p":[0.378,1.283,-0.227],"e":[-1.5708,0.0,0.0]},{"p":[0.378,0.391,-0.227],"e":[-1.5708,0.0,0.0]}]},{"key":"arm_5in","name":"Arm 1","step":7,"path":[{"p":[1.396,1.437,1.155],"e":[-0.0,0.9599,-0.0]},{"p":[1.396,0.545,1.155],"e":[-0.0,0.9599,-0.0]}]},{"key":"arm_5in","name":"Arm 2","step":8,"path":[{"p":[1.396,1.555,-0.991],"e":[-3.1416,0.9599,-0.0]},{"p":[1.396,0.663,-0.991],"e":[-3.1416,0.9599,-0.0]}]},{"key":"arm_5in","name":"Arm 3","step":9,"path":[{"p":[-1.317,1.437,-1.074],"e":[-3.1416,-0.8727,-3.1416]},{"p":[-1.317,0.545,-1.074],"e":[-3.1416,-0.8727,-3.1416]}]},{"key":"arm_5in","name":"Arm 4","step":10,"path":[{"p":[-1.396,1.56,1.159],"e":[-0.0,-0.9599,3.1416]},{"p":[-1.396,0.669,1.159],"e":[-0.0,-0.9599,3.1416]}]},{"key":"split_front_plate","name":"Front Plate","step":11,"path":[{"p":[-0.005,1.56,-0.537],"e":[-0.0,0.0,-0.0]},{"p":[-0.005,0.669,-0.537],"e":[-0.0,0.0,-0.0]}]},{"key":"screw_m3x6_pan","name":"M3×6","step":12,"path":[{"p":[-0.005,1.474,0.087],"e":[-0.0,0.0,-0.0]},{"p":[-0.005,0.582,0.087],"e":[-0.0,0.0,-0.0]}]},{"key":"screw_m3x16_pan","name":"M3×16 1","step":13,"path":[{"p":[0.362,1.227,-0.568],"e":[-0.0,0.0,-0.0]},{"p":[0.362,0.336,-0.568],"e":[-0.0,0.0,-0.0]}]},{"key":"knurled_standoff","name":"Standoff 1","step":14,"path":[{"p":[0.362,-0.644,-0.636],"e":[1.5708,0.0,-0.0]},{"p":[0.362,0.248,-0.636],"e":[1.5708,0.0,-0.0]}]},{"key":"screw_m3x16_pan","name":"M3×16 2","step":15,"path":[{"p":[0.362,1.227,0.743],"e":[-0.0,0.0,-0.0]},{"p":[0.362,0.336,0.743],"e":[-0.0,0.0,-0.0]}]},{"key":"knurled_standoff","name":"Standoff 2","step":16,"path":[{"p":[0.362,-0.644,0.675],"e":[1.5708,0.0,-0.0]},{"p":[0.362,0.248,0.675],"e":[1.5708,0.0,-0.0]}]},{"key":"screw_m3x16_pan","name":"M3×16 3","step":17,"path":[{"p":[-0.372,1.227,0.743],"e":[-0.0,0.0,-0.0]},{"p":[-0.372,0.336,0.743],"e":[-0.0,0.0,-0.0]}]},{"key":"knurled_standoff","name":"Standoff 3","step":18,"path":[{"p":[-0.372,-0.644,0.675],"e":[1.5708,0.0,-0.0]},{"p":[-0.372,0.248,0.675],"e":[1.5708,0.0,-0.0]}]},{"key":"screw_m3x16_pan","name":"M3×16 4","step":19,"path":[{"p":[-0.372,1.227,-0.568],"e":[-0.0,0.0,-0.0]},{"p":[-0.372,0.336,-0.568],"e":[-0.0,0.0,-0.0]}]},{"key":"knurled_standoff","name":"Standoff 4","step":20,"path":[{"p":[-0.372,-0.644,-0.636],"e":[1.5708,0.0,-0.0]},{"p":[-0.372,0.248,-0.636],"e":[1.5708,0.0,-0.0]}]}]};
+  // 参考装配来自零件库数据(manifest.answer,mm / GLB 原点,features_db.py answer 生成)。
+  // 打开时换算到场景单位:整体 XZ 居中、最低零件原点落到 0(root 再抬 HOVER)。
+  var DATA = { steps: [], parts: [], source: null };
+  function loadData() {
+    var src = window.KBParts && KBParts.ready() && KBParts.answer && KBParts.answer();
+    if (!src || DATA.source === src) return;
+    var parts = [], minY = Infinity, sx = 0, sz = 0, n = 0;
+    src.parts.forEach(function (d) {
+      if (!KBParts.spec(d.key)) return;
+      var path = d.path.map(function (pose) { var t = KBParts.nodeTransform(d.key, pose); return { p: t.p, e: t.r }; });
+      if (path.length === 1) path.push({ p: path[0].p.slice(), e: path[0].e.slice() }); // 静止零件:原地出现
+      var last = path[path.length - 1];
+      minY = Math.min(minY, last.p[1]); sx += last.p[0]; sz += last.p[2]; n += 1;
+      parts.push({ id: d.id, key: d.key, name: d.name, step: d.step, path: path });
+    });
+    parts.sort(function (a, b) { return a.step - b.step; });   // schedule() 按步骤顺序走
+    var cx = n ? sx / n : 0, cz = n ? sz / n : 0;
+    parts.forEach(function (d) {
+      d.path.forEach(function (w) { w.p = [w.p[0] - cx, w.p[1] - minY, w.p[2] - cz]; });
+    });
+    DATA = {
+      source: src,
+      steps: src.steps.map(function (st) { return { i: st.i, label: st.name, requires: st.requires || [] }; }),
+      parts: parts
+    };
+  }
 
   var btn = document.getElementById('btnAnswer');
   var bar = document.getElementById('answerBar');
@@ -51,6 +76,8 @@
       KB.toast('Parts library is still loading, try again shortly');
       return false;
     }
+    loadData();
+    if (!DATA.parts.length) { KB.toast('No reference assembly in the part library'); return false; }
     root = new THREE.Group();
     root.userData.kbOverlay = true; // 抓帧时隐藏
     root.position.set(0, HOVER, 0);
@@ -223,18 +250,21 @@
   /* 测试 / 调试入口 + 标准答案数据(供 Checks 对照) */
   window.KBAnswer = {
     poses: function () {
+      loadData();
       return DATA.parts.map(function (d) {
         var last = d.path[d.path.length - 1];
         return { key: d.key, name: d.name, step: d.step, p: last.p, e: last.e };
       });
     },
-    stepLabel: function (i) { return (DATA.steps[i] && DATA.steps[i].label) || ('Step ' + (i + 1)); },
-    stepCount: function () { return DATA.steps.length; },
+    stepLabel: function (i) { loadData(); return (DATA.steps[i] && DATA.steps[i].label) || ('Step ' + (i + 1)); },
+    stepCount: function () { loadData(); return DATA.steps.length; },
+    /* 任务图里步骤 i 的前置步骤(答案步骤下标),供 Checks 判装配顺序;无数据时 null */
+    requires: function (i) { loadData(); return DATA.source && DATA.steps[i] ? DATA.steps[i].requires : null; },
     seekStep: function (i) { t = stepEnd[i]; setPlaying(false); render(); },
     info: function () {
       return { active: !!root, t: t, maxT: maxT, playing: playing,
         steps: stepEnd.length,
-        placed: items.filter(function (it) { return t >= it.start + DUR; }).length };
+        placed: items.filter(function (it) { return t >= it.start + DUR - 1e-6; }).length };
     }
   };
 })();

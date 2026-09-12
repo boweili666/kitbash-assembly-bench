@@ -175,15 +175,32 @@
       }
     });
 
-    targets.filter(function (t) { return t.ok && STRUCT[t.slot.key]; }).forEach(function (t) {
-      targets.forEach(function (u) {
-        if (u.ok || !STRUCT[u.slot.key] || u.slot.step >= t.slot.step) return;
-        var key = 'order|' + t.slot.name;
-        if (issues.some(function (i) { return i.key === key; })) return;
-        issues.push({ key: key, severity: 'warn', node: t.part.node,
-          msg: 'Out of order: ' + t.slot.name + ' (step ' + (t.slot.step + 1) + ') placed before ' +
-            u.slot.name + ' (step ' + (u.slot.step + 1) + ': ' + KBAnswer.stepLabel(u.slot.step) + ')' });
-      });
+    // 装配顺序。有任务图依赖数据(答案里每步的 requires)时按它判:某零件已装好,
+    // 而它所在步骤的某个前置步骤还一件都没装 → 顺序错。没有依赖数据时退回结构件硬规则。
+    targets.filter(function (t) { return t.ok; }).forEach(function (t) {
+      var key = 'order|' + t.slot.name;
+      if (issues.some(function (i) { return i.key === key; })) return;
+      var reqs = KBAnswer.requires ? KBAnswer.requires(t.slot.step) : null;
+      if (reqs) {
+        for (var r = 0; r < reqs.length; r++) {
+          var stepTargets = targets.filter(function (u) { return u.slot.step === reqs[r]; });
+          // 前置步骤只要有零件在场(配上了,哪怕位置不对)就算已开始,不报顺序;位置问题另有规则
+          if (!stepTargets.length || stepTargets.some(function (u) { return u.ok || u.part; })) continue;
+          issues.push({ key: key, severity: 'warn', node: t.part.node,
+            msg: 'Out of order: ' + t.slot.name + ' (step ' + (t.slot.step + 1) + ') placed before step ' +
+              (reqs[r] + 1) + ' (' + KBAnswer.stepLabel(reqs[r]) + ': ' +
+              stepTargets.map(function (u) { return u.slot.name; }).join(', ') + ')' });
+          return;
+        }
+      } else if (STRUCT[t.slot.key]) {
+        targets.forEach(function (u) {
+          if (u.ok || !STRUCT[u.slot.key] || u.slot.step >= t.slot.step) return;
+          if (issues.some(function (i) { return i.key === key; })) return;
+          issues.push({ key: key, severity: 'warn', node: t.part.node,
+            msg: 'Out of order: ' + t.slot.name + ' (step ' + (t.slot.step + 1) + ') placed before ' +
+              u.slot.name + ' (step ' + (u.slot.step + 1) + ': ' + KBAnswer.stepLabel(u.slot.step) + ')' });
+        });
+      }
     });
 
     results = { ready: true, issues: issues, correct: correct, total: targets.length };

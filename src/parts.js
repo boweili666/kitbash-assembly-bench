@@ -199,6 +199,8 @@
     keys: function () { return manifest ? manifest.parts.map(function (p) { return p.key; }) : []; },
     /* 初始"零件摆在桌上"的布局(ScenePart[]),由 tools/scene_from_db.py --layout kit 从任务图库生成 */
     kit: function () { return (manifest && manifest.kit) || null; },
+    /* 参考装配(步骤顺序 / 每件的接近→落位轨迹 / 前置依赖),由 features_db.py answer 从任务图库生成;mm · GLB 原点 */
+    answer: function () { return (manifest && manifest.answer) || null; },
     keyForModel: keyForModel,
     poseOf: poseOf,
     nodeTransform: nodeTransform,

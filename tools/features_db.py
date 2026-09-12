@@ -26,10 +26,12 @@ Commands
   export   DB --out FILE           write the database content in the contributor file format
   manifest DB MODELS_DIR --out F   build the simulator manifest (+ copy GLBs) from the database
   show     DB [NAME]               print the features of matching part types
+  answer   DB MODELS_DIR --out F   reference assembly (steps in order, per-part approach ->
+                                   installed paths, prerequisites) for Answer / Checks
   detect   DB MODELS_DIR           (internal) mesh detector, only to draft a first file for a
                                    contributor to correct; not part of the data workflow
 """
-import argparse, gc, json, pathlib, shutil, sqlite3, sys, uuid as uuidlib
+import argparse, gc, json, pathlib, re, shutil, sqlite3, sys, uuid as uuidlib
 import numpy as np
 import trimesh
 
@@ -87,11 +89,30 @@ NAME_KEYS = [
 ]
 
 
-def key_for(name):
+def slug(name):
+    return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")[:40]
+
+
+def known_key(name):
+    """Simulator key + short label for the part types the checker / answer
+    code already refer to by name. Anything else gets a key derived from its
+    name (see part_types), so a newly uploaded part type needs no code change."""
     for frag, key, label in NAME_KEYS:
         if frag in name:
             return key, label
     return None, None
+
+
+def common_prefixes(names, min_words=3, min_count=3):
+    """Word prefixes shared by several part-type names -- brand / product
+    strings such as 'Lumenier QAV-S 2 Joshua Bardwell' -- longest first."""
+    counts = {}
+    for nm in names:
+        words = nm.split()
+        for k in range(min_words, len(words)):
+            pre = " ".join(words[:k])
+            counts[pre] = counts.get(pre, 0) + 1
+    return sorted((pre for pre, c in counts.items() if c >= min_count), key=len, reverse=True)
 
 
 def model_file(models_dir, model_uuid):
@@ -105,10 +126,21 @@ def model_file(models_dir, model_uuid):
 
 def part_types(db, models_dir):
     rows = db.execute("SELECT id, uuid, name, model FROM PartTypes ORDER BY id").fetchall()
-    out = []
+    prefixes = common_prefixes([r[2] for r in rows])
+    out, used = [], set()
     for pid, puuid, name, model in rows:
         f = model_file(models_dir, model) if model else None
-        key, label = key_for(name)
+        key, label = known_key(name)
+        if not key:
+            label = name
+            for pre in prefixes:
+                if label.startswith(pre + " "):
+                    label = label[len(pre) + 1:]
+                    break
+            key = slug(label) or f"part_{puuid[:8]}"
+            if key in used:
+                key = f"{key}_{puuid[:4]}"
+        used.add(key)
         out.append(dict(id=pid, uuid=puuid, name=name, model=model, file=f, key=key, label=label))
     return out
 
@@ -201,8 +233,125 @@ def cmd_manifest(a):
     manifest = {"unitScale": S, "source": pathlib.Path(a.db).name, "parts": parts}
     if a.kit:
         manifest["kit"] = json.load(open(a.kit))
+    if a.answer:
+        manifest["answer"] = json.load(open(a.answer))
     pathlib.Path(a.out).write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"wrote {a.out}: {len(parts)} part types" + (f", kit of {len(manifest['kit'])} parts" if a.kit else ""))
+
+
+# ---------------------------------------------------------------- answer
+TRAY_JUMP_MM = 100.0   # a first waypoint this far from the next one is the staging tray, not an approach
+
+
+def cmd_answer(a):
+    """The reference assembly for the simulator's Answer animation and Checks,
+    straight from Step3DPaths / StepRequirements / StepParts.
+
+    Steps = the graph steps in which some part moves. Their order is the
+    animation's own chronology: sort by how many parts are already installed
+    when the step starts, honouring StepRequirements. Each moving part keeps
+    its in-step approach -> installed waypoints (the far staging-tray point
+    is dropped). Parts that never move (motor screws, grommets) appear at the
+    step that mentions them, or right after the step they depend on."""
+    db = sqlite3.connect(a.db)
+    types = {t["id"]: t for t in part_types(db, a.models) if t["file"]}
+    parts = {pid: dict(uuid=u, name=nm, type=ty) for pid, u, nm, ty in db.execute("SELECT id, uuid, name, type FROM Parts")}
+    steps = {sid: dict(uuid=u, name=nm) for sid, u, nm in db.execute("SELECT id, uuid, name FROM Steps")}
+
+    paths = {}
+    for sid, pid, t, x, y, z, r, p_, yw in db.execute(
+            "SELECT stepId, partId, stepTime, x, y, z, roll, pitch, yaw FROM Step3DPaths ORDER BY stepId, partId, stepTime"):
+        paths.setdefault((sid, pid), []).append((t, (round(x, 3), round(y, 3), round(z, 3), round(r, 4), round(p_, 4), round(yw, 4))))
+    path_steps = sorted({sid for sid, _ in paths})
+    part_ids = sorted({pid for _, pid in paths} & set(parts))
+
+    def moved(seq):
+        return seq[0][1] != seq[-1][1]
+
+    moving = {sid: [pid for pid in part_ids if (sid, pid) in paths and moved(paths[(sid, pid)])] for sid in path_steps}
+    moving = {sid: v for sid, v in moving.items() if v}
+    if any(sum(pid in v for v in moving.values()) > 1 for pid in part_ids):
+        print("warning: a part moves in more than one step; taking the last", file=sys.stderr)
+
+    # final pose: where a part ends its moving step; a static part's constant pose
+    final = {}
+    for pid in part_ids:
+        home = [sid for sid, v in moving.items() if pid in v]
+        sid = home[-1] if home else next(s for s in path_steps if (s, pid) in paths)
+        final[pid] = paths[(sid, pid)][-1][1]
+    installed_at_start = {sid: sum(1 for pid in part_ids if (sid, pid) in paths and paths[(sid, pid)][0][1] == final[pid])
+                          for sid in moving}
+
+    # prerequisites among moving steps (transitive closure of StepRequirements)
+    req = {}
+    for sid, rid in db.execute("SELECT stepId, requirementId FROM StepRequirements"):
+        req.setdefault(sid, set()).add(rid)
+    def ancestors(sid, seen=None):
+        seen = set() if seen is None else seen
+        for r in req.get(sid, ()):
+            if r not in seen:
+                seen.add(r); ancestors(r, seen)
+        return seen
+    anc = {sid: ancestors(sid) & set(moving) for sid in moving}
+
+    # order: Kahn over the moving steps, ready ones by installed count then id
+    remaining = set(moving); order = []
+    while remaining:
+        ready = [sid for sid in remaining if not (anc[sid] & remaining)]
+        ready.sort(key=lambda sid: (installed_at_start[sid], sid))
+        order.append(ready[0]); remaining.remove(ready[0])
+    index = {sid: i for i, sid in enumerate(order)}
+
+    # static parts: the earliest answer step that lists them, else the step
+    # right after the (non-animated) step that lists them
+    step_parts = {}
+    for sid, pid in db.execute("SELECT stepId, partId FROM StepParts"):
+        step_parts.setdefault(pid, set()).add(sid)
+    def static_step(pid):
+        listed = step_parts.get(pid, set())
+        hits = sorted(index[s] for s in listed if s in index)
+        if hits:
+            return hits[0]
+        for s in listed:               # e.g. "Attach Motor to Arm (A) with Screw" -> after "Position Motor on Arm (A)"
+            before = sorted(index[x] for x in ancestors(s) if x in index)
+            if before:
+                return before[-1]
+        return 0
+
+    def pose_dict(v):
+        return {"x": v[0], "y": v[1], "z": v[2], "roll": v[3], "pitch": v[4], "yaw": v[5]}
+    def trimmed(seq):
+        pts = [v for _, v in seq]
+        out = [pts[0]]
+        for v in pts[1:]:
+            if v != out[-1]:
+                out.append(v)
+        if len(out) > 1 and np.linalg.norm(np.array(out[0][:3]) - np.array(out[1][:3])) > TRAY_JUMP_MM:
+            out = out[1:]
+        return out
+
+    out_parts = []
+    for pid in part_ids:
+        t = types.get(parts[pid]["type"])
+        if not t:
+            continue
+        home = [sid for sid, v in moving.items() if pid in v]
+        if home:
+            step_i, path = index[home[-1]], trimmed(paths[(home[-1], pid)])
+        else:
+            step_i, path = static_step(pid), [final[pid]]
+        out_parts.append({"id": parts[pid]["uuid"], "key": t["key"], "name": parts[pid]["name"],
+                          "step": step_i, "path": [pose_dict(v) for v in path]})
+    out_parts.sort(key=lambda d: (d["step"], d["name"]))      # the animation scheduler walks parts step by step
+    out_steps = [{"i": i, "id": steps[sid]["uuid"], "name": steps[sid]["name"],
+                  "requires": sorted(index[x] for x in anc[sid])} for i, sid in enumerate(order)]
+    answer = {"source": pathlib.Path(a.db).name, "steps": out_steps, "parts": out_parts}
+    pathlib.Path(a.out).write_text(json.dumps(answer, ensure_ascii=False, indent=1), encoding="utf-8")
+    skipped = len(part_ids) - len(out_parts)
+    print(f"answer: {len(out_steps)} steps, {len(out_parts)} parts ({skipped} without a model skipped) -> {a.out}")
+    for st in out_steps:
+        names = [p["name"] for p in out_parts if p["step"] == st["i"]]
+        print(f"  {st['i']+1:2d}. {st['name'][:52]:52s} {', '.join(names)[:60]}")
 
 
 # ---------------------------------------------------------------- import / export
@@ -320,9 +469,11 @@ if __name__ == "__main__":
     m = sub.add_parser("manifest"); m.add_argument("db"); m.add_argument("models"); m.add_argument("--out", required=True)
     m.add_argument("--unit-scale", type=float, default=DEFAULT_UNIT_SCALE); m.add_argument("--copy-glb", action="store_true")
     m.add_argument("--kit", help="kit layout json (from scene_from_db.py --layout kit) to embed as manifest.kit")
+    m.add_argument("--answer", help="reference assembly json (from `answer`) to embed as manifest.answer")
+    w = sub.add_parser("answer");   w.add_argument("db"); w.add_argument("models"); w.add_argument("--out", required=True)
     s = sub.add_parser("show");     s.add_argument("db"); s.add_argument("name", nargs="?")
     i = sub.add_parser("import");   i.add_argument("db"); i.add_argument("file")
     x = sub.add_parser("export");   x.add_argument("db"); x.add_argument("--out", required=True)
     a = ap.parse_args()
     {"detect": cmd_detect, "manifest": cmd_manifest, "show": cmd_show,
-     "import": cmd_import, "export": cmd_export}[a.cmd](a)
+     "import": cmd_import, "export": cmd_export, "answer": cmd_answer}[a.cmd](a)

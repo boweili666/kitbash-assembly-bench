@@ -35,8 +35,8 @@ python3 serve.py        # 然后打开 http://localhost:8123
 | 录屏 | 顶栏「Rec」:浏览器内录制本页为 WebM(选"当前标签页",可混麦克风),再点停止并保存 |
 | 直播小窗 | 顶栏「Agent」→ Live view:`python3 monitor.py` 后点 Share view,任何浏览器/设备打开 http://127.0.0.1:8124 即可实时观看,支持画中画悬浮窗;`/embed` 可嵌入 iframe,`/frame.jpg` 供程序取帧 |
 | Agent 推流 | 同一面板 → Assembly agent:把视口帧按变化/心跳 POST 给 animation_new/agent_server.py 的 /predict,面板内显示识别到的装配阶段 |
-| 失败检测 | 顶栏「Checks」:以 X-Lock 为基准对照标准答案 —— 完成度评分、放错孔位/位置偏差、用错零件(如 M3×16 放在 M3×22 位)、螺丝方向装反、装配顺序(前板先于机臂)。相同零件可互换,且识别零件自身的旋转对称(楔块绕 z 180°、板绕长轴 180°),对称等价的摆法视为正确;暂不区分 M3×16 盘头/杯头 |
-| 答案演示 | 顶栏「答案」:半透明虚影按装配顺序落位,循环演示最终装配位姿(位姿来自 aristos step_3d_paths.json);再点关闭 |
+| 失败检测 | 顶栏「Checks」:以 X-Lock 为基准对照标准答案 —— 完成度评分、放错孔位/位置偏差、用错零件(如 M3×16 放在 M3×22 位)、螺丝方向装反、装配顺序(按任务图 StepRequirements 的前置依赖,例如电调要求 X-Lock 螺丝已装)。相同零件可互换,且识别零件自身的旋转对称(楔块绕 z 180°、板绕长轴 180°),对称等价的摆法视为正确;暂不区分 M3×16 盘头/杯头 |
+| 答案演示 | 顶栏「Answer」:半透明虚影按装配顺序落位(27 步 / 53 件,步骤顺序、接近→落位轨迹、前置依赖全部由 `features_db.py answer` 从 task_graphs.db 生成);Checks 的装配顺序规则用同一份前置依赖 |
 
 接入 ARISTOS 的说明见 [docs/ARISTOS_INTEGRATION.md](docs/ARISTOS_INTEGRATION.md);孔位数据规范见 [docs/FEATURE_SCHEMA.md](docs/FEATURE_SCHEMA.md)。
 

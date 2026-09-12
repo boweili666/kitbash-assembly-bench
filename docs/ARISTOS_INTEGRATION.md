@@ -144,13 +144,22 @@ Data the page is built from — regenerate when the task graph changes:
 ```sh
 python3 tools/features_db.py import   task_graphs.db part_features.json          # contributor hole/peg data
 python3 tools/scene_from_db.py        task_graphs.db --layout kit --models media/models --out kit.json
-python3 tools/features_db.py manifest task_graphs.db media/models --kit kit.json --copy-glb --out assets/parts/manifest.json
+python3 tools/features_db.py answer   task_graphs.db media/models --out answer.json   # reference assembly (Step3DPaths + StepRequirements)
+python3 tools/features_db.py manifest task_graphs.db media/models --kit kit.json --answer answer.json --copy-glb --out assets/parts/manifest.json
 python3 build.py                                                                 # → dist/
 ```
 
 Part features (holes, pegs, symmetries) are **contributor data** in
 `task_graphs.db` — see `FEATURE_SCHEMA.md`. The simulator cannot snap parts
 whose type has no features.
+
+Everything the simulator shows about the *reference* build — the Answer
+animation's steps and per-part approach paths, and the poses, step order and
+prerequisites the Checks compare against — is generated from `Step3DPaths`,
+`StepRequirements` and `StepParts` by `features_db.py answer`. Steps are the
+graph steps in which a part moves (27 of 353 for this graph), ordered by the
+animation's own chronology; parts whose type has no model are skipped. A new
+part type needs no code change: its simulator key is derived from its name.
 
 ## 8. Verified
 

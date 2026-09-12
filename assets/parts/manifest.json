@@ -3197,5 +3197,1370 @@
     "yaw": 0.0
    }
   }
- ]
+ ],
+ "answer": {
+  "source": "task_graphs.db",
+  "steps": [
+   {
+    "i": 0,
+    "id": "65ad97a4-76f9-4ddd-83e6-f2f73070cc21",
+    "name": "Feed Screw through Arm Wedge (A)",
+    "requires": []
+   },
+   {
+    "i": 1,
+    "id": "3b3966f3-e84e-4a2b-a178-7b59e250d52d",
+    "name": "Feed Screw through Arm Wedge (B)",
+    "requires": []
+   },
+   {
+    "i": 2,
+    "id": "972c5284-031e-44eb-883f-cc040168dac0",
+    "name": "Attach Arm Wedge Assembly to X-Lock (A)",
+    "requires": [
+     0
+    ]
+   },
+   {
+    "i": 3,
+    "id": "a199bfeb-c45e-4ba0-9ede-6a183208cdec",
+    "name": "Place Assembly Aluminum X-Lock with Wedges on Rear Plate",
+    "requires": []
+   },
+   {
+    "i": 4,
+    "id": "8e6bfe19-0d08-4471-87f6-09053b939d57",
+    "name": "Feed Screw through X-Lock and Rear Plate (A)",
+    "requires": [
+     3
+    ]
+   },
+   {
+    "i": 5,
+    "id": "5eec8bdd-a094-45d3-b190-d8df90e3b92c",
+    "name": "Feed Screw through X-Lock and Rear Plate (B)",
+    "requires": [
+     3
+    ]
+   },
+   {
+    "i": 6,
+    "id": "874e9b51-a6e4-4374-9c9f-00a9edb0c46a",
+    "name": "Feed Screw through X-Lock and Rear Plate (C)",
+    "requires": [
+     3
+    ]
+   },
+   {
+    "i": 7,
+    "id": "84de15af-a037-434b-877e-4fdbb64f22fb",
+    "name": "Feed Screw through X-Lock and Rear Plate (D)",
+    "requires": [
+     3
+    ]
+   },
+   {
+    "i": 8,
+    "id": "4a36727d-3c46-4cab-85e5-daa6c5f4ec09",
+    "name": "Insert Arm into X-Lock Assembly (A)",
+    "requires": [
+     0,
+     2
+    ]
+   },
+   {
+    "i": 9,
+    "id": "89b94ace-2378-4b37-bc0e-cc7ea50c0eec",
+    "name": "Insert Arm into X-Lock Assembly (B)",
+    "requires": [
+     0,
+     2
+    ]
+   },
+   {
+    "i": 10,
+    "id": "dbba517f-91f2-480f-880b-03fe58838bb3",
+    "name": "Insert Arm into X-Lock Assembly (C)",
+    "requires": [
+     1
+    ]
+   },
+   {
+    "i": 11,
+    "id": "21830df6-67f7-488d-a921-91edf646ee7e",
+    "name": "Insert Arm into X-Lock Assembly (D)",
+    "requires": [
+     1
+    ]
+   },
+   {
+    "i": 12,
+    "id": "209399c0-2b2b-4059-a22f-9bede07b6d8c",
+    "name": "Place Front Plate on X-Lock",
+    "requires": []
+   },
+   {
+    "i": 13,
+    "id": "87a09b07-d119-4529-9fc1-e1a76fef50f8",
+    "name": "Attach Front Plate on Rear Plate and Arm Assembly",
+    "requires": [
+     12
+    ]
+   },
+   {
+    "i": 14,
+    "id": "77f1ccf4-bd4d-4b1f-b567-1922141d2aae",
+    "name": "Feed Standoff Screw through Frame Bottom (A)",
+    "requires": [
+     0,
+     2,
+     3,
+     8,
+     9,
+     12
+    ]
+   },
+   {
+    "i": 15,
+    "id": "3439423d-e6e6-4f54-86fa-f622d2bd10bd",
+    "name": "Attach Knurled Standoff to Frame Bottom (A)",
+    "requires": [
+     0,
+     2,
+     3,
+     8,
+     9,
+     12,
+     14
+    ]
+   },
+   {
+    "i": 16,
+    "id": "879b7276-1735-4721-ae9d-870ba1f4f8f3",
+    "name": "Feed Standoff Screw through Frame Bottom (B)",
+    "requires": [
+     0,
+     2,
+     3,
+     8,
+     9,
+     12
+    ]
+   },
+   {
+    "i": 17,
+    "id": "8ed7c848-93ac-4452-b80c-be571384f186",
+    "name": "Attach Knurled Standoff to Frame Bottom (B)",
+    "requires": [
+     0,
+     2,
+     3,
+     8,
+     9,
+     12,
+     16
+    ]
+   },
+   {
+    "i": 18,
+    "id": "e1001af1-7d20-4c4d-9fc4-faa7da28eab8",
+    "name": "Feed Standoff Screw through Frame Bottom (C)",
+    "requires": [
+     1,
+     3,
+     10,
+     11,
+     12
+    ]
+   },
+   {
+    "i": 19,
+    "id": "6ab4c59a-a687-45d4-a36a-242c24b271cc",
+    "name": "Attach Knurled Standoff to Frame Bottom (C)",
+    "requires": [
+     1,
+     3,
+     10,
+     11,
+     12,
+     18
+    ]
+   },
+   {
+    "i": 20,
+    "id": "66d54e07-3ac1-4041-8612-2236b4525356",
+    "name": "Feed Standoff Screw through Frame Bottom (D)",
+    "requires": [
+     1,
+     3,
+     10,
+     11,
+     12
+    ]
+   },
+   {
+    "i": 21,
+    "id": "3958faae-2f47-4e21-9a64-889c1138d884",
+    "name": "Attach Knurled Standoff to Frame Bottom (D)",
+    "requires": [
+     1,
+     3,
+     10,
+     11,
+     12,
+     20
+    ]
+   },
+   {
+    "i": 22,
+    "id": "47ef6f0b-d0ca-46e5-b0f5-e146b93b3c9a",
+    "name": "Position Motor on Arm (A)",
+    "requires": []
+   },
+   {
+    "i": 23,
+    "id": "6d8f1bcf-8bc4-4b10-ae5d-f1ec1809489f",
+    "name": "Position Motor on Arm (B)",
+    "requires": []
+   },
+   {
+    "i": 24,
+    "id": "97f911ff-796a-452e-9a0f-fe1a3248dd6e",
+    "name": "Position Motor on Arm (C)",
+    "requires": []
+   },
+   {
+    "i": 25,
+    "id": "35cab1e0-83bc-4986-b0f7-4cabfdc89b75",
+    "name": "Position Motor on Arm (D)",
+    "requires": []
+   },
+   {
+    "i": 26,
+    "id": "9eb0df82-f1cb-45e4-9f37-fb0f469e219b",
+    "name": "Orient and Place ESC onto Stack Screws",
+    "requires": [
+     3,
+     4,
+     5,
+     6,
+     7
+    ]
+   }
+  ],
+  "parts": [
+   {
+    "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+    "key": "aluminum_arm_wedge_5mm",
+    "name": "Left Arm Wedge",
+    "step": 0,
+    "path": [
+     {
+      "x": -57.359,
+      "y": 4.5,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     },
+     {
+      "x": -21.359,
+      "y": 4.5,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+    "key": "screw_m3x16_socket_cap",
+    "name": "Left Arm Wedge Screw",
+    "step": 0,
+    "path": [
+     {
+      "x": -115.0,
+      "y": 4.5,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     },
+     {
+      "x": -15.0,
+      "y": 4.5,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     }
+    ]
+   },
+   {
+    "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+    "key": "aluminum_arm_wedge_5mm",
+    "name": "Right Arm Wedge",
+    "step": 1,
+    "path": [
+     {
+      "x": 58.323,
+      "y": 4.824,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     },
+     {
+      "x": 22.323,
+      "y": 4.824,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+    "key": "screw_m3x16_socket_cap",
+    "name": "Right Arm Wedge Screw",
+    "step": 1,
+    "path": [
+     {
+      "x": 115.0,
+      "y": 4.5,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     },
+     {
+      "x": 15.0,
+      "y": 4.5,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     }
+    ]
+   },
+   {
+    "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+    "key": "aluminum_x_lock",
+    "name": "Aluminum X-Lock",
+    "step": 2,
+    "path": [
+     {
+      "x": 0.0,
+      "y": 38.0,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": 0.0,
+      "y": 2.0,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+    "key": "split_rear_plate",
+    "name": "Split Rear Plate",
+    "step": 3,
+    "path": [
+     {
+      "x": 0.0,
+      "y": -36.0,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+    "key": "screw_m3x22_pan",
+    "name": "M3x22mm Pan Head Screw #1",
+    "step": 4,
+    "path": [
+     {
+      "x": 15.465,
+      "y": 31.803,
+      "z": 15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": 15.465,
+      "y": -4.197,
+      "z": 15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+    "key": "screw_m3x22_pan",
+    "name": "M3x22mm Pan Head Screw #2",
+    "step": 5,
+    "path": [
+     {
+      "x": -15.465,
+      "y": 31.803,
+      "z": 15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": -15.465,
+      "y": -4.197,
+      "z": 15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+    "key": "screw_m3x22_pan",
+    "name": "M3x22mm Pan Head Screw #3",
+    "step": 6,
+    "path": [
+     {
+      "x": -15.465,
+      "y": 31.803,
+      "z": -15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": -15.465,
+      "y": -4.197,
+      "z": -15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+    "key": "screw_m3x22_pan",
+    "name": "M3x22mm Pan Head Screw #4",
+    "step": 7,
+    "path": [
+     {
+      "x": 15.465,
+      "y": 31.803,
+      "z": -15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": 15.465,
+      "y": -4.197,
+      "z": -15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+    "key": "arm_5in",
+    "name": "5-inch Arm #1",
+    "step": 8,
+    "path": [
+     {
+      "x": 91.071,
+      "y": 38.0,
+      "z": 65.754,
+      "roll": 0.0,
+      "pitch": 0.9599,
+      "yaw": 0.0
+     },
+     {
+      "x": 91.071,
+      "y": 2.0,
+      "z": 65.754,
+      "roll": 0.0,
+      "pitch": 0.9599,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+    "key": "arm_5in",
+    "name": "5-inch Arm #2",
+    "step": 9,
+    "path": [
+     {
+      "x": 91.071,
+      "y": 42.766,
+      "z": -66.188,
+      "roll": -3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     },
+     {
+      "x": 91.071,
+      "y": 6.766,
+      "z": -66.188,
+      "roll": -3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    ]
+   },
+   {
+    "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+    "key": "arm_5in",
+    "name": "5-inch Arm #3",
+    "step": 10,
+    "path": [
+     {
+      "x": -85.373,
+      "y": 38.0,
+      "z": -72.448,
+      "roll": -3.1416,
+      "pitch": -0.8727,
+      "yaw": -3.1416
+     },
+     {
+      "x": -85.373,
+      "y": 2.0,
+      "z": -72.448,
+      "roll": -3.1416,
+      "pitch": -0.8727,
+      "yaw": -3.1416
+     }
+    ]
+   },
+   {
+    "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+    "key": "arm_5in",
+    "name": "5-inch Arm #4",
+    "step": 11,
+    "path": [
+     {
+      "x": -90.667,
+      "y": 43.0,
+      "z": 65.907,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": 3.1416
+     },
+     {
+      "x": -90.667,
+      "y": 7.0,
+      "z": 65.907,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": 3.1416
+     }
+    ]
+   },
+   {
+    "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+    "key": "split_front_plate",
+    "name": "Split Front Plate",
+    "step": 12,
+    "path": [
+     {
+      "x": 0.0,
+      "y": 43.0,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": 0.0,
+      "y": 7.0,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "52e5ae62-8d7f-4975-95fd-28611d677d39",
+    "key": "screw_m3x6_pan",
+    "name": "Center X-Lock Screw",
+    "step": 13,
+    "path": [
+     {
+      "x": 0.0,
+      "y": 44.0,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": 0.0,
+      "y": 8.0,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "06151b08-07be-444d-b6c1-e960a3a90528",
+    "key": "screw_m3x16_pan",
+    "name": "Standoff Screw #1",
+    "step": 14,
+    "path": [
+     {
+      "x": 14.821,
+      "y": 39.057,
+      "z": -26.463,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": 14.821,
+      "y": 3.057,
+      "z": -26.463,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "7ba6ea05-098b-4c62-9ae8-a203e41652fd",
+    "key": "knurled_standoff",
+    "name": "Standoff #1",
+    "step": 15,
+    "path": [
+     {
+      "x": 14.821,
+      "y": -46.0,
+      "z": -26.463,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": 14.821,
+      "y": -10.0,
+      "z": -26.463,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "7f4f1096-48e3-4d5e-a753-2c777f78dd29",
+    "key": "screw_m3x16_pan",
+    "name": "Standoff Screw #2",
+    "step": 16,
+    "path": [
+     {
+      "x": 14.821,
+      "y": 39.057,
+      "z": 26.463,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": 14.821,
+      "y": 3.057,
+      "z": 26.463,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "b9d5fd44-1a47-4c0a-bdfb-c3a0b2925ca2",
+    "key": "knurled_standoff",
+    "name": "Standoff #2",
+    "step": 17,
+    "path": [
+     {
+      "x": 14.821,
+      "y": -46.0,
+      "z": 26.463,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": 14.821,
+      "y": -10.0,
+      "z": 26.463,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "1901797f-ee02-43de-990e-817dfeef6ea8",
+    "key": "screw_m3x16_pan",
+    "name": "Standoff Screw #3",
+    "step": 18,
+    "path": [
+     {
+      "x": -14.821,
+      "y": 39.057,
+      "z": 26.463,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": -14.821,
+      "y": 3.057,
+      "z": 26.463,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "56281c28-09d7-4519-aed3-6aeab2a1ac49",
+    "key": "knurled_standoff",
+    "name": "Standoff #3",
+    "step": 19,
+    "path": [
+     {
+      "x": -14.821,
+      "y": -46.0,
+      "z": 26.463,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": -14.821,
+      "y": -10.0,
+      "z": 26.463,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "f2460165-80e4-4c0e-ab99-5b877b8178fb",
+    "key": "screw_m3x16_pan",
+    "name": "Standoff Screw #4",
+    "step": 20,
+    "path": [
+     {
+      "x": -14.821,
+      "y": 39.057,
+      "z": -26.463,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": -14.821,
+      "y": 3.057,
+      "z": -26.463,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "9ef7451a-519d-44b6-b309-791f2deb2927",
+    "key": "knurled_standoff",
+    "name": "Standoff #4",
+    "step": 21,
+    "path": [
+     {
+      "x": -14.821,
+      "y": -46.0,
+      "z": -26.463,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": -14.821,
+      "y": -10.0,
+      "z": -26.463,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "c83c45d7-c6e4-4b7c-8184-135c528f9536",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #1-1",
+    "step": 22,
+    "path": [
+     {
+      "x": 92.494,
+      "y": 5.0,
+      "z": 74.058,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "5ebe5814-3691-4844-ab81-e8462819fdbe",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #1-2",
+    "step": 22,
+    "path": [
+     {
+      "x": 90.15,
+      "y": 5.0,
+      "z": 57.255,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "6d987065-3475-403c-8080-a4abc763f65b",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #1-3",
+    "step": 22,
+    "path": [
+     {
+      "x": 99.541,
+      "y": 5.0,
+      "z": 63.818,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "26b9c19c-be5f-4543-8879-964cf24a865f",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #1-4",
+    "step": 22,
+    "path": [
+     {
+      "x": 82.921,
+      "y": 5.0,
+      "z": 66.956,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+    "key": "motor_2207",
+    "name": "Motor #1",
+    "step": 22,
+    "path": [
+     {
+      "x": 91.0,
+      "y": -33.5,
+      "z": 65.75,
+      "roll": 1.5708,
+      "pitch": -0.0,
+      "yaw": -0.9599
+     },
+     {
+      "x": 91.0,
+      "y": 2.5,
+      "z": 65.75,
+      "roll": 1.5708,
+      "pitch": -0.0,
+      "yaw": -0.9599
+     }
+    ]
+   },
+   {
+    "id": "b4e6ca7b-0f42-48aa-96db-bdc272b153a5",
+    "key": "motor_nut_m5",
+    "name": "Propeller Nut #1",
+    "step": 22,
+    "path": [
+     {
+      "x": 91.0,
+      "y": 18.4,
+      "z": 65.75,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": 91.0,
+      "y": -17.6,
+      "z": 65.75,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "39f5bc62-8bac-49f0-a886-e35c252f2f09",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #2-1",
+    "step": 23,
+    "path": [
+     {
+      "x": 89.887,
+      "y": 4.384,
+      "z": -57.717,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "da36cc28-f889-4fbe-81f7-d68e1af38b91",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #2-2",
+    "step": 23,
+    "path": [
+     {
+      "x": 92.653,
+      "y": 4.384,
+      "z": -74.603,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "3ff3d68e-54fd-454a-8a4f-802c7392d1cf",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #2-3",
+    "step": 23,
+    "path": [
+     {
+      "x": 99.61,
+      "y": 4.384,
+      "z": -64.833,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "d62e2658-6a51-49cf-9d14-9506a004d84f",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #2-4",
+    "step": 23,
+    "path": [
+     {
+      "x": 82.696,
+      "y": 4.384,
+      "z": -67.814,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+    "key": "motor_2207",
+    "name": "Motor #2",
+    "step": 23,
+    "path": [
+     {
+      "x": 91.0,
+      "y": -33.5,
+      "z": -66.116,
+      "roll": 1.5708,
+      "pitch": -0.0,
+      "yaw": -0.6109
+     },
+     {
+      "x": 91.0,
+      "y": 2.5,
+      "z": -66.116,
+      "roll": 1.5708,
+      "pitch": -0.0,
+      "yaw": -0.6109
+     }
+    ]
+   },
+   {
+    "id": "b0e480aa-818a-4eea-84d0-3000f13a6a23",
+    "key": "motor_nut_m5",
+    "name": "Propeller Nut #2",
+    "step": 23,
+    "path": [
+     {
+      "x": 91.0,
+      "y": 18.4,
+      "z": -66.116,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": 91.0,
+      "y": -17.6,
+      "z": -66.116,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "8a59e5bb-6e58-451c-a3c0-504fcfd7d032",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #3-1",
+    "step": 24,
+    "path": [
+     {
+      "x": -99.101,
+      "y": 5.0,
+      "z": 64.387,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "250b1751-d5db-4cd6-86b8-9dfc5add0a30",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #3-2",
+    "step": 24,
+    "path": [
+     {
+      "x": -82.187,
+      "y": 5.0,
+      "z": 67.368,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "f977e47d-b592-440f-b573-3484c52b1972",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #3-3",
+    "step": 24,
+    "path": [
+     {
+      "x": -89.144,
+      "y": 5.0,
+      "z": 57.598,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "031286ef-09e1-4d25-9aa7-26fe1d1b5b34",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #3-4",
+    "step": 24,
+    "path": [
+     {
+      "x": -91.91,
+      "y": 5.0,
+      "z": 74.484,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+    "key": "motor_2207",
+    "name": "Motor #3",
+    "step": 24,
+    "path": [
+     {
+      "x": -90.628,
+      "y": -33.5,
+      "z": 65.85,
+      "roll": 1.5708,
+      "pitch": -0.0,
+      "yaw": -0.6109
+     },
+     {
+      "x": -90.628,
+      "y": 2.5,
+      "z": 65.85,
+      "roll": 1.5708,
+      "pitch": -0.0,
+      "yaw": -0.6109
+     }
+    ]
+   },
+   {
+    "id": "484cb3e1-4d98-4509-8c7d-35a83ae123ed",
+    "key": "motor_nut_m5",
+    "name": "Propeller Nut #3",
+    "step": 24,
+    "path": [
+     {
+      "x": -90.628,
+      "y": 18.4,
+      "z": 65.85,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": -90.628,
+      "y": -17.6,
+      "z": 65.85,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "2e66311a-1399-4f92-87f4-a9368df68a36",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #4-1",
+    "step": 25,
+    "path": [
+     {
+      "x": -93.479,
+      "y": 5.0,
+      "z": -71.129,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "63dcf032-2444-4962-b873-996f7ffa6b49",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #4-2",
+    "step": 25,
+    "path": [
+     {
+      "x": -76.859,
+      "y": 5.0,
+      "z": -74.267,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "576d9adf-2736-4af3-8ddc-59e5de127737",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #4-3",
+    "step": 25,
+    "path": [
+     {
+      "x": -86.25,
+      "y": 5.0,
+      "z": -80.83,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "d765d31b-ce11-4402-9c5f-b3763788820f",
+    "key": "screw_m3x8_socket_cap",
+    "name": "M3x8mm Motor Screw #4-4",
+    "step": 25,
+    "path": [
+     {
+      "x": -83.906,
+      "y": 5.0,
+      "z": -64.027,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+    "key": "motor_2207",
+    "name": "Motor #4",
+    "step": 25,
+    "path": [
+     {
+      "x": -85.302,
+      "y": -33.5,
+      "z": -72.422,
+      "roll": 1.5708,
+      "pitch": -0.0,
+      "yaw": -0.8727
+     },
+     {
+      "x": -85.302,
+      "y": 2.5,
+      "z": -72.422,
+      "roll": 1.5708,
+      "pitch": -0.0,
+      "yaw": -0.8727
+     }
+    ]
+   },
+   {
+    "id": "61970440-40d5-44f7-a718-a79591c70524",
+    "key": "motor_nut_m5",
+    "name": "Propeller Nut #4",
+    "step": 25,
+    "path": [
+     {
+      "x": -85.302,
+      "y": 18.4,
+      "z": -72.422,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": -85.302,
+      "y": -17.6,
+      "z": -72.422,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+    "key": "esc_4in1",
+    "name": "4-in-1 ESC",
+    "step": 26,
+    "path": [
+     {
+      "x": 0.0,
+      "y": -64.0,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     },
+     {
+      "x": 0.0,
+      "y": -4.0,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "1f067ba6-468c-48d4-94dd-e9b65f5fe57d",
+    "key": "damper_m2",
+    "name": "ESC Spacer Grommet #1",
+    "step": 26,
+    "path": [
+     {
+      "x": 15.465,
+      "y": -1.5,
+      "z": 15.425,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "b2e830f3-9c86-4d90-8fc5-5e0115ed5d7d",
+    "key": "damper_m2",
+    "name": "ESC Spacer Grommet #2",
+    "step": 26,
+    "path": [
+     {
+      "x": -15.465,
+      "y": -1.5,
+      "z": 15.425,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "4f1d3bb7-362e-44aa-95ac-4b5da5d2fe13",
+    "key": "damper_m2",
+    "name": "ESC Spacer Grommet #3",
+    "step": 26,
+    "path": [
+     {
+      "x": -15.465,
+      "y": -1.5,
+      "z": -15.425,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   },
+   {
+    "id": "a83feb95-a3f7-48c9-b766-34828a66e009",
+    "key": "damper_m2",
+    "name": "ESC Spacer Grommet #4",
+    "step": 26,
+    "path": [
+     {
+      "x": 15.465,
+      "y": -1.5,
+      "z": -15.425,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0
+     }
+    ]
+   }
+  ]
+ }
 }
