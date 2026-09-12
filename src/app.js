@@ -77,8 +77,12 @@
   scene.add(gizmo);
   gizmo.addEventListener('dragging-changed', function (e) {
     orbit.enabled = !e.value;
+    if (gizmo.object) emit(e.value ? 'grab' : 'place', gizmo.object);
   });
-  gizmo.addEventListener('objectChange', function () { syncInspectorFromSelection(); });
+  gizmo.addEventListener('objectChange', function () {
+    syncInspectorFromSelection();
+    if (gizmo.dragging && gizmo.object) emit('move', gizmo.object);
+  });
   gizmo.addEventListener('mouseUp', function () { pushSnapshot(); });
 
   canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
@@ -138,6 +142,7 @@
       var tint = window.KBParts ? KBParts.getTint(node)
         : (node.userData.kbPending ? node.userData.kbPending.tint : null);
       if (tint) out.tint = tint;
+      if (node.userData.kbId) out.id = node.userData.kbId;
       return out;
     }
     if (node.isMesh) {
@@ -177,6 +182,7 @@
         node.userData.kbType = data.type;
         node.userData.kbPending = { tint: data.tint || null };
       }
+      node.userData.kbId = data.id || newId();
     } else if (data.type === 'group') {
       node = new THREE.Group();
       (data.children || []).forEach(function (c) {
@@ -360,6 +366,18 @@
 
   var selectionHooks = [];
   var changeHooks = [];   // 场景变化(快照)回调,供 Checks 面板重算
+  var eventHooks = {};    // 交互事件('grab' | 'move' | 'place'),供外部集成(bridge.js)
+  function emit(type, node) {
+    var list = eventHooks[type];
+    if (!list) return;
+    for (var i = 0; i < list.length; i++) list[i](node);
+  }
+  function newId() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+    });
+  }
   function setSelection(nodes) {
     bakePivot();
     selection = nodes.slice();
@@ -1091,6 +1109,12 @@
     rebuildAttachment: rebuildAttachment,
     onSelection: function (fn) { selectionHooks.push(fn); },
     onChange: function (fn) { changeHooks.push(fn); },
+    /* 交互事件:'grab' | 'move' | 'place',回调收到被操作的节点(零件或多选 pivot) */
+    on: function (type, fn) { (eventHooks[type] || (eventHooks[type] = [])).push(fn); },
+    emit: emit,
+    loadSceneData: loadSceneData,
+    serializeScene: serializeScene,
+    newId: newId,
     nextName: function (base) { nameCounter += 1; return base + ' ' + nameCounter; },
     /* 从屏幕坐标拾取顶层节点,返回 {node, point} 或 null */
     raycastTopAt: function (px, py) {

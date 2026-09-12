@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 .DS_Store
 releases/
+
+# demo borrows node_modules via symlink
+integration/react/demo/node_modules

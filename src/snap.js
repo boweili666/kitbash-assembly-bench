@@ -506,6 +506,7 @@
       drag.vertical = e.shiftKey;
       KB.setSelection([drag.node]);
       begin(drag.node);
+      KB.emit('grab', drag.node);
       canvas.style.cursor = 'grabbing';
       if (drag.vertical) {
         // 垂直模式:过抓取点、面向相机的立面
@@ -537,6 +538,7 @@
       placeWorld(drag.node, desired);
     }
     KB.syncInspector();
+    KB.emit('move', drag.node);
   });
 
   function endDrag(commit) {
@@ -560,6 +562,7 @@
       d.node.quaternion.copy(d.startQuat);
       KB.syncInspector();
     }
+    KB.emit('place', d.node);   // Esc 取消也算放下:零件回到了原位
   }
 
   canvas.addEventListener('pointerup', function () { endDrag(true); });
