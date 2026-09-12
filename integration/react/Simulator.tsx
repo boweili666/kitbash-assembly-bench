@@ -58,9 +58,12 @@ export interface SimulatorProps {
   style?: CSSProperties;
 }
 
+/** A part as reported back by the simulator. */
+export interface ScenePartState { id: string; name: string; key: string; pose: Pose }
+
 export interface SimulatorHandle {
   /** Current pose of every part. */
-  getScene: () => Promise<Array<{ id: string; name: string; key: string; pose: Pose }>>;
+  getScene: () => Promise<ScenePartState[]>;
   /** Replace the whole scene. */
   setScene: (parts: ScenePart[]) => void;
 }
@@ -71,18 +74,17 @@ type BenchMessage =
   | { type: 'kb:ready'; protocol: number; keys: string[] }
   | { type: 'kb:grab' | 'kb:move' | 'kb:place'; id: string; name: string; key: string; pose: Pose }
   | { type: 'kb:frame'; image: string; t: number }
-  | { type: 'kb:scene'; parts: Array<{ id: string; name: string; key: string; pose: Pose }> }
+  | { type: 'kb:scene'; parts: ScenePartState[] }
   | { type: 'kb:warn'; message: string };
 
 const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator(props, ref) {
-  const {
-    initialScene, onReady, src = DEFAULT_SRC,
-    frameRate = 10, moveRate = 30, frameWidth = 960, className, style,
-  } = props;
+  // initialScene and the callbacks are read through `cb` (below), never here,
+  // so a parent re-rendering with new closures cannot restart anything.
+  const { src = DEFAULT_SRC, frameRate = 10, moveRate = 30, frameWidth = 960, className, style } = props;
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const originRef = useRef<string>('*');
-  const sceneWaiters = useRef<Array<(parts: any) => void>>([]);
+  const sceneWaiters = useRef<Array<(parts: ScenePartState[]) => void>>([]);
 
   // Latest-callback refs: the message listener is registered once and must
   // never go stale, however often the parent re-renders with new closures.
@@ -94,7 +96,7 @@ const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator
   };
 
   useEffect(() => {
-    try { originRef.current = new URL(src).origin; } catch { originRef.current = '*'; }
+    try { originRef.current = new URL(src, window.location.href).origin; } catch { originRef.current = '*'; }
 
     const onMessage = (ev: MessageEvent) => {
       const frame = iframeRef.current;

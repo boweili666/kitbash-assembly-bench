@@ -1,80 +1,62 @@
 /**
- * SimulatorTraineeView — the Kitbash assembly simulator standing in for the
- * trainee's camera when there are no physical parts to assemble.
+ * SimulatorTraineeView — the assembly simulator standing in for the trainee's
+ * camera when there are no physical parts to assemble.
  *
- * This is the integration surface and nothing more: every callback Dana asked
- * for is exposed here and left EMPTY on purpose. ARISTOS decides what each one
- * feeds (a socket event, the tutor, a log); this file does not emit, fetch or
- * store anything. See docs/ARISTOS_INTEGRATION.md for the suggested wiring.
+ * This is the integration surface. Every callback the simulator offers is a
+ * prop here; the defaults are documented no-ops so the surface is visible even
+ * when nothing is connected. TraineeCam wires only onViewUpdate (to the
+ * existing session-video-frame emit); grab / move / place are left for the
+ * backend design to decide. See docs/ARISTOS_INTEGRATION.md in the
+ * kitbash-assembly-bench repository for the suggested wiring.
  *
- * Drop-in: copy this file and Simulator.tsx into aristos_frontend/src/, and
- * render <SimulatorTraineeView session={session} /> where TraineeCam renders
- * <Webcam> today (behind a Real / Sim toggle, or as the only view when the
- * session is flagged as simulated).
+ * Poses everywhere: mm, Y up, XYZ Euler radians, GLB node origin — the
+ * Step3DPaths convention, so a placed pose compares with the graph directly.
+ * objectId is the part instance's task-graph UUID (Parts.uuid).
  */
-import Simulator, { type Pose, type ScenePart } from '../Simulator';
+import Simulator from '../Simulator';
+import type { Pose, ScenePart } from '../Simulator';
 import kitScene from './kit_scene.json';
-
-// Where the simulator itself is served from. `python3 serve.py` in the
-// kitbash repo (port 8123), or a static copy of dist/kitbash-standalone.html.
-const SIMULATOR_URL =
-  (import.meta as any).env?.VITE_SIMULATOR_URL || 'http://127.0.0.1:8123/index.html';
+const SIMULATOR_URL = import.meta.env?.VITE_SIMULATOR_URL ?? '/simulator/kitbash-standalone.html';
 
 interface Props {
-  /** The ARISTOS session; only its id is read here, for the integrator's convenience. */
-  session: { id: string };
-  /**
-   * Parts on the table when the session starts. Default: every modelled part
-   * of the current task graph laid out by type (tools/scene_from_db.py
-   * --layout kit). Pass the output of --layout installed --step N to start a
-   * session mid-build.
-   */
+  /** Parts on the table when the session starts. Default: the drone kit, by type. */
   initialScene?: ScenePart[];
+  /** The trainee picked a part up. */
+  onGrabObject?: (objectId: string, pose: Pose) => void;
+  /** The part is being moved (≤ 30 Hz while dragging). */
+  onMoveObject?: (objectId: string, pose: Pose) => void;
+  /** The trainee put the part down — the moment to compare `pose` with the step's target. */
+  onPlaceObject?: (objectId: string, pose: Pose) => void;
+  /** Rendered frame as a JPEG data URL, 10 Hz — the same payload the webcam path sends. */
+  onViewUpdate?: (image: string) => void;
 }
 
-export default function SimulatorTraineeView({ session, initialScene }: Props) {
-  // ---- Integration points -------------------------------------------------
-  // Each receives the part-instance UUID from the task graph (Parts.uuid) and
-  // the part's pose: mm, Y up, XYZ Euler radians, GLB node origin — the same
-  // convention as Step3DPaths, so it can be compared with the graph directly.
+// Not connected to anything yet, on purpose: each callback's signature is
+// the one in Props above; this default simply drops the event.
+const notWired = () => {};
 
-  const onGrabObject = (objectId: string, pose: Pose) => {
-    // TODO(ARISTOS): the trainee picked a part up.
-    // e.g. socket.emit('session-sim-action', { sessionID: session.id, action: 'grab', objectId, pose })
-    void objectId; void pose;
-  };
-
-  const onMoveObject = (objectId: string, pose: Pose) => {
-    // TODO(ARISTOS): the part is being moved (≤ 30 Hz while dragging).
-    void objectId; void pose;
-  };
-
-  const onPlaceObject = (objectId: string, pose: Pose) => {
-    // TODO(ARISTOS): the trainee put the part down. This is the natural moment
-    // to compare `pose` against the step's target in Step3DPaths.
-    void objectId; void pose;
-  };
-
-  const onViewUpdate = (image: string) => {
-    // TODO(ARISTOS): rendered frame, JPEG data URL, 10 Hz — the same payload
-    // TraineeCam sends from the webcam today:
-    // socket.emit('session-video-frame', { sessionID: session.id, payload: { data: image } })
-    void image;
-  };
-  // -------------------------------------------------------------------------
-
-  void session;
-
+export default function SimulatorTraineeView({
+  initialScene = kitScene,
+  onGrabObject = notWired,
+  onMoveObject = notWired,
+  onPlaceObject = notWired,
+  onViewUpdate = notWired,
+}: Props) {
   return (
     <Simulator
       src={SIMULATOR_URL}
-      initialScene={initialScene ?? (kitScene as ScenePart[])}
+      initialScene={initialScene}
       onGrabObject={onGrabObject}
       onMoveObject={onMoveObject}
       onPlaceObject={onPlaceObject}
       onViewUpdate={onViewUpdate}
       frameRate={10}
-      style={{ width: '100%', aspectRatio: '16 / 10', borderRadius: 12, border: '1px solid var(--hairline)' }}
+      style={{
+        width: '100%',
+        aspectRatio: '16 / 10',
+        borderRadius: 12,
+        border: '1px solid var(--hairline)',
+      }}
     />
   );
 }

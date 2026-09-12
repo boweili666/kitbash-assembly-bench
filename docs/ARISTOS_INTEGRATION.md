@@ -1,8 +1,10 @@
 # Integrating the assembly simulator into ARISTOS
 
-**Status: interface exposed, nothing wired.** The simulator ships as a React
-component with exactly the signature requested; every callback is surfaced and
-left empty for the ARISTOS team to connect. This document is the hand-off.
+**Status: on branch `bowei/simulator` of `aristos_frontend` (from gin-dev
+`72cc057`, two commits). The trainee view can switch to the simulator; its
+frames reach the backend on the existing channel. The grab / move / place
+callbacks are exposed and deliberately left unconnected.** This document is
+the hand-off.
 
 ## 1. Motivation
 
@@ -83,29 +85,36 @@ the simulator's part library are skipped with a `console.warn` — today that is
 28 of the 48 part types (electronics, wires, connectors), which have no GLB in
 the data package and no rigid-body assembly step anyway.
 
-## 5. Where it mounts in the gin-dev frontend
+## 5. Where it mounts — done on `bowei/simulator`
 
-`TraineeCam.tsx` renders `<Webcam>` and, every 100 ms, emits its screenshot as
-`session-video-frame`. The simulator takes that slot:
+gin-dev's `TraineeCam.tsx` renders `<Webcam>` and, every 100 ms, emits its
+screenshot as `session-video-frame`. The branch adds a **Real / Sim** toggle
+next to "Trainee view" (default Real). In Sim, the webcam is unmounted and
+`<SimulatorTraineeView onViewUpdate={sendFrame} />` takes its place — the
+simulator's 10 fps frames go out through the very same `sendFrame`, so **the
+backend receives simulated frames exactly like camera frames and needs no
+change**. Files on the branch:
 
-```tsx
-// TraineeCam.tsx — sketch, not applied
-{source === 'real'
-  ? <Webcam ref={webcamRef} … />
-  : <SimulatorTraineeView session={session} />}
+```
+src/components/Simulator/Simulator.tsx             the component
+src/components/Simulator/SimulatorTraineeView.tsx  host; callbacks are props with no-op defaults
+src/components/Simulator/kit_scene.ts              82-part initialScene from task_graphs.db
+public/simulator/kitbash-standalone.html           the simulator page, served same-origin
+src/config.ts                                      SIMULATOR_URL (override: VITE_SIMULATOR_URL)
+src/components/AristosSession/TraineeCam.tsx       the toggle
 ```
 
-with a Real / Sim toggle next to the "Trainee view" label, or with `source`
-decided by a session flag ("simulated session") so trainees never see the
-toggle. **No change to the backend is needed for this**: once `onViewUpdate`
-is connected to the existing `session-video-frame` emit, the tutor receives
-simulated frames exactly like camera frames.
+Passes the project's own gates: `tsc -b`, `npm run build`, and `eslint` with no
+new findings. Verified with the backend running: switching to Sim sends
+`session-video-frame` at 10.0 fps with a JPEG data URL and the session id;
+switching back stops them and restores the webcam. Login is untouched: the
+session page still requires an account, as on gin-dev.
 
 ## 6. What is deliberately not connected
 
 | callback | today | suggested wiring (ARISTOS decides) |
 | --- | --- | --- |
-| `onViewUpdate(image)` | no-op | `socket.emit('session-video-frame', {sessionID, payload: {data: image}})` — the existing channel; replaces the webcam screenshot |
+| `onViewUpdate(image)` | **connected** on the branch | goes through TraineeCam's existing `sendFrame` → `session-video-frame`; replaces the webcam screenshot |
 | `onPlaceObject(id, pose)` | no-op | a new event, e.g. `session-sim-action {action:'place', objectId, pose}`; compare `pose` with the step's `Step3DPaths` target → deterministic "right part, right hole, right orientation" without VQA |
 | `onGrabObject(id, pose)` | no-op | same event, `action:'grab'`; lets the tutor react to "you picked up the wrong screw" before it is placed |
 | `onMoveObject(id, pose)` | no-op | usually not sent; useful for dwell-time / hesitation analytics |
