@@ -12538,14 +12538,18 @@ input[type="range"]::-moz-range-thumb {
     'use strict';
     if (!new URLSearchParams(location.search).has('bridge'))
         return;
-    if (window.parent === window)
+    var host = window.parent !== window ? window.parent : window.opener;
+    if (!host)
         return;
     var PROTOCOL = 1;
     var origin = '*';
     var pendingInit = null;
     var options = { frames: true, fps: 10, width: 960, quality: 0.72, moveHz: 30 };
     var frameTimer = 0, lastMove = 0;
-    function post(msg) { window.parent.postMessage(msg, origin); }
+    function post(msg) { try {
+        host.postMessage(msg, origin);
+    }
+    catch (e) { } }
     function warn(message) { post({ type: 'kb:warn', message: message }); }
     function poseOf(node) { return KBParts.poseOf(node); }
     function describe(node) {
@@ -12621,7 +12625,7 @@ input[type="range"]::-moz-range-thumb {
         var msg = ev.data;
         if (!msg || typeof msg.type !== 'string' || msg.type.indexOf('kb:') !== 0)
             return;
-        if (ev.source !== window.parent)
+        if (ev.source !== host)
             return;
         if (ev.origin && ev.origin !== 'null')
             origin = ev.origin;

@@ -28,7 +28,9 @@
 (function () {
   'use strict';
   if (!new URLSearchParams(location.search).has('bridge')) return;
-  if (window.parent === window) return;   // 不在 iframe 里,没人可通信
+  // 宿主:嵌在 iframe 里时是父页面;被 window.open 弹出时是打开者。都没有就没人可通信
+  var host = window.parent !== window ? window.parent : window.opener;
+  if (!host) return;
 
   var PROTOCOL = 1;
 
@@ -37,7 +39,7 @@
   var options = { frames: true, fps: 10, width: 960, quality: 0.72, moveHz: 30 };
   var frameTimer = 0, lastMove = 0;
 
-  function post(msg) { window.parent.postMessage(msg, origin); }
+  function post(msg) { try { host.postMessage(msg, origin); } catch (e) { /* 宿主已关闭 */ } }
   function warn(message) { post({ type: 'kb:warn', message: message }); }
 
   /* ---------- 位姿换算与模型识别:统一在 parts.js(与 Kit 布局、答案数据同源) ---------- */
@@ -112,7 +114,7 @@
   window.addEventListener('message', function (ev) {
     var msg = ev.data;
     if (!msg || typeof msg.type !== 'string' || msg.type.indexOf('kb:') !== 0) return;
-    if (ev.source !== window.parent) return;
+    if (ev.source !== host) return;
     if (ev.origin && ev.origin !== 'null') origin = ev.origin;
     switch (msg.type) {
       case 'kb:init':

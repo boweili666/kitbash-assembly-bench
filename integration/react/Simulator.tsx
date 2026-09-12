@@ -9,14 +9,15 @@
  *     onViewUpdate={(image) => ...}      // JPEG data URL, ~10 Hz
  *   />
  *
- * The simulator itself runs in an iframe (the plain-JS bench served from
- * `src`, with `?bridge=1&embed=1`); this component owns the postMessage
- * protocol so callers never see it.
+ * The simulator runs in an iframe (the plain-JS bench served from `src`, with
+ * `?bridge=1&embed=1`), or — after ref.popOut() — in its own browser window,
+ * where this component keeps showing its live picture. Either way the same
+ * postMessage protocol drives it, so callbacks and frames never stop.
  *
  * Pose convention matches aristos `step_3d_paths.json`: millimetres, Y up,
  * XYZ Euler radians (roll→x, pitch→y, yaw→z), position of the GLB node origin.
  */
-import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import type { CSSProperties } from 'react';
 
 export interface Pose {
@@ -46,6 +47,8 @@ export interface SimulatorProps {
   onViewUpdate?: (image: string) => void;
   /** Fires once the simulator has loaded its part library and the initial scene. */
   onReady?: () => void;
+  /** Fires when the simulator moves to its own window (true) or back into the page (false). */
+  onPopOutChange?: (poppedOut: boolean) => void;
   /** Where the bench is served from. */
   src?: string;
   /** Frame callback rate, Hz. 0 disables frames. */
@@ -66,9 +69,17 @@ export interface SimulatorHandle {
   getScene: () => Promise<ScenePartState[]>;
   /** Replace the whole scene. */
   setScene: (parts: ScenePart[]) => void;
+  /** Move the simulator into its own window, carrying the current scene along. */
+  popOut: () => Promise<void>;
+  /** Bring it back into the page, carrying the window's scene along. */
+  dockBack: () => Promise<void>;
+  /** Whether it is currently in its own window. */
+  isPoppedOut: () => boolean;
 }
 
 const DEFAULT_SRC = 'http://127.0.0.1:8123/index.html';
+const POPUP_NAME = 'aristos-simulator';
+const POPUP_FEATURES = 'width=1280,height=800,menubar=no,toolbar=no,location=no';
 
 type BenchMessage =
   | { type: 'kb:ready'; protocol: number; keys: string[] }
@@ -83,24 +94,54 @@ const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator
   const { src = DEFAULT_SRC, frameRate = 10, moveRate = 30, frameWidth = 960, className, style } = props;
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const popupRef = useRef<Window | null>(null);
   const originRef = useRef<string>('*');
   const sceneWaiters = useRef<Array<(parts: ScenePartState[]) => void>>([]);
+  // The scene the *next* bench window is initialised with: the caller's
+  // initialScene at first, then whatever the last window reported, so popping
+  // out and docking back never lose the trainee's progress.
+  const sceneRef = useRef<ScenePart[] | null>(null);
+  const [popped, setPopped] = useState(false);
+  const [lastFrame, setLastFrame] = useState<string>('');
 
-  // Latest-callback refs: the message listener is registered once and must
-  // never go stale, however often the parent re-renders with new closures.
   const cb = useRef(props);
   cb.current = props;
 
-  const post = (msg: object) => {
-    iframeRef.current?.contentWindow?.postMessage(msg, originRef.current);
-  };
+  // Helpers that only touch refs, created once so effects and the imperative
+  // handle can use them without listing them as dependencies.
+  const api = useRef<{
+    benchWindow: () => Window | null;
+    post: (msg: object) => void;
+    requestScene: () => Promise<ScenePartState[]>;
+    snapshotScene: () => Promise<void>;
+    url: (embed: boolean) => string;
+  } | null>(null);
+  if (!api.current) {
+    const benchWindow = () => popupRef.current ?? iframeRef.current?.contentWindow ?? null;
+    const post = (msg: object) => { benchWindow()?.postMessage(msg, originRef.current); };
+    const requestScene = () => new Promise<ScenePartState[]>((resolve) => {
+      sceneWaiters.current.push(resolve);
+      post({ type: 'kb:getScene' });
+    });
+    const snapshotScene = async () => {
+      if (!benchWindow()) return;
+      const parts = await Promise.race([requestScene(), new Promise<null>((r) => setTimeout(() => r(null), 1500))]);
+      if (parts) sceneRef.current = parts.map((p) => ({ id: p.id, key: p.key, name: p.name, pose: p.pose }));
+    };
+    const url = (embed: boolean) => {
+      const base = cb.current.src ?? DEFAULT_SRC;
+      return `${base}${base.includes('?') ? '&' : '?'}bridge=1${embed ? '&embed=1' : ''}`;
+    };
+    api.current = { benchWindow, post, requestScene, snapshotScene, url };
+  }
+  const { url } = api.current;
 
   useEffect(() => {
     try { originRef.current = new URL(src, window.location.href).origin; } catch { originRef.current = '*'; }
 
+    const { benchWindow, post } = api.current!;
     const onMessage = (ev: MessageEvent) => {
-      const frame = iframeRef.current;
-      if (!frame || ev.source !== frame.contentWindow) return;
+      if (!ev.source || ev.source !== benchWindow()) return;
       const msg = ev.data as BenchMessage;
       if (!msg || typeof msg.type !== 'string' || !msg.type.startsWith('kb:')) return;
 
@@ -108,15 +149,25 @@ const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator
         case 'kb:ready':
           post({
             type: 'kb:init',
-            scene: cb.current.initialScene,
+            scene: sceneRef.current ?? cb.current.initialScene,
             options: { frames: frameRate > 0, fps: frameRate, width: frameWidth, moveHz: moveRate },
           });
           cb.current.onReady?.();
           break;
         case 'kb:grab':  cb.current.onGrabObject?.(msg.id, msg.pose); break;
         case 'kb:move':  cb.current.onMoveObject?.(msg.id, msg.pose); break;
-        case 'kb:place': cb.current.onPlaceObject?.(msg.id, msg.pose); break;
-        case 'kb:frame': cb.current.onViewUpdate?.(msg.image); break;
+        case 'kb:place':
+          // keep the carry-over scene current even if the window is closed abruptly
+          if (sceneRef.current) {
+            const p = sceneRef.current.find((s) => s.id === msg.id);
+            if (p) p.pose = msg.pose;
+          }
+          cb.current.onPlaceObject?.(msg.id, msg.pose);
+          break;
+        case 'kb:frame':
+          if (popupRef.current) setLastFrame(msg.image);
+          cb.current.onViewUpdate?.(msg.image);
+          break;
         case 'kb:scene':
           sceneWaiters.current.splice(0).forEach((resolve) => resolve(msg.parts));
           break;
@@ -130,23 +181,68 @@ const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator
     return () => window.removeEventListener('message', onMessage);
   }, [src, frameRate, moveRate, frameWidth]);
 
-  useImperativeHandle(ref, () => ({
-    getScene: () => new Promise((resolve) => {
-      sceneWaiters.current.push(resolve);
-      post({ type: 'kb:getScene' });
-    }),
-    setScene: (parts) => post({ type: 'kb:setScene', scene: parts }),
-  }), []);
+  // A popped-out window the user closes by hand docks the simulator back.
+  useEffect(() => {
+    if (!popped) return;
+    const timer = window.setInterval(() => {
+      if (popupRef.current && popupRef.current.closed) {
+        popupRef.current = null;
+        setPopped(false);
+        cb.current.onPopOutChange?.(false);
+      }
+    }, 500);
+    return () => window.clearInterval(timer);
+  }, [popped]);
 
-  const url = `${src}${src.includes('?') ? '&' : '?'}bridge=1&embed=1`;
+  useEffect(() => () => { popupRef.current?.close(); }, []);
+
+  useImperativeHandle(ref, () => {
+    const { post, requestScene, snapshotScene, url } = api.current!;
+    return {
+    getScene: requestScene,
+    setScene: (parts) => { sceneRef.current = parts; post({ type: 'kb:setScene', scene: parts }); },
+    popOut: async () => {
+      if (popupRef.current && !popupRef.current.closed) { popupRef.current.focus(); return; }
+      await snapshotScene();
+      const w = window.open(url(false), POPUP_NAME, POPUP_FEATURES);
+      if (!w) { console.warn('[Simulator] popup blocked'); return; }
+      popupRef.current = w;
+      setLastFrame('');
+      setPopped(true);
+      cb.current.onPopOutChange?.(true);
+    },
+    dockBack: async () => {
+      if (!popupRef.current) return;
+      await snapshotScene();
+      popupRef.current.close();
+      popupRef.current = null;
+      setPopped(false);
+      cb.current.onPopOutChange?.(false);
+    },
+    isPoppedOut: () => !!popupRef.current && !popupRef.current.closed,
+    };
+  }, []);
+
+  const box: CSSProperties = { border: 0, width: '100%', height: '100%', display: 'block', ...style };
+
+  if (popped) {
+    // Live picture of the separate window, so the page still shows what the trainee does.
+    return lastFrame
+      ? <img src={lastFrame} alt="Assembly simulator (in its own window)" className={className}
+             style={{ ...box, objectFit: 'contain', background: '#171b21' }} />
+      : <div className={className} style={{ ...box, background: '#171b21', color: '#8d97a5',
+             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>
+          Simulator is open in its own window…
+        </div>;
+  }
 
   return (
     <iframe
       ref={iframeRef}
-      src={url}
+      src={url(true)}
       title="Kitbash assembly simulator"
       className={className}
-      style={{ border: 0, width: '100%', height: '100%', display: 'block', ...style }}
+      style={box}
       allow="fullscreen"
     />
   );

@@ -9,12 +9,17 @@
  * backend design to decide. See docs/ARISTOS_INTEGRATION.md in the
  * kitbash-assembly-bench repository for the suggested wiring.
  *
+ * The ref exposes popOut() / dockBack(): the simulator can move to its own
+ * browser window (a second monitor, a bigger view) and come back, keeping the
+ * trainee's progress; the frames keep flowing either way.
+ *
  * Poses everywhere: mm, Y up, XYZ Euler radians, GLB node origin — the
  * Step3DPaths convention, so a placed pose compares with the graph directly.
  * objectId is the part instance's task-graph UUID (Parts.uuid).
  */
+import { forwardRef } from 'react';
 import Simulator from '../Simulator';
-import type { Pose, ScenePart } from '../Simulator';
+import type { Pose, ScenePart, SimulatorHandle } from '../Simulator';
 import kitScene from './kit_scene.json';
 const SIMULATOR_URL = import.meta.env?.VITE_SIMULATOR_URL ?? '/simulator/kitbash-standalone.html';
 
@@ -29,27 +34,32 @@ interface Props {
   onPlaceObject?: (objectId: string, pose: Pose) => void;
   /** Rendered frame as a JPEG data URL, 10 Hz — the same payload the webcam path sends. */
   onViewUpdate?: (image: string) => void;
+  /** The simulator moved to its own window (true) or back into the page (false). */
+  onPopOutChange?: (poppedOut: boolean) => void;
 }
 
 // Not connected to anything yet, on purpose: each callback's signature is
 // the one in Props above; this default simply drops the event.
 const notWired = () => {};
 
-export default function SimulatorTraineeView({
+const SimulatorTraineeView = forwardRef<SimulatorHandle, Props>(function SimulatorTraineeView({
   initialScene = kitScene,
   onGrabObject = notWired,
   onMoveObject = notWired,
   onPlaceObject = notWired,
   onViewUpdate = notWired,
-}: Props) {
+  onPopOutChange = notWired,
+}, ref) {
   return (
     <Simulator
+      ref={ref}
       src={SIMULATOR_URL}
       initialScene={initialScene}
       onGrabObject={onGrabObject}
       onMoveObject={onMoveObject}
       onPlaceObject={onPlaceObject}
       onViewUpdate={onViewUpdate}
+      onPopOutChange={onPopOutChange}
       frameRate={10}
       style={{
         width: '100%',
@@ -59,4 +69,6 @@ export default function SimulatorTraineeView({
       }}
     />
   );
-}
+});
+
+export default SimulatorTraineeView;

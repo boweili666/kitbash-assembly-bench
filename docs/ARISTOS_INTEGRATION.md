@@ -67,8 +67,11 @@ interface ScenePart {
 ```
 
 Optional: `src` (where the simulator page is served), `frameRate` (default 10;
-0 disables frames), `moveRate` (default 30), `onReady`, and a ref with
-`getScene()` (every part's current pose) and `setScene(parts)`.
+0 disables frames), `moveRate` (default 30), `onReady`, `onPopOutChange`, and a
+ref with `getScene()` (every part's current pose), `setScene(parts)`,
+`popOut()` / `dockBack()` (move the simulator to its own browser window and
+back — the scene travels along, the pane shows the window's live picture,
+frames never stop) and `isPoppedOut()`.
 
 ## 4. Producing `initialScene` from the database
 
@@ -89,7 +92,8 @@ the data package and no rigid-body assembly step anyway.
 
 gin-dev's `TraineeCam.tsx` renders `<Webcam>` and, every 100 ms, emits its
 screenshot as `session-video-frame`. The branch adds a **Real / Sim** toggle
-next to "Trainee view" (default Real). In Sim, the webcam is unmounted and
+next to "Trainee view" (default Real) and, in Sim, a **Pop out / Dock back**
+button for working in a separate window (second monitor). In Sim, the webcam is unmounted and
 `<SimulatorTraineeView onViewUpdate={sendFrame} />` takes its place — the
 simulator's 10 fps frames go out through the very same `sendFrame`, so **the
 backend receives simulated frames exactly like camera frames and needs no
