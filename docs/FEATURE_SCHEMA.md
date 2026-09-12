@@ -58,34 +58,63 @@ CREATE TABLE PartTypeSymmetries (
   only those. Rows a contributor adds or edits are `contributor` and are never
   touched by tooling.
 
+## The contributor file: `part_features.json`
+
+Contributors deliver the features as a JSON file — one object per part type,
+or a list of them. JSON Schema: [`part_features.schema.json`](part_features.schema.json).
+A complete example for the 20 modelled part types of the drone kit:
+[`examples/part_features.json`](examples/part_features.json).
+
+```json
+{
+  "partType": "e1b51f19-5149-4028-8e56-31adc814a71d",     // PartTypes.uuid  (or "model": "<model uuid>")
+  "name": "Lumenier QAV-S 2 Joshua Bardwell Knurled Standoff",
+  "features": [
+    { "name": "H1", "kind": "hole", "center": [0, 0, 0], "axis": [0, 0, 1], "diameter": 3.0, "depth": 20.0 },
+    { "name": "P1", "kind": "peg",  "center": [0, 0, 0], "axis": [0, 0, 1], "diameter": 5.5, "depth": 20.0 }
+  ],
+  "symmetries": [
+    { "axis": [0, 0, 1], "center": [0, 0, 0], "degrees": 72 }
+  ]
+}
+```
+
+| field | meaning |
+| --- | --- |
+| `partType` / `model` | which part type; `PartTypes.uuid`, or the model uuid (hyphens optional) |
+| `features[].name` | unique within the part type — `H1`, `shaft`, `mount_A`… echoed in tutor messages |
+| `features[].kind` | `hole` receives `peg` |
+| `features[].center` | mm, model frame; a point on the axis at the middle of the feature |
+| `features[].axis` | direction of the axis (normalised on import); hole: bottom → mouth, peg: root → tip |
+| `features[].diameter`, `depth` | mm |
+| `symmetries[]` | rotation axis + a point on it + angle that maps the part onto itself |
+
 ## Workflow
 
 ```
-contributor uploads part GLB
+contributor authors / edits part_features.json          (from CAD, or by correcting an exported file)
         │
         ▼
-python3 tools/features_db.py detect task_graphs.db media/models      # seeds 'auto' rows
-        │
-        ▼
-contributor reviews in the DB / a future editor:
-   renames features ('H3' → 'motor_mount_A'), deletes phantoms,
-   adds what the detector missed (oblong slots), fixes diameters   → source='contributor'
-        │
+python3 tools/features_db.py import task_graphs.db part_features.json
+        │   validates the whole file first (kind, 3-vectors, non-zero axes, diameter > 0);
+        │   a bad file changes nothing. Replaces that part type's rows, source='contributor'.
         ▼
 python3 tools/features_db.py manifest task_graphs.db media/models \
-        --kit kit.json --copy-glb --out assets/parts/manifest.json   # simulator build input
+        --kit kit.json --copy-glb --out assets/parts/manifest.json      # simulator build input
 ```
 
-The detector finds circular cylinders from the triangle mesh (barrel-face
-clustering + least-squares circle fit, with a solid-of-revolution fallback for
-low-poly threads). It drops cylinders thinner than 1.5 mm (motor windings,
-wires). Known limits — the reasons contributor review exists:
+`features_db.py export task_graphs.db --out part_features.json` writes the
+database back out in the same format, so the file can be edited and
+re-imported; the round trip is exact.
 
-| Limit | Example in this kit |
-| --- | --- |
-| Oblong / slotted holes are not circles → not detected | the arms' slots |
-| Off-nominal CAD diameters are reported as drawn | front plate holes ⌀2.6–2.8 where ⌀3.0 is meant |
-| Heavy meshes are slow and memory-hungry | the 144k-face motor (run once; store the result) |
+The database, not the simulator, is the source of truth: the simulator's
+`manifest.json` is a build artifact generated from it (verified to reproduce
+the previous hand-generated manifest to 0.0000 mm for all 15 original parts).
+
+> `features_db.py detect` (mesh detector) is an internal aid to draft a first
+> file for a contributor to correct. It is not part of the data workflow and
+> its known blind spots — slotted holes, off-nominal CAD diameters — are why
+> the contributor file is authoritative.
 
 ## What the simulator derives from these tables
 

@@ -1,0 +1,1837 @@
+[
+ {
+  "partType": "ddce5eb4-07de-48ba-99c8-5dfbc58903ac",
+  "model": "3989ee7c-49b0-4a91-93fa-8b5faf6ce43c",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell Aluminum Arm Wedge 5mm",
+  "features": [
+   {
+    "uuid": "0e0b2201-ff96-488e-bc95-824c43594191",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     0.0,
+     0.0,
+     -2.0
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 2.984,
+    "depth": 4.0
+   }
+  ],
+  "symmetries": [
+   {
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "center": [
+     0.0,
+     0.0,
+     -0.75
+    ],
+    "degrees": 180.0
+   }
+  ]
+ },
+ {
+  "partType": "2fb915bd-d284-4503-870a-d58a5606bd65",
+  "model": "c51b6dfc-df94-4ffa-8640-11d536c41345",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell Aluminum Camera Plate (Left)",
+  "features": [
+   {
+    "uuid": "674ebd93-8b61-43ce-af25-7ffdb2ef4570",
+    "name": "P1",
+    "kind": "peg",
+    "center": [
+     -11.3944,
+     3.0092,
+     -0.6258
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 2.461,
+    "depth": 16.019
+   },
+   {
+    "uuid": "7398a062-d135-45f5-bf59-83bcf0e42279",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     -3.7019,
+     5.4832,
+     1.564
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 1.784,
+    "depth": 2.966
+   },
+   {
+    "uuid": "83013ca3-6737-4375-9ff5-6ffb540c4b91",
+    "name": "H2",
+    "kind": "hole",
+    "center": [
+     -0.5156,
+     5.4832,
+     2.2075
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.042,
+    "depth": 2.966
+   },
+   {
+    "uuid": "3674f2c7-ceda-458d-b4a5-4f47235caca1",
+    "name": "H3",
+    "kind": "hole",
+    "center": [
+     -3.7898,
+     4.3315,
+     -0.6299
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 2.981,
+    "depth": 24.51
+   }
+  ],
+  "symmetries": []
+ },
+ {
+  "partType": "24a3959c-e940-42dc-87a1-f7c59030252e",
+  "model": "19e93415-630c-4f77-befc-73242c706ae2",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell Aluminum Camera Plate (Right)",
+  "features": [
+   {
+    "uuid": "42be62c0-5860-4af1-a885-1e8ee420d5c7",
+    "name": "P1",
+    "kind": "peg",
+    "center": [
+     11.3944,
+     3.0092,
+     -0.6258
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 2.461,
+    "depth": 16.019
+   },
+   {
+    "uuid": "997dfcbb-d190-4a74-9913-bb3148fd83e5",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     3.7019,
+     5.4832,
+     1.564
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 1.784,
+    "depth": 2.966
+   },
+   {
+    "uuid": "4e898f8f-d82d-440a-8be4-9bfd94805b62",
+    "name": "H2",
+    "kind": "hole",
+    "center": [
+     0.5156,
+     5.4832,
+     2.2075
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.042,
+    "depth": 2.966
+   },
+   {
+    "uuid": "71b0ee3c-9009-487c-b4f7-a25d7cee4d21",
+    "name": "H3",
+    "kind": "hole",
+    "center": [
+     3.8669,
+     4.055,
+     -0.6299
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 2.981,
+    "depth": 24.51
+   }
+  ],
+  "symmetries": []
+ },
+ {
+  "partType": "3deb522a-fd64-4ce4-87de-37703acd4e61",
+  "model": "db195d0b-0de3-4ddc-8c6c-6672fee30986",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell Screw - M3x16mm Socket Cap",
+  "features": [
+   {
+    "uuid": "9a99ed76-a36e-409b-9172-a3febd2acec8",
+    "name": "P1",
+    "kind": "peg",
+    "center": [
+     0.0,
+     -1.5008,
+     0.0
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 3.012,
+    "depth": 15.998
+   },
+   {
+    "uuid": "b13a02e8-92b3-4bd0-974b-4ebd25c6b267",
+    "name": "P2",
+    "kind": "peg",
+    "center": [
+     0.0,
+     8.0,
+     0.0
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 5.498,
+    "depth": 3.0
+   }
+  ],
+  "symmetries": [
+   {
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "degrees": 90.0
+   },
+   {
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "degrees": 180.0
+   },
+   {
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "degrees": 270.0
+   }
+  ]
+ },
+ {
+  "partType": "f183bfcc-69de-4b80-ab8d-65b2df81789e",
+  "model": "61b9b0c7-2626-474d-af91-1e9b38c0d570",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell Aluminum X-Lock",
+  "features": [
+   {
+    "uuid": "1eb509d7-3d3f-420e-b32c-1050c5d505fc",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     0.0005,
+     2.5,
+     0.0003
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.97,
+    "depth": 5.0
+   },
+   {
+    "uuid": "5e81ffec-0aad-45c0-a429-c2b1a883126e",
+    "name": "H2",
+    "kind": "hole",
+    "center": [
+     15.7635,
+     1.5,
+     -15.9861
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 3.0
+   },
+   {
+    "uuid": "910a0943-747f-48a9-8908-0df388501323",
+    "name": "H3",
+    "kind": "hole",
+    "center": [
+     -15.7635,
+     1.5,
+     -15.9861
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 3.0
+   },
+   {
+    "uuid": "1774322e-6e01-46de-842e-5f27ca59cf5a",
+    "name": "H4",
+    "kind": "hole",
+    "center": [
+     -15.6118,
+     1.5,
+     15.2538
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 3.0
+   },
+   {
+    "uuid": "f64fc91a-8a5f-4000-9f17-e12ed29f50a8",
+    "name": "H5",
+    "kind": "hole",
+    "center": [
+     15.6118,
+     1.5,
+     15.2538
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 3.0
+   },
+   {
+    "uuid": "3f66aa1e-c360-4317-8aed-f644d5779e72",
+    "name": "H6",
+    "kind": "hole",
+    "center": [
+     -10.2985,
+     1.5,
+     9.9016
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.984,
+    "depth": 3.0
+   },
+   {
+    "uuid": "237ec47f-1341-4936-9f1c-0b2b8ebe2c90",
+    "name": "H7",
+    "kind": "hole",
+    "center": [
+     10.2976,
+     1.5,
+     9.9016
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.984,
+    "depth": 3.0
+   },
+   {
+    "uuid": "81b5b412-772f-411d-b72a-e25a2d0a823d",
+    "name": "H8",
+    "kind": "hole",
+    "center": [
+     -10.3407,
+     1.5,
+     -10.4792
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.984,
+    "depth": 3.0
+   },
+   {
+    "uuid": "f9a46876-be9c-4fc7-a281-1873be080bf3",
+    "name": "H9",
+    "kind": "hole",
+    "center": [
+     10.3401,
+     1.5,
+     -10.4792
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.984,
+    "depth": 3.0
+   },
+   {
+    "uuid": "57e1457e-539f-4c7f-82a6-17f9fe23eeae",
+    "name": "H10",
+    "kind": "hole",
+    "center": [
+     0.0,
+     2.4999,
+     -0.0008
+    ],
+    "axis": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "diameter": 2.989,
+    "depth": 21.474
+   }
+  ],
+  "symmetries": []
+ },
+ {
+  "partType": "e33c0318-ef98-45dd-a44a-c6bd81b4fb4b",
+  "model": "3afd0f37-d270-4c5b-8327-e8192f4a7b4f",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell SE Split Rear Plate",
+  "features": [
+   {
+    "uuid": "6b3d26ad-617d-4a38-b0bf-220f33a3aee8",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     -10.1196,
+     1.0,
+     59.2416
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "fbfb13bb-8fd3-46c0-ba1f-ee039b6db37f",
+    "name": "H2",
+    "kind": "hole",
+    "center": [
+     10.1196,
+     1.0,
+     59.2416
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "a42cbfe4-dcc7-4f25-a52a-8504c9cdfc24",
+    "name": "H3",
+    "kind": "hole",
+    "center": [
+     15.3703,
+     1.0,
+     -15.5922
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "9592154f-eff2-46a5-b7ee-070fe602f215",
+    "name": "H4",
+    "kind": "hole",
+    "center": [
+     -15.3703,
+     1.0,
+     -15.5922
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "8792c769-d72e-4eeb-bc89-316ef8077076",
+    "name": "H5",
+    "kind": "hole",
+    "center": [
+     9.5921,
+     1.0,
+     73.826
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "7ac7e60d-3cc4-4eba-8e2c-6ec3f5f50120",
+    "name": "H6",
+    "kind": "hole",
+    "center": [
+     -9.5921,
+     1.0,
+     73.826
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "79e033c4-a69d-4eee-aaca-43b33e331a19",
+    "name": "H7",
+    "kind": "hole",
+    "center": [
+     -9.9274,
+     1.0,
+     10.3673
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "bee70ba8-3e96-4166-9072-e4e445849949",
+    "name": "H8",
+    "kind": "hole",
+    "center": [
+     9.9274,
+     1.0,
+     10.3673
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "af049a2a-3739-42c2-93ec-56ad6f8aff3e",
+    "name": "H9",
+    "kind": "hole",
+    "center": [
+     -14.8901,
+     1.0,
+     -26.7792
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "1515002b-e60b-4169-acd0-30f1998cd6e6",
+    "name": "H10",
+    "kind": "hole",
+    "center": [
+     14.8901,
+     1.0,
+     -26.7792
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "68bdbb4a-91ae-4288-9a56-e56a0fd6d3c4",
+    "name": "H11",
+    "kind": "hole",
+    "center": [
+     -15.2889,
+     1.0,
+     15.7458
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "cdb799fb-56bf-4641-b78d-06ca57324d56",
+    "name": "H12",
+    "kind": "hole",
+    "center": [
+     15.2889,
+     1.0,
+     15.7458
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "dbf3432b-6690-4695-a09b-b3c7a92c3ff0",
+    "name": "H13",
+    "kind": "hole",
+    "center": [
+     -14.6652,
+     1.0,
+     26.5131
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "7bbe43c5-9fed-4e2e-bb8a-eb3230f4b86b",
+    "name": "H14",
+    "kind": "hole",
+    "center": [
+     14.6652,
+     1.0,
+     26.5131
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "dc294d07-10da-446b-8823-00af6e44a502",
+    "name": "H15",
+    "kind": "hole",
+    "center": [
+     10.1158,
+     1.0,
+     -10.1964
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "360959ba-2073-4fc2-996a-246409c62dda",
+    "name": "H16",
+    "kind": "hole",
+    "center": [
+     -10.1158,
+     1.0,
+     -10.1964
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "6f0a5bc7-3452-4d42-ba6c-85aeecc9c37d",
+    "name": "H17",
+    "kind": "hole",
+    "center": [
+     -10.1196,
+     1.0,
+     39.0514
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   },
+   {
+    "uuid": "0e603556-8a2e-4c1a-bae0-74b031a7903a",
+    "name": "H18",
+    "kind": "hole",
+    "center": [
+     10.1196,
+     1.0,
+     39.0514
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.0
+   }
+  ],
+  "symmetries": [
+   {
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "center": [
+     0.0,
+     1.0,
+     26.6888
+    ],
+    "degrees": 180.0
+   }
+  ]
+ },
+ {
+  "partType": "3e7aa9cb-a6d9-4673-a453-2811b5a8841f",
+  "model": "87e89b9b-e727-4c7a-b125-58108842879a",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell Screw - M3x22mm Pan",
+  "features": [
+   {
+    "uuid": "bf7e726b-b40c-43e9-addf-362ac05ca311",
+    "name": "P1",
+    "kind": "peg",
+    "center": [
+     0.0,
+     0.0,
+     -1.5019
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 2.974,
+    "depth": 21.996
+   },
+   {
+    "uuid": "3d446616-d89f-4163-a428-076dcd2e3e90",
+    "name": "P2",
+    "kind": "peg",
+    "center": [
+     0.0,
+     0.0,
+     11.0
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 5.49,
+    "depth": 3.0
+   }
+  ],
+  "symmetries": [
+   {
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "degrees": 90.0
+   },
+   {
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "degrees": 180.0
+   },
+   {
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "degrees": 270.0
+   }
+  ]
+ },
+ {
+  "partType": "e75e56dc-d0f9-4140-86ab-6c2003a06c4b",
+  "model": "241d88c2-e829-4e9f-8c79-fa44329035d6",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell SE 5 inch Arm",
+  "features": [
+   {
+    "uuid": "0e251008-63b3-4181-96d8-12422d000b1b",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     -10.6367,
+     2.5,
+     -83.7138
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 5.0
+   }
+  ],
+  "symmetries": []
+ },
+ {
+  "partType": "7054f7fa-53b2-4c9c-8fda-7ad7e7478d26",
+  "model": "6e6d8d23-fdf0-440a-b675-942ffcb9c776",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell SE Split Front Plate",
+  "features": [
+   {
+    "uuid": "8acc48e5-9c93-42db-935a-b6c0c2f0e0dc",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     12.8519,
+     1.25,
+     -71.7403
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.629,
+    "depth": 2.5
+   },
+   {
+    "uuid": "6a7dbe4f-0d8b-4bb4-9e87-d1159588c092",
+    "name": "H2",
+    "kind": "hole",
+    "center": [
+     -12.8519,
+     1.25,
+     -71.7403
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.629,
+    "depth": 2.5
+   },
+   {
+    "uuid": "60c6c1a7-128c-46f3-a6d8-7815d20abb89",
+    "name": "H3",
+    "kind": "hole",
+    "center": [
+     14.885,
+     1.25,
+     -26.4376
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.644,
+    "depth": 2.5
+   },
+   {
+    "uuid": "935a597f-b05c-444e-a5b1-4ee6f4539fcd",
+    "name": "H4",
+    "kind": "hole",
+    "center": [
+     -14.885,
+     1.25,
+     -26.4376
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.644,
+    "depth": 2.5
+   },
+   {
+    "uuid": "b97c75b3-087d-4e4a-882a-482387f8e840",
+    "name": "H5",
+    "kind": "hole",
+    "center": [
+     -15.0527,
+     1.25,
+     26.0933
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.782,
+    "depth": 2.5
+   },
+   {
+    "uuid": "f780d4a3-5056-4a61-b7e8-36f675f6ef5d",
+    "name": "H6",
+    "kind": "hole",
+    "center": [
+     15.0527,
+     1.25,
+     26.0933
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.782,
+    "depth": 2.5
+   },
+   {
+    "uuid": "01481a3c-6c26-4bda-9a6f-4eee9662c6b1",
+    "name": "H7",
+    "kind": "hole",
+    "center": [
+     0.0,
+     1.25,
+     0.0
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.5
+   }
+  ],
+  "symmetries": [
+   {
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "center": [
+     0.0,
+     1.25,
+     -25.2095
+    ],
+    "degrees": 180.0
+   }
+  ]
+ },
+ {
+  "partType": "e14aa0e1-80ec-4d8c-9ba9-d53ddf57516c",
+  "model": "40489e9a-75a2-4fc4-b51e-a28c1f76d22a",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell SE Top Plate",
+  "features": [
+   {
+    "uuid": "bc24764e-e069-4c3f-a434-a7f0f3879cd7",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     14.8098,
+     1.25,
+     -31.2325
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.5
+   },
+   {
+    "uuid": "1028d1d3-26c6-4730-bbd3-e762bcf4064c",
+    "name": "H2",
+    "kind": "hole",
+    "center": [
+     -14.8098,
+     1.25,
+     -31.2325
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.5
+   },
+   {
+    "uuid": "88d300ee-e58e-4437-9275-155066ffea9a",
+    "name": "H3",
+    "kind": "hole",
+    "center": [
+     -10.2084,
+     1.25,
+     72.3096
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.5
+   },
+   {
+    "uuid": "c0dbd1b8-cfe8-429e-baed-b30e12b99bc8",
+    "name": "H4",
+    "kind": "hole",
+    "center": [
+     10.2084,
+     1.25,
+     72.3096
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.5
+   },
+   {
+    "uuid": "6e1c0e64-71ec-4de5-8ffa-607a165b8d3c",
+    "name": "H5",
+    "kind": "hole",
+    "center": [
+     15.0513,
+     1.25,
+     22.7872
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.5
+   },
+   {
+    "uuid": "d796ee23-e6d7-4516-a46b-cbb7a0fb1d4f",
+    "name": "H6",
+    "kind": "hole",
+    "center": [
+     -15.0513,
+     1.25,
+     22.7872
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.5
+   },
+   {
+    "uuid": "23f3a3b0-fd54-41c0-9eb5-5912160f7ab7",
+    "name": "H7",
+    "kind": "hole",
+    "center": [
+     12.3672,
+     1.25,
+     -75.9291
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.5
+   },
+   {
+    "uuid": "6008cf63-52ce-4bf5-93fd-8d9ceab87391",
+    "name": "H8",
+    "kind": "hole",
+    "center": [
+     -12.3672,
+     1.25,
+     -75.9291
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 2.5
+   },
+   {
+    "uuid": "0bd74722-fdb0-45d1-9459-87e186a106e6",
+    "name": "H9",
+    "kind": "hole",
+    "center": [
+     0.0,
+     1.25,
+     -41.3245
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 3.562,
+    "depth": 2.5
+   }
+  ],
+  "symmetries": [
+   {
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "center": [
+     0.0,
+     1.25,
+     -2.2165
+    ],
+    "degrees": 180.0
+   }
+  ]
+ },
+ {
+  "partType": "ba8f0eb4-ad6c-471b-b6ee-7be597e00bdc",
+  "model": "c85bff8b-b730-495b-9a19-01150ca168a2",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell Screw - M3x6mm Pan",
+  "features": [
+   {
+    "uuid": "1ed0d91d-7439-49e6-9826-6e30e1386bcf",
+    "name": "P1",
+    "kind": "peg",
+    "center": [
+     0.0,
+     -1.5008,
+     0.0
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 3.012,
+    "depth": 5.998
+   },
+   {
+    "uuid": "67872ae6-1559-4963-8010-a03be8b36f0d",
+    "name": "P2",
+    "kind": "peg",
+    "center": [
+     0.0,
+     3.0,
+     0.0
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 5.498,
+    "depth": 3.0
+   }
+  ],
+  "symmetries": [
+   {
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "degrees": 180.0
+   }
+  ]
+ },
+ {
+  "partType": "0df65e49-4c2d-4913-ac11-7e6422c4e3c5",
+  "model": "40cd7f66-a31c-473e-a32c-bea8ed97a1c8",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell Screw - M3x16mm Pan",
+  "features": [
+   {
+    "uuid": "8d1822ce-59e6-4059-9428-909fb162bb6d",
+    "name": "P1",
+    "kind": "peg",
+    "center": [
+     0.0,
+     -1.5008,
+     0.0
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 3.012,
+    "depth": 15.998
+   },
+   {
+    "uuid": "a6085a6f-8083-49c1-acb5-6d0f15c13e4d",
+    "name": "P2",
+    "kind": "peg",
+    "center": [
+     0.0,
+     8.0,
+     0.0
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 5.498,
+    "depth": 3.0
+   }
+  ],
+  "symmetries": [
+   {
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "degrees": 90.0
+   },
+   {
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "degrees": 180.0
+   },
+   {
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "degrees": 270.0
+   }
+  ]
+ },
+ {
+  "partType": "e1b51f19-5149-4028-8e56-31adc814a71d",
+  "model": "5c8559df-bcad-4a81-a84c-6f2455461b35",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell Knurled Standoff",
+  "features": [
+   {
+    "uuid": "2b5163fb-39c1-4413-bd51-7846ac84f2d1",
+    "name": "P1",
+    "kind": "peg",
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 5.482,
+    "depth": 20.0
+   },
+   {
+    "uuid": "b9929fb4-80ca-46ba-8795-1257e1785a95",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 2.982,
+    "depth": 20.0
+   }
+  ],
+  "symmetries": [
+   {
+    "axis": [
+     1.0,
+     0.0,
+     0.0
+    ],
+    "center": [
+     -0.005,
+     0.0,
+     0.0
+    ],
+    "degrees": 180.0
+   },
+   {
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "center": [
+     -0.005,
+     0.0,
+     0.0
+    ],
+    "degrees": 180.0
+   },
+   {
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "center": [
+     -0.005,
+     0.0,
+     0.0
+    ],
+    "degrees": 90.0
+   },
+   {
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "center": [
+     -0.005,
+     0.0,
+     0.0
+    ],
+    "degrees": 180.0
+   },
+   {
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "center": [
+     -0.005,
+     0.0,
+     0.0
+    ],
+    "degrees": 270.0
+   }
+  ]
+ },
+ {
+  "partType": "166a582b-36ee-4a2c-b50d-398404ce7c83",
+  "model": "fdc19e95-c2d3-4fb7-a51b-fd3babcfba21",
+  "name": "XILO Stealth 2207 Motor - 1800KV/2450KV",
+  "features": [
+   {
+    "uuid": "c98ac9c0-4c61-4d03-b69a-5b11364c50c2",
+    "name": "P1",
+    "kind": "peg",
+    "center": [
+     0.0006,
+     0.0007,
+     10.1
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 10.116,
+    "depth": 19.0
+   },
+   {
+    "uuid": "b0fbef68-d800-4075-895d-35819fc2d18e",
+    "name": "P2",
+    "kind": "peg",
+    "center": [
+     0.0,
+     0.0,
+     28.1
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 4.946,
+    "depth": 9.0
+   },
+   {
+    "uuid": "70b62998-8e63-4e24-95f2-b8c580a18060",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     5.657,
+     5.6566,
+     8.6
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 2.521,
+    "depth": 16.0
+   },
+   {
+    "uuid": "dacb74ad-d0a8-4b1d-a19b-c32ecef21d50",
+    "name": "H2",
+    "kind": "hole",
+    "center": [
+     -5.6567,
+     5.6566,
+     8.6
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 2.522,
+    "depth": 16.0
+   },
+   {
+    "uuid": "5316e449-2921-42fe-88b2-084e96b1e052",
+    "name": "H3",
+    "kind": "hole",
+    "center": [
+     5.657,
+     -5.6571,
+     8.6
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 2.522,
+    "depth": 16.0
+   },
+   {
+    "uuid": "62859709-33e1-4f07-a0f2-2c824cce37a7",
+    "name": "H4",
+    "kind": "hole",
+    "center": [
+     -5.6567,
+     -5.6571,
+     8.6
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 2.522,
+    "depth": 16.0
+   },
+   {
+    "uuid": "022ae6a7-13e9-41c1-8439-bb89858794ed",
+    "name": "H5",
+    "kind": "hole",
+    "center": [
+     0.0,
+     0.0,
+     16.6
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 2.981,
+    "depth": 32.0
+   }
+  ],
+  "symmetries": [
+   {
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "center": [
+     -0.0063,
+     0.0,
+     16.6
+    ],
+    "degrees": 180.0
+   }
+  ]
+ },
+ {
+  "partType": "f9042698-c094-41cc-9b1b-d124921e01b3",
+  "model": "846d88a9a6d24db9be319d312aded87c",
+  "name": "XILO Stealth 2207 Motor M5 Nylon Flanged Hex Nut",
+  "features": [
+   {
+    "uuid": "3ccac9f2-763c-4dc6-ac71-778b75b542b7",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     0.0,
+     3.0,
+     0.0
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 4.985,
+    "depth": 6.0
+   }
+  ],
+  "symmetries": []
+ },
+ {
+  "partType": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+  "model": "9c37da50-5c65-49c0-a81f-e62bf299691e",
+  "name": "Lumenier QAV-S 2 Joshua Bardwell Screw - M3x8mm Socket Cap",
+  "features": [
+   {
+    "uuid": "6bf87b8b-fbb9-4bc9-ae4e-57f7b4ebd858",
+    "name": "P1",
+    "kind": "peg",
+    "center": [
+     0.0,
+     -1.5008,
+     0.0
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 3.012,
+    "depth": 7.998
+   },
+   {
+    "uuid": "fbffe9fb-d4ee-46b7-b9b1-eabc9f2bb0ba",
+    "name": "P2",
+    "kind": "peg",
+    "center": [
+     0.0,
+     4.0,
+     0.0
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 5.498,
+    "depth": 3.0
+   }
+  ],
+  "symmetries": [
+   {
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "degrees": 180.0
+   }
+  ]
+ },
+ {
+  "partType": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+  "model": "f3addb33903448e38195a51e5cb8dd74",
+  "name": "M2 Flight Controller Vibration Dampeners",
+  "features": [
+   {
+    "uuid": "4b7ef6ef-3be6-4e85-becc-c4845cbd3bf8",
+    "name": "P1",
+    "kind": "peg",
+    "center": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 3.49,
+    "depth": 3.0
+   }
+  ],
+  "symmetries": []
+ },
+ {
+  "partType": "3af83cae-b9d4-46d8-a182-79d57b909cef",
+  "model": "94ab9f35e6764ce69fdfa63e8e3f30ff",
+  "name": "XILO Stax V2 F4 45A BLHeli_32 3-6S 4-in-1 ESC",
+  "features": [
+   {
+    "uuid": "a77bd2d3-f306-4ced-93b6-2943de7d5d7c",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     -15.5403,
+     0.5,
+     -15.4616
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 1.0
+   },
+   {
+    "uuid": "24637f63-c584-4777-9ae8-56a4ce8e0ea4",
+    "name": "H2",
+    "kind": "hole",
+    "center": [
+     15.4444,
+     0.5,
+     -15.428
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 1.0
+   },
+   {
+    "uuid": "defdca16-fe7b-4d09-a8a2-084ec31e9733",
+    "name": "H3",
+    "kind": "hole",
+    "center": [
+     15.4322,
+     0.5,
+     15.4237
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 1.0
+   },
+   {
+    "uuid": "a9841af8-8e0f-44e7-85b1-3e21ee35877e",
+    "name": "H4",
+    "kind": "hole",
+    "center": [
+     -15.3811,
+     0.5,
+     15.4058
+    ],
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "diameter": 2.981,
+    "depth": 1.0
+   }
+  ],
+  "symmetries": [
+   {
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "center": [
+     -0.0256,
+     0.55,
+     -2.0
+    ],
+    "degrees": 180.0
+   }
+  ]
+ },
+ {
+  "partType": "de69b20f-1d60-48ba-9c5f-c3602ca99589",
+  "model": "88f5fd87-5df9-45b1-9b9a-b0b6d2855bdd",
+  "name": "Gemfan Hurricane Durable 51477 3-Blade Propeller -- Clockwise",
+  "features": [
+   {
+    "uuid": "75f9dbb7-6d36-4dce-b6bb-5a64847eaf86",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     0.0,
+     0.0001,
+     2.45
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 3.845,
+    "depth": 4.9
+   }
+  ],
+  "symmetries": []
+ },
+ {
+  "partType": "204a36e9-ca51-4f29-8043-baf999a21d10",
+  "model": "78f6f743-004b-4070-ae6d-4e326362e191",
+  "name": "Gemfan Hurricane Durable 51477 3-Blade Propeller -- Counterclockwise",
+  "features": [
+   {
+    "uuid": "484206a4-57b2-4a0c-8e95-43b655168450",
+    "name": "H1",
+    "kind": "hole",
+    "center": [
+     0.0,
+     -0.0001,
+     -2.45
+    ],
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "diameter": 3.845,
+    "depth": 4.9
+   }
+  ],
+  "symmetries": []
+ }
+]

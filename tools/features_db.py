@@ -1,22 +1,33 @@
 #!/usr/bin/env python3
 """Hole / peg features as contributor data in the ARISTOS task_graphs.db.
 
-Two tables are added next to PartTypes (see docs/FEATURE_SCHEMA.md):
+Contributors deliver a `part_features.json` (format below, JSON Schema in
+docs/part_features.schema.json). It is imported into two tables next to
+PartTypes and the simulator manifest is generated from the database:
 
-  PartTypeFeatures    one row per hole or peg of a part type
-  PartTypeSymmetries  rotational symmetries of a part type
+  part_features.json  --import-->  PartTypeFeatures / PartTypeSymmetries  --manifest-->  assets/parts/manifest.json
 
-All geometry is in the part model's own frame (the GLB node origin), in
-millimetres -- the same convention as Step3DPaths -- so a feature never has to
-know how the simulator rescales or recentres meshes.
+All geometry is in the part model's own frame (the GLB node origin), Y up,
+in millimetres -- the same convention as Step3DPaths.
+
+Contributor file (one object per part type, or a list of them):
+  {
+    "partType": "<PartTypes.uuid>",          // or "model": "<model uuid>"
+    "name": "Knurled Standoff",              // informational
+    "features": [
+      {"name": "H1", "kind": "hole", "center": [0, 0, 0],  "axis": [0, 1, 0], "diameter": 3.0, "depth": 20.0},
+      {"name": "P1", "kind": "peg",  "center": [0, 10, 0], "axis": [0, 1, 0], "diameter": 5.5, "depth": 20.0}
+    ],
+    "symmetries": [ {"axis": [0, 1, 0], "center": [0, 10, 0], "degrees": 72} ]
+  }
 
 Commands
-  detect   DB MODELS_DIR            run the mesh detector on every part type that has
-                                    a model; replaces rows with source='auto', keeps
-                                    rows a contributor entered (source='contributor')
-  manifest DB MODELS_DIR --out F    build the simulator's assets/parts/manifest.json
-                                    (and copy the GLBs next to it) from the database
-  show     DB [NAME]                print the features of matching part types
+  import   DB FILE                 load a contributor file (replaces that part type's rows)
+  export   DB --out FILE           write the database content in the contributor file format
+  manifest DB MODELS_DIR --out F   build the simulator manifest (+ copy GLBs) from the database
+  show     DB [NAME]               print the features of matching part types
+  detect   DB MODELS_DIR           (internal) mesh detector, only to draft a first file for a
+                                   contributor to correct; not part of the data workflow
 """
 import argparse, gc, json, pathlib, shutil, sqlite3, sys, uuid as uuidlib
 import numpy as np
@@ -194,6 +205,101 @@ def cmd_manifest(a):
     print(f"wrote {a.out}: {len(parts)} part types" + (f", kit of {len(manifest['kit'])} parts" if a.kit else ""))
 
 
+# ---------------------------------------------------------------- import / export
+def _unit(v, what):
+    v = [float(x) for x in v]
+    n = float(np.linalg.norm(v))
+    if n < 1e-9:
+        raise ValueError(f"{what}: axis is zero")
+    return [x / n for x in v]
+
+
+def validate_entry(e, i):
+    """Structural check of one part-type entry; raises ValueError with a useful message."""
+    where = f"entry {i} ({e.get('name') or e.get('partType') or e.get('model') or '?'})"
+    if not (e.get("partType") or e.get("model")):
+        raise ValueError(f"{where}: needs 'partType' (PartTypes.uuid) or 'model' (model uuid)")
+    for j, f in enumerate(e.get("features", [])):
+        w = f"{where} feature {j} ({f.get('name', '?')})"
+        for k in ("name", "kind", "center", "axis", "diameter"):
+            if k not in f:
+                raise ValueError(f"{w}: missing '{k}'")
+        if f["kind"] not in ("hole", "peg"):
+            raise ValueError(f"{w}: kind must be 'hole' or 'peg'")
+        if len(f["center"]) != 3 or len(f["axis"]) != 3:
+            raise ValueError(f"{w}: center and axis must have 3 numbers")
+        if not float(f["diameter"]) > 0:
+            raise ValueError(f"{w}: diameter must be > 0 mm")
+        _unit(f["axis"], w)
+    for j, sy in enumerate(e.get("symmetries", [])):
+        w = f"{where} symmetry {j}"
+        for k in ("axis", "center", "degrees"):
+            if k not in sy:
+                raise ValueError(f"{w}: missing '{k}'")
+        if not 0 < float(sy["degrees"]) < 360:
+            raise ValueError(f"{w}: degrees must be in (0, 360)")
+        _unit(sy["axis"], w)
+
+
+def resolve_part_type(db, e):
+    if e.get("partType"):
+        row = db.execute("SELECT id, name FROM PartTypes WHERE uuid=?", (e["partType"],)).fetchone()
+    else:
+        bare = e["model"].replace("-", "").lower()
+        row = next((r for r in db.execute("SELECT id, name, model FROM PartTypes")
+                    if (r[2] or "").replace("-", "").lower() == bare), None)
+    if not row:
+        raise ValueError(f"no PartTypes row for {e.get('partType') or e.get('model')}")
+    return row[0], row[1]
+
+
+def cmd_import(a):
+    db = sqlite3.connect(a.db)
+    db.executescript(SCHEMA)
+    data = json.load(open(a.file, encoding="utf-8"))
+    entries = data if isinstance(data, list) else [data]
+    for i, e in enumerate(entries):
+        validate_entry(e, i)
+    for e in entries:
+        pid, pname = resolve_part_type(db, e)
+        db.execute("DELETE FROM PartTypeFeatures WHERE partTypeId=?", (pid,))
+        db.execute("DELETE FROM PartTypeSymmetries WHERE partTypeId=?", (pid,))
+        for f in e.get("features", []):
+            ax = _unit(f["axis"], f["name"])
+            db.execute("INSERT INTO PartTypeFeatures VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                       (f.get("uuid") or str(uuidlib.uuid4()), pid, f["name"], f["kind"],
+                        *[float(x) for x in f["center"]], *ax,
+                        float(f["diameter"]), float(f.get("depth", 0.0)), "contributor"))
+        for sy in e.get("symmetries", []):
+            ax = _unit(sy["axis"], "symmetry")
+            db.execute("INSERT INTO PartTypeSymmetries VALUES (NULL,?,?,?,?,?,?,?,?,?)",
+                       (pid, *ax, *[float(x) for x in sy["center"]], float(sy["degrees"]), "contributor"))
+        print(f"  {pname[:58]:58s} features {len(e.get('features', [])):2d}  symmetries {len(e.get('symmetries', []))}")
+    db.commit()
+    print(f"imported {len(entries)} part types from {a.file}")
+
+
+def cmd_export(a):
+    db = sqlite3.connect(a.db)
+    out = []
+    for pid, puuid, name, model in db.execute("SELECT id, uuid, name, model FROM PartTypes ORDER BY id"):
+        feats = db.execute("SELECT uuid, name, kind, centerX, centerY, centerZ, axisX, axisY, axisZ, diameter, depth "
+                           "FROM PartTypeFeatures WHERE partTypeId=? ORDER BY kind DESC, id", (pid,)).fetchall()
+        syms = db.execute("SELECT axisX, axisY, axisZ, centerX, centerY, centerZ, degrees "
+                          "FROM PartTypeSymmetries WHERE partTypeId=? ORDER BY id", (pid,)).fetchall()
+        if not feats and not syms:
+            continue
+        out.append({
+            "partType": puuid, "model": model, "name": name,
+            "features": [{"uuid": u, "name": n, "kind": k, "center": [cx, cy, cz], "axis": [ax, ay, az],
+                          "diameter": dia, "depth": dep} for u, n, k, cx, cy, cz, ax, ay, az, dia, dep in feats],
+            "symmetries": [{"axis": [ax, ay, az], "center": [cx, cy, cz], "degrees": deg}
+                           for ax, ay, az, cx, cy, cz, deg in syms],
+        })
+    pathlib.Path(a.out).write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"exported {len(out)} part types -> {a.out}")
+
+
 # ---------------------------------------------------------------- show
 def cmd_show(a):
     db = sqlite3.connect(a.db)
@@ -215,5 +321,8 @@ if __name__ == "__main__":
     m.add_argument("--unit-scale", type=float, default=DEFAULT_UNIT_SCALE); m.add_argument("--copy-glb", action="store_true")
     m.add_argument("--kit", help="kit layout json (from scene_from_db.py --layout kit) to embed as manifest.kit")
     s = sub.add_parser("show");     s.add_argument("db"); s.add_argument("name", nargs="?")
+    i = sub.add_parser("import");   i.add_argument("db"); i.add_argument("file")
+    x = sub.add_parser("export");   x.add_argument("db"); x.add_argument("--out", required=True)
     a = ap.parse_args()
-    {"detect": cmd_detect, "manifest": cmd_manifest, "show": cmd_show}[a.cmd](a)
+    {"detect": cmd_detect, "manifest": cmd_manifest, "show": cmd_show,
+     "import": cmd_import, "export": cmd_export}[a.cmd](a)

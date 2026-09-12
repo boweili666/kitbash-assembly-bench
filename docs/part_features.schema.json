@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/boweili666/kitbash-assembly-bench/docs/part_features.schema.json",
+  "title": "ARISTOS part features",
+  "description": "Holes, pegs and rotational symmetries of part types, authored by contributors. Geometry is in the part model's own frame (GLB node origin), Y up, millimetres.",
+  "oneOf": [
+    { "$ref": "#/$defs/partTypeEntry" },
+    { "type": "array", "items": { "$ref": "#/$defs/partTypeEntry" } }
+  ],
+  "$defs": {
+    "vec3": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+    "partTypeEntry": {
+      "type": "object",
+      "anyOf": [ { "required": ["partType"] }, { "required": ["model"] } ],
+      "properties": {
+        "partType": { "type": "string", "description": "PartTypes.uuid" },
+        "model":    { "type": "string", "description": "Model uuid (PartTypes.model), with or without hyphens; alternative to partType" },
+        "name":     { "type": "string", "description": "Informational; the PartTypes.name" },
+        "features": { "type": "array", "items": { "$ref": "#/$defs/feature" } },
+        "symmetries": { "type": "array", "items": { "$ref": "#/$defs/symmetry" } }
+      },
+      "additionalProperties": false
+    },
+    "feature": {
+      "type": "object",
+      "required": ["name", "kind", "center", "axis", "diameter"],
+      "properties": {
+        "uuid":     { "type": "string", "description": "Stable id; generated on import if absent" },
+        "name":     { "type": "string", "maxLength": 64, "description": "Unique within the part type, e.g. H1 / shaft / mount_A" },
+        "kind":     { "enum": ["hole", "peg"], "description": "A hole receives a peg" },
+        "center":   { "$ref": "#/$defs/vec3", "description": "mm, model frame: a point on the cylinder axis, at the middle of the feature's extent" },
+        "axis":     { "$ref": "#/$defs/vec3", "description": "Direction of the cylinder axis (normalised on import). Hole: bottom -> mouth. Peg: root -> tip" },
+        "diameter": { "type": "number", "exclusiveMinimum": 0, "description": "mm" },
+        "depth":    { "type": "number", "minimum": 0, "description": "mm, extent of the cylindrical surface along the axis" }
+      },
+      "additionalProperties": false
+    },
+    "symmetry": {
+      "type": "object",
+      "required": ["axis", "center", "degrees"],
+      "properties": {
+        "axis":    { "$ref": "#/$defs/vec3", "description": "Rotation axis (normalised on import)" },
+        "center":  { "$ref": "#/$defs/vec3", "description": "mm, model frame: a point on the axis" },
+        "degrees": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 360, "description": "Rotating the part by this angle about the axis maps it onto itself (180 = can be flipped; 72 = 5-fold)" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
