@@ -76,6 +76,14 @@ closures never restarts the frame loop.
 
 ## Dropping into aristos_frontend
 
+`aristos/SimulatorTraineeView.tsx` is the ready-made host: it renders
+`<Simulator>` with the drone kit as `initialScene` (`aristos/kit_scene.json`,
+82 parts with their task-graph UUIDs) and exposes all four callbacks as empty,
+documented stubs for ARISTOS to wire. Full hand-off in
+[`docs/ARISTOS_INTEGRATION.md`](../../docs/ARISTOS_INTEGRATION.md).
+
+### Manually
+
 Copy `Simulator.tsx` anywhere under `src/` — no dependencies beyond React.
 Serve the bench (`python3 serve.py` in this repo, port 8123) or point `src` at
 a static copy of `dist/kitbash-standalone.html`.

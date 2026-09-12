@@ -38,6 +38,8 @@ python3 serve.py        # 然后打开 http://localhost:8123
 | 失败检测 | 顶栏「Checks」:以 X-Lock 为基准对照标准答案 —— 完成度评分、放错孔位/位置偏差、用错零件(如 M3×16 放在 M3×22 位)、螺丝方向装反、装配顺序(前板先于机臂)。相同零件可互换,且识别零件自身的旋转对称(楔块绕 z 180°、板绕长轴 180°),对称等价的摆法视为正确;暂不区分 M3×16 盘头/杯头 |
 | 答案演示 | 顶栏「答案」:半透明虚影按装配顺序落位,循环演示最终装配位姿(位姿来自 aristos step_3d_paths.json);再点关闭 |
 
+接入 ARISTOS 的说明见 [docs/ARISTOS_INTEGRATION.md](docs/ARISTOS_INTEGRATION.md);孔位数据规范见 [docs/FEATURE_SCHEMA.md](docs/FEATURE_SCHEMA.md)。
+
 ## 结构
 
 ```
