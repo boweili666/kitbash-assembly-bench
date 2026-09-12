@@ -15,15 +15,51 @@ dist.mkdir(exist_ok=True)
 html = (root / "index.html").read_text(encoding="utf-8")
 
 
+import os
+import shutil
+import subprocess
+
+def _node_path():
+    """Directories where `typescript` may be installed (for the comment stripper)."""
+    cands = [os.environ.get("KB_NODE_PATH", ""),
+             str(root.parent / "aristos" / "external" / "aristos_frontend" / "node_modules")]
+    try:
+        cands.append(subprocess.check_output(["npm", "root", "-g"], text=True, stderr=subprocess.DEVNULL).strip())
+    except Exception:
+        pass
+    return os.pathsep.join(c for c in cands if c)
+
+def strip_js_comments(path, content):
+    """Our own scripts ship without comments (they are written in Chinese and the
+    bundle is what other teams receive). Falls back to the original if the
+    TypeScript-based stripper is unavailable."""
+    if not path.startswith("src/") or not shutil.which("node"):
+        return content
+    try:
+        out = subprocess.run(["node", str(root / "tools" / "strip_comments.js"), str(root / path)],
+                             capture_output=True, text=True, timeout=120,
+                             env={**os.environ, "NODE_PATH": _node_path()})
+        if out.returncode == 0 and out.stdout.strip():
+            return out.stdout
+        print(f"warning: comment stripping skipped for {path}: {out.stderr.strip()[:120]}")
+    except Exception as e:  # noqa: BLE001
+        print(f"warning: comment stripping skipped for {path}: {e}")
+    return content
+
+def strip_css_comments(content):
+    return re.sub(r"/\*.*?\*/", "", content, flags=re.S)
+
 def inline_script(m):
     content = (root / m.group(1)).read_text(encoding="utf-8")
+    content = strip_js_comments(m.group(1), content)
     # 防止库代码中的 "</script>" 提前终止内联脚本
     content = content.replace("</script>", "<\\/script>")
     return "<script>\n" + content + "\n</script>"
 
 
 def inline_style(m):
-    return "<style>\n" + (root / m.group(1)).read_text(encoding="utf-8") + "\n</style>"
+    css = strip_css_comments((root / m.group(1)).read_text(encoding="utf-8"))
+    return "<style>\n" + css + "\n</style>"
 
 
 inlined = re.sub(r'<script src="((?:vendor|src)/[^"]+)"></script>', inline_script, html)
@@ -47,6 +83,7 @@ if manifest_file.exists():
 else:
     embed_tag = ""
 inlined = inlined.replace("<!-- PARTS_EMBED -->", embed_tag)
+inlined = re.sub(r"<!--.*?-->\n?", "", inlined, flags=re.S)   # our HTML comments (Chinese) stay out of the bundle
 
 (dist / "kitbash-standalone.html").write_text(inlined, encoding="utf-8")
 
