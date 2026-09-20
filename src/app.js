@@ -5,6 +5,10 @@
 (function () {
   'use strict';
 
+  var URLP = new URLSearchParams(location.search);
+  // 受训者模式:只做装配,没有缩放 / 删除 / 复制 / 分组 / 材质编辑。嵌进 ARISTOS(bridge)时默认开,?tools=1 关
+  var trainee = URLP.has('trainee') || (URLP.has('bridge') && !URLP.has('tools'));
+
   var STORAGE_KEY = 'kitbash-scene-v1';
   var SPAWN_COLORS = ['#c8cfd6', '#c05b4d', '#4a81a5', '#5b9279', '#c99846', '#7a6fa0', '#4e8e8a'];
   var TYPE_LABELS = {
@@ -515,6 +519,59 @@
   function renameForCopy(data) {
     data.name = data.name.replace(/ copy( \d+)?$/, '') + ' copy';
     (data.children || []).forEach(renameForCopy);
+  }
+
+  /* ---------- 融合(fuse):两个零件从此作为一体移动。复用分组机制(点选任一件选中整组)。
+     宿主(ARISTOS)判定某步完成后调用;把已在组里的一并合并 ---------- */
+  function topOf(node) { while (node.parent && node.parent !== objectsRoot) node = node.parent; return node; }
+  function isGroupNode(n) { return n && !n.isMesh && !isPartNode(n); }
+  function fuse(parent, child) {
+    if (!parent || !child || parent === child) return null;
+    bakePivot();
+    var ptop = topOf(parent), ctop = topOf(child);
+    if (ptop === ctop) return ptop;
+    var group = isGroupNode(ptop) ? ptop : isGroupNode(ctop) ? ctop : null;
+    if (!group) {
+      group = new THREE.Group();
+      group.name = parent.name + ' assembly';
+      var box = new THREE.Box3().expandByObject(parent);
+      var c = box.getCenter(new THREE.Vector3());
+      group.position.set(c.x, box.min.y, c.z);
+      objectsRoot.add(group);
+    }
+    [ptop, ctop].forEach(function (top) {
+      if (top === group) return;
+      if (isGroupNode(top)) { top.children.slice().forEach(function (n) { group.attach(n); }); objectsRoot.remove(top); }
+      else group.attach(top);
+    });
+    refreshTree();
+    pushSnapshot();
+    return group;
+  }
+  function unfuse(child) {
+    if (!child) return;
+    bakePivot();
+    var top = topOf(child);
+    if (top === child) return;
+    objectsRoot.attach(child);
+    if (top.children.length === 1) { objectsRoot.attach(top.children[0]); objectsRoot.remove(top); }
+    else if (!top.children.length) objectsRoot.remove(top);
+    refreshTree();
+    pushSnapshot();
+  }
+  /* 高亮一个零件(宿主指示"就是这个");color 为空则取消 */
+  function highlight(node, color) {
+    if (!node) return;
+    node.traverse(function (o) {
+      if (!o.isMesh || !o.material || !o.material.emissive) return;
+      if (color) { o.material.emissive.set(color); o.material.emissiveIntensity = 0.55; }
+      else { o.material.emissive.set(0x000000); o.material.emissiveIntensity = 1; }
+    });
+  }
+  function partById(id) {
+    var found = null;
+    objectsRoot.traverse(function (o) { if (!found && isPartNode(o) && o.userData.kbId === id) found = o; });
+    return found;
   }
 
   function groupSelection() {
@@ -1035,14 +1092,14 @@
     var ctrl = e.ctrlKey || e.metaKey;
     if (ctrl && e.code === 'KeyZ' && !e.shiftKey) { e.preventDefault(); undo(); return; }
     if (ctrl && (e.code === 'KeyY' || (e.code === 'KeyZ' && e.shiftKey))) { e.preventDefault(); redo(); return; }
-    if (ctrl && e.code === 'KeyD') { e.preventDefault(); duplicateSelection(); return; }
-    if (ctrl && e.code === 'KeyG' && e.shiftKey) { e.preventDefault(); ungroupSelection(); return; }
-    if (ctrl && e.code === 'KeyG') { e.preventDefault(); groupSelection(); return; }
+    if (ctrl && e.code === 'KeyD') { e.preventDefault(); if (!trainee) duplicateSelection(); return; }
+    if (ctrl && e.code === 'KeyG' && e.shiftKey) { e.preventDefault(); if (!trainee) ungroupSelection(); return; }
+    if (ctrl && e.code === 'KeyG') { e.preventDefault(); if (!trainee) groupSelection(); return; }
     if (ctrl) return;
     switch (e.code) {
       case 'KeyW': setMode('translate'); break;
       case 'KeyE': setMode('rotate'); break;
-      case 'KeyR': setMode('scale'); break;
+      case 'KeyR': if (!trainee) setMode('scale'); break;
       case 'KeyQ': toggleSpace(); break;
       case 'KeyV': setSnap(!snapOn); break;
       case 'KeyF': focusOn(selection); break;
@@ -1051,7 +1108,7 @@
         else setSelection([]);
         break;
       case 'Delete':
-      case 'Backspace': e.preventDefault(); deleteSelection(); break;
+      case 'Backspace': e.preventDefault(); if (!trainee) deleteSelection(); break;
     }
   });
 
@@ -1124,6 +1181,12 @@
     loadSceneData: loadSceneData,
     serializeScene: serializeScene,
     newId: newId,
+    trainee: function () { return trainee; },
+    fuse: fuse,
+    unfuse: unfuse,
+    highlight: highlight,
+    partById: partById,
+    topOf: topOf,
     nextName: function (base) { nameCounter += 1; return base + ' ' + nameCounter; },
     /* 从屏幕坐标拾取顶层节点,返回 {node, point} 或 null */
     raycastTopAt: function (px, py) {
@@ -1148,9 +1211,8 @@
   };
 
   /* ---------- 嵌入模式:?embed=1(aristos 内嵌小窗)---------- */
-  if (new URLSearchParams(location.search).has('embed')) {
-    document.body.classList.add('embed');
-  }
+  if (URLP.has('embed')) document.body.classList.add('embed');
+  if (trainee) document.body.classList.add('trainee');
 
   /* ---------- 启动 ---------- */
   var restored = false;

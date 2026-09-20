@@ -5,3 +5,6 @@ releases/
 
 # demo borrows node_modules via symlink
 integration/react/demo/node_modules
+
+# regenerable intermediates (scene_from_db / features_db answer)
+build_cache/

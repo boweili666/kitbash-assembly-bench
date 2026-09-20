@@ -243,6 +243,116 @@ def cmd_manifest(a):
 TRAY_JUMP_MM = 100.0   # a first waypoint this far from the next one is the staging tray, not an approach
 
 
+MATE_ANGLE_DEG = 5.0        # feature axes parallel within this
+MATE_AXIS_MM = 1.5          # axis-to-axis distance
+MATE_PEG_OVER_MM = 0.6      # a peg may be drawn this much wider than its hole (motor mounts: 3.0 in 2.5)
+MATE_PEG_UNDER_MM = 1.5     # or this much narrower
+MATE_HOLE_HOLE_MM = 1.0     # hole-on-hole diameter difference
+CONTACT_MM = 2.0            # bounding boxes closer than this touch
+
+
+def pose_matrix(v):
+    """(x,y,z,roll,pitch,yaw) mm -> 4x4, R = Rx*Ry*Rz (three.js XYZ)."""
+    x, y, z, r, p, w = v
+    cr, sr, cp, sp, cw, sw = np.cos(r), np.sin(r), np.cos(p), np.sin(p), np.cos(w), np.sin(w)
+    Rx = np.array([[1, 0, 0], [0, cr, -sr], [0, sr, cr]])
+    Ry = np.array([[cp, 0, sp], [0, 1, 0], [-sp, 0, cp]])
+    Rz = np.array([[cw, -sw, 0], [sw, cw, 0], [0, 0, 1]])
+    M = np.eye(4); M[:3, :3] = Rx @ Ry @ Rz; M[:3, 3] = [x, y, z]
+    return M
+
+
+def matrix_pose(M):
+    """4x4 -> (x,y,z,roll,pitch,yaw) with R = Rx*Ry*Rz."""
+    R = M[:3, :3]
+    p = np.arcsin(np.clip(R[0, 2], -1, 1))
+    if abs(R[0, 2]) < 0.9999999:
+        r = np.arctan2(-R[1, 2], R[2, 2]); w = np.arctan2(-R[0, 1], R[0, 0])
+    else:
+        r = np.arctan2(R[2, 1], R[1, 1]); w = 0.0
+    return (round(float(M[0, 3]), 3), round(float(M[1, 3]), 3), round(float(M[2, 3]), 3),
+            round(float(r), 4), round(float(p), 4), round(float(w), 4))
+
+
+def compute_mates(db, types, parts, part_ids, final):
+    """For every part at its final pose: which other parts it is assembled to.
+
+    kind 'feature' = a hole/peg of this part is coaxial with a compatible feature
+    of the other part (axes parallel, on the same line, diameters compatible,
+    axial extents overlapping) -- screws in holes, nuts on shafts, plate on plate.
+    kind 'contact' = no such feature pair, but the bounding boxes touch -- arms
+    in the X-Lock slots, motors on arm tips, whose mating faces are not cylinders.
+    'rel' = this part's pose in the mate's frame (inv(P_mate) * P_part), the
+    quantity the simulator compares at runtime; independent of where on the
+    table the pair sits."""
+    feats, bboxes = {}, {}
+    for tid, t in types.items():
+        feats[tid] = db.execute("SELECT name, kind, centerX, centerY, centerZ, axisX, axisY, axisZ, diameter, depth "
+                                "FROM PartTypeFeatures WHERE partTypeId=?", (tid,)).fetchall()
+        mesh, mm = load_mesh(t["file"])
+        bboxes[tid] = np.asarray(mesh.bounds) * mm
+    live = [pid for pid in part_ids if parts[pid]["type"] in types]
+    world = {}
+    for pid in live:
+        M = pose_matrix(final[pid]); R, tt = M[:3, :3], M[:3, 3]
+        fw = []
+        for n, k, cx, cy, cz, ax, ay, az, dia, dep in feats[parts[pid]["type"]]:
+            c = R @ np.array([cx, cy, cz]) + tt; d = R @ np.array([ax, ay, az]); d /= np.linalg.norm(d)
+            fw.append(dict(name=n, kind=k, c=c, d=d, dia=dia, depth=dep or 0.0))
+        b = bboxes[parts[pid]["type"]]
+        corners = np.array([[x, y, z] for x in (b[0][0], b[1][0]) for y in (b[0][1], b[1][1]) for z in (b[0][2], b[1][2])])
+        wc = (R @ corners.T).T + tt
+        world[pid] = dict(M=M, feats=fw, aabb=(wc.min(0), wc.max(0)))
+    cos_min = np.cos(np.radians(MATE_ANGLE_DEG))
+
+    def feature_pairs(a, b):
+        out = []
+        for fa in a["feats"]:
+            for fb in b["feats"]:
+                kinds = (fa["kind"], fb["kind"])
+                if kinds == ("peg", "peg"):
+                    continue
+                if abs(float(fa["d"] @ fb["d"])) < cos_min:
+                    continue
+                v = fa["c"] - fb["c"]
+                if np.linalg.norm(v - (v @ fb["d"]) * fb["d"]) > MATE_AXIS_MM:
+                    continue
+                if kinds == ("hole", "hole"):
+                    if abs(fa["dia"] - fb["dia"]) > MATE_HOLE_HOLE_MM:
+                        continue
+                else:
+                    peg, hole = (fa, fb) if fa["kind"] == "peg" else (fb, fa)
+                    if not (hole["dia"] - MATE_PEG_UNDER_MM <= peg["dia"] <= hole["dia"] + MATE_PEG_OVER_MM):
+                        continue
+                ta, tb = float(fa["c"] @ fb["d"]), float(fb["c"] @ fb["d"])
+                if (ta - fa["depth"] / 2) > (tb + fb["depth"] / 2) or (tb - fb["depth"] / 2) > (ta + fa["depth"] / 2):
+                    continue            # stacked along one axis without overlapping
+                out.append([fa["name"], fb["name"]])
+        return out
+
+    def touching(a, b):
+        return bool(np.all(a["aabb"][0] - CONTACT_MM <= b["aabb"][1]) and np.all(b["aabb"][0] - CONTACT_MM <= a["aabb"][1]))
+
+    mates = {}
+    for pa in live:
+        lst = []
+        for pb in live:
+            if pb == pa:
+                continue
+            pairs = feature_pairs(world[pa], world[pb])
+            if pairs:
+                kind = "feature"
+            elif touching(world[pa], world[pb]):
+                kind = "contact"
+            else:
+                continue
+            rel = matrix_pose(np.linalg.inv(world[pb]["M"]) @ world[pa]["M"])
+            lst.append(dict(pid=pb, kind=kind, features=pairs, rel=rel))
+        lst.sort(key=lambda m: (m["kind"] != "feature", -len(m["features"])))
+        mates[pa] = lst
+    return mates
+
+
 def cmd_answer(a):
     """The reference assembly for the simulator's Answer animation and Checks,
     straight from Step3DPaths / StepRequirements / StepParts.
@@ -330,6 +440,8 @@ def cmd_answer(a):
             out = out[1:]
         return out
 
+    mates = compute_mates(db, types, parts, part_ids, final)
+
     out_parts = []
     for pid in part_ids:
         t = types.get(parts[pid]["type"])
@@ -341,7 +453,9 @@ def cmd_answer(a):
         else:
             step_i, path = static_step(pid), [final[pid]]
         out_parts.append({"id": parts[pid]["uuid"], "key": t["key"], "name": parts[pid]["name"],
-                          "step": step_i, "path": [pose_dict(v) for v in path]})
+                          "step": step_i, "path": [pose_dict(v) for v in path],
+                          "mates": [{"id": parts[m["pid"]]["uuid"], "kind": m["kind"], "features": m["features"],
+                                     "rel": pose_dict(m["rel"])} for m in mates.get(pid, [])]})
     out_parts.sort(key=lambda d: (d["step"], d["name"]))      # the animation scheduler walks parts step by step
     out_steps = [{"i": i, "id": steps[sid]["uuid"], "name": steps[sid]["name"],
                   "requires": sorted(index[x] for x in anc[sid])} for i, sid in enumerate(order)]

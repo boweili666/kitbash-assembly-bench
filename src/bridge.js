@@ -8,11 +8,20 @@
  *     {type:'kb:init',     scene:[ScenePart], options:{frames, fps, width, quality, moveHz}}
  *     {type:'kb:setScene', scene:[ScenePart]}
  *     {type:'kb:getScene'}                         → 回 kb:scene
+ *     {type:'kb:getState'}                         → 回 kb:state
+ *     {type:'kb:showNext'} / {type:'kb:showStep', step:<id|index>} / {type:'kb:hideAnswer'}
+ *                                                  在用户当前结构上循环演示下一步 / 某一步的虚影
+ *     {type:'kb:highlight', id, color|null}        高亮某个零件(琥珀色等),null 取消
+ *     {type:'kb:fuse', parentId, childId} / {type:'kb:unfuse', childId}
+ *                                                  两件从此一体移动(步骤判定完成后由宿主调用)
  *   仿真台 → 宿主
  *     {type:'kb:ready', protocol:1, keys:[...]}    仿真台就绪(零件库已加载)
  *     {type:'kb:grab' | 'kb:move' | 'kb:place', id, name, key, pose}
  *     {type:'kb:frame', image, t}                  JPEG data URL,默认 10 Hz
  *     {type:'kb:scene', parts:[{id, name, key, pose}]}
+ *     {type:'kb:state', state, lastPlace?}         每次放下后的装配状态(见 check.js state()):
+ *                                                  steps[{id,index,name,state:complete|available|premature|blocked,progress,requires}]
+ *                                                  parts[{id,name,step,placed,ok,by}] issues[{severity,message,objectId,step}] next score
  *     {type:'kb:warn',  message}
  *
  *   ScenePart = {id, key | glb, name?, pose}
@@ -102,13 +111,38 @@
   });
   KB.on('place', function (node) {
     partsOf(node).forEach(function (n) { var d = describe(n); d.type = 'kb:place'; post(d); });
+    var st = stateMsg(partsOf(node)[0]);
+    if (st) post(st);
   });
+
+  /* ---------- 装配状态:仿真算几何,宿主据此更新任务图 ---------- */
+  function stateMsg(placedNode) {
+    if (!window.KBCheck) return null;
+    var res = KBCheck.evaluate();
+    var st = res && res.ready ? KBCheck.state() : null;
+    if (!st) return null;
+    var msg = { type: 'kb:state', state: st };
+    if (placedNode) {
+      var slot = KBCheck.slotOf(placedNode);
+      msg.lastPlace = { objectId: placedNode.userData.kbId, pose: poseOf(placedNode),
+        fitsStep: slot && slot.near.length ? res.steps[slot.ref.step].id : null, ok: !!(slot && slot.ok) };
+    }
+    return msg;
+  }
+  function stepIndex(ref) {
+    var res = KBCheck.results();
+    if (typeof ref === 'number') return ref;
+    var hit = res && res.steps.filter(function (s) { return s.id === ref; })[0];
+    return hit ? hit.i : -1;
+  }
 
   /* ---------- 宿主消息 ---------- */
   function applyInit(msg) {
     if (msg.options) Object.keys(msg.options).forEach(function (k) { options[k] = msg.options[k]; });
     if (msg.scene) setScene(msg.scene);
     startFrames();
+    var st = stateMsg();
+    if (st) post(st);
   }
 
   window.addEventListener('message', function (ev) {
@@ -128,6 +162,13 @@
         break;
       case 'kb:stopFrames': stopFrames(); break;
       case 'kb:startFrames': startFrames(); break;
+      case 'kb:getState': { var st = stateMsg(); if (st) post(st); break; }
+      case 'kb:showNext': if (window.KBAnswer) KBAnswer.showNext(); break;
+      case 'kb:showStep': if (window.KBAnswer) KBAnswer.showStep(stepIndex(msg.step)); break;
+      case 'kb:hideAnswer': if (window.KBAnswer) KBAnswer.hide(); break;
+      case 'kb:highlight': KB.highlight(KB.partById(msg.id), msg.color || null); break;
+      case 'kb:fuse': KB.fuse(KB.partById(msg.parentId), KB.partById(msg.childId)); break;
+      case 'kb:unfuse': KB.unfuse(KB.partById(msg.childId)); break;
     }
   });
 

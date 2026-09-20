@@ -19,9 +19,9 @@
  */
 import { forwardRef } from 'react';
 import Simulator from '../Simulator';
-import type { Pose, ScenePart, SimulatorHandle } from '../Simulator';
+import type { Pose, ScenePart, SimulatorHandle, SimState, LastPlace } from '../Simulator';
 import kitScene from './kit_scene.json';
-const SIMULATOR_URL = import.meta.env?.VITE_SIMULATOR_URL ?? '/simulator/kitbash-standalone.html';
+const SIMULATOR_URL = (import.meta as any).env?.VITE_SIMULATOR_URL ?? '/simulator/kitbash-standalone.html';
 
 interface Props {
   /** Parts on the table when the session starts. Default: the drone kit, by type. */
@@ -36,6 +36,8 @@ interface Props {
   onViewUpdate?: (image: string) => void;
   /** The simulator moved to its own window (true) or back into the page (false). */
   onPopOutChange?: (poppedOut: boolean) => void;
+  /** Assembly state after every place: which steps are complete / available / premature / blocked, issues, next step. */
+  onStateChange?: (state: SimState, lastPlace?: LastPlace) => void;
 }
 
 // Not connected to anything yet, on purpose: each callback's signature is
@@ -49,6 +51,7 @@ const SimulatorTraineeView = forwardRef<SimulatorHandle, Props>(function Simulat
   onPlaceObject = notWired,
   onViewUpdate = notWired,
   onPopOutChange = notWired,
+  onStateChange = notWired,
 }, ref) {
   return (
     <Simulator
@@ -60,6 +63,7 @@ const SimulatorTraineeView = forwardRef<SimulatorHandle, Props>(function Simulat
       onPlaceObject={onPlaceObject}
       onViewUpdate={onViewUpdate}
       onPopOutChange={onPopOutChange}
+      onStateChange={onStateChange}
       frameRate={10}
       style={{
         width: '100%',

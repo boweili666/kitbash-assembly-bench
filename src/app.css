@@ -691,3 +691,9 @@ input[type="range"]::-moz-range-thumb {
 .embed #panel:not(:has(.insp-body.show)) { display: none; }  /* only show when something is selected */
 .embed #agentPanel { display: none !important; }  /* sharing keeps running headless */
 .embed #answerBar { bottom: 10px; width: min(94vw, 560px); }
+
+/* ---------- 受训者模式:?trainee=1(嵌入 ARISTOS 时默认)——
+   只留装配需要的:不能缩放、删除、复制、分组,也不能改材质 ---------- */
+.trainee #mode-scale, .trainee #btnDel, .trainee #btnDup, .trainee #btnGroup, .trainee #btnUngroup,
+.trainee #inspMaterial, .trainee #btnResetXform { display: none !important; }
+.embed #btnNext { display: inline-flex; }

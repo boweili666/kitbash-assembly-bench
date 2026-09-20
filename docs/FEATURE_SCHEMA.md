@@ -134,6 +134,15 @@ type — is generated from `Parts` × `PartTypes` (`tools/scene_from_db.py
 --layout kit`) and embedded in the manifest as `kit`. Nothing about the
 initial scene is hand-written any more.
 
+## Step-level mates (generated, not authored)
+
+Which part each part is assembled to — the `StepFeatureMates` idea below — is
+now **derived** rather than stored: `features_db.py answer` transforms every
+part type's features to the parts' final poses and emits, per part, the mates
+whose features are coaxial (or whose bounding boxes touch, for surfaces that
+are not cylinders). See `STEP_COMPLETION.md` §2. If contributors ever need to
+override a mate, this is the table to add.
+
 ## Proposed next table (not yet created)
 
 ```sql

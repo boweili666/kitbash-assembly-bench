@@ -73,6 +73,22 @@ ref with `getScene()` (every part's current pose), `setScene(parts)`,
 back — the scene travels along, the pane shows the window's live picture,
 frames never stop) and `isPoppedOut()`.
 
+**Assembly state.** `onStateChange(state, lastPlace)` fires after every place
+with the simulator's own judgement of the build — which steps are `complete`,
+`available`, `premature` (done out of order) or `blocked`, per-part placement,
+issues (wrong hole, reversed screw, wrong part, out of order) and the step it
+would show next. It is computed from part poses against the reference
+assembly generated from `task_graphs.db`, relative to mating parts, so
+sub-assemblies built anywhere on the table count and identical parts are
+interchangeable. The ref adds `getState()`, `showNext()` / `showStep(step)` /
+`hideAnswer()` (a looping ghost of the step on the trainee's current
+assembly), `highlight(objectId, color)` and `fuse(parentId, childId)` /
+`unfuse(childId)` (make parts move as one). Full definition:
+[`STEP_COMPLETION.md`](STEP_COMPLETION.md).
+
+When embedded the simulator runs in **trainee mode**: no scale, delete,
+duplicate, group or material editing (`?tools=1` on `src` restores them).
+
 ## 4. Producing `initialScene` from the database
 
 ```sh
@@ -122,6 +138,7 @@ session page still requires an account, as on gin-dev.
 | `onPlaceObject(id, pose)` | no-op | a new event, e.g. `session-sim-action {action:'place', objectId, pose}`; compare `pose` with the step's `Step3DPaths` target → deterministic "right part, right hole, right orientation" without VQA |
 | `onGrabObject(id, pose)` | no-op | same event, `action:'grab'`; lets the tutor react to "you picked up the wrong screw" before it is placed |
 | `onMoveObject(id, pose)` | no-op | usually not sent; useful for dwell-time / hesitation analytics |
+| `onStateChange(state, lastPlace)` | no-op | `state.steps` → task-graph node states (replaces the hand-curated linear sequence); `state.next` → what the tutor proposes; `lastPlace.fitsStep && ok` → confirm the step and `ref.fuse(mate, part)`; an *Out of order … started* issue → the trainee has begun seating a part where it does not belong yet → intervene; a `grab` of a part no `available` step uses → note, say nothing |
 
 Nothing else is touched: no auth, no session database, no chat, no Workflow
 server calls. The component does not know ARISTOS exists.

@@ -49,6 +49,8 @@ export interface SimulatorProps {
   onReady?: () => void;
   /** Fires when the simulator moves to its own window (true) or back into the page (false). */
   onPopOutChange?: (poppedOut: boolean) => void;
+  /** Assembly state after every place (and after the scene is set). Ground truth — no vision needed. */
+  onStateChange?: (state: SimState, lastPlace?: LastPlace) => void;
   /** Where the bench is served from. */
   src?: string;
   /** Frame callback rate, Hz. 0 disables frames. */
@@ -64,6 +66,29 @@ export interface SimulatorProps {
 /** A part as reported back by the simulator. */
 export interface ScenePartState { id: string; name: string; key: string; pose: Pose }
 
+/**
+ * Assembly state, recomputed by the simulator after every place from the scene
+ * geometry (relative poses against the reference assembly from task_graphs.db).
+ *  complete   every part of the step is in place and all prerequisite steps are complete
+ *  premature  in place, but a prerequisite step is not — done out of order
+ *  available  not done; every prerequisite step is complete
+ *  blocked    not done; some prerequisite step is not complete
+ */
+export type StepState = 'complete' | 'available' | 'premature' | 'blocked';
+export interface SimStep { id: string; index: number; name: string; state: StepState; progress: number; requires: string[] }
+export interface SimPart { id: string; name: string; step: string; placed: boolean; ok: boolean; by: string | null }
+export interface SimIssue { severity: 'error' | 'warn'; message: string; objectId: string | null; step: string | null }
+export interface SimState {
+  steps: SimStep[];
+  parts: SimPart[];
+  issues: SimIssue[];
+  /** Step id the simulator would show next (an available step, started ones first). */
+  next: string | null;
+  score: { partsOk: number; partsTotal: number; stepsComplete: number; stepsSettled: number; stepsTotal: number };
+}
+/** What the trainee just put down, and whether it landed a step. */
+export interface LastPlace { objectId: string; pose: Pose; fitsStep: string | null; ok: boolean }
+
 export interface SimulatorHandle {
   /** Current pose of every part. */
   getScene: () => Promise<ScenePartState[]>;
@@ -75,6 +100,18 @@ export interface SimulatorHandle {
   dockBack: () => Promise<void>;
   /** Whether it is currently in its own window. */
   isPoppedOut: () => boolean;
+  /** Current assembly state (same payload as onStateChange). */
+  getState: () => Promise<SimState>;
+  /** Loop a ghost animation of the next available step on the trainee's current assembly. */
+  showNext: () => void;
+  /** Same, for a specific step (task-graph step id or answer index). */
+  showStep: (step: string | number) => void;
+  hideAnswer: () => void;
+  /** Tint a part (CSS color or 0xrrggbb); null clears. */
+  highlight: (objectId: string, color: string | number | null) => void;
+  /** Make two parts move as one from now on (e.g. after a step is confirmed complete). */
+  fuse: (parentId: string, childId: string) => void;
+  unfuse: (childId: string) => void;
 }
 
 const DEFAULT_SRC = 'http://127.0.0.1:8123/index.html';
@@ -86,6 +123,7 @@ type BenchMessage =
   | { type: 'kb:grab' | 'kb:move' | 'kb:place'; id: string; name: string; key: string; pose: Pose }
   | { type: 'kb:frame'; image: string; t: number }
   | { type: 'kb:scene'; parts: ScenePartState[] }
+  | { type: 'kb:state'; state: SimState; lastPlace?: LastPlace }
   | { type: 'kb:warn'; message: string };
 
 const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator(props, ref) {
@@ -97,6 +135,7 @@ const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator
   const popupRef = useRef<Window | null>(null);
   const originRef = useRef<string>('*');
   const sceneWaiters = useRef<Array<(parts: ScenePartState[]) => void>>([]);
+  const stateWaiters = useRef<Array<(state: SimState) => void>>([]);
   // The scene the *next* bench window is initialised with: the caller's
   // initialScene at first, then whatever the last window reported, so popping
   // out and docking back never lose the trainee's progress.
@@ -171,6 +210,10 @@ const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator
         case 'kb:scene':
           sceneWaiters.current.splice(0).forEach((resolve) => resolve(msg.parts));
           break;
+        case 'kb:state':
+          stateWaiters.current.splice(0).forEach((resolve) => resolve(msg.state));
+          cb.current.onStateChange?.(msg.state, msg.lastPlace);
+          break;
         case 'kb:warn':
           console.warn('[Simulator]', msg.message);
           break;
@@ -220,6 +263,16 @@ const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator
       cb.current.onPopOutChange?.(false);
     },
     isPoppedOut: () => !!popupRef.current && !popupRef.current.closed,
+    getState: () => new Promise<SimState>((resolve) => {
+      stateWaiters.current.push(resolve);
+      post({ type: 'kb:getState' });
+    }),
+    showNext: () => post({ type: 'kb:showNext' }),
+    showStep: (step) => post({ type: 'kb:showStep', step }),
+    hideAnswer: () => post({ type: 'kb:hideAnswer' }),
+    highlight: (objectId, color) => post({ type: 'kb:highlight', id: objectId, color }),
+    fuse: (parentId, childId) => post({ type: 'kb:fuse', parentId, childId }),
+    unfuse: (childId) => post({ type: 'kb:unfuse', childId }),
     };
   }, []);
 
