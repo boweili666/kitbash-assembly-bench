@@ -19,7 +19,7 @@
  */
 import { forwardRef } from 'react';
 import Simulator from '../Simulator';
-import type { Pose, ScenePart, SimulatorHandle, SimState, LastPlace } from '../Simulator';
+import type { Pose, ScenePart, SimulatorHandle, SimState, LastPlace, CollisionInfo } from '../Simulator';
 import kitScene from './kit_scene.json';
 const SIMULATOR_URL = (import.meta as any).env?.VITE_SIMULATOR_URL ?? '/simulator/kitbash-standalone.html';
 
@@ -41,6 +41,8 @@ interface Props {
   /** Snap attempt (Ctrl-drag): moved part, target part, feature ids on each, and whether it was geometrically valid. */
   onSnapAttempt?: (object1Id: string, object2Id: string, snapPoint1Id: string, snapPoint2Id: string,
                    success: boolean, reason: string | null) => void;
+  /** The moved part (object1) is pushed into object2: solids interpenetrating > 1 mm, or a peg on a hole it cannot enter. */
+  onCollision?: (object1Id: string, object2Id: string, info: CollisionInfo) => void;
 }
 
 // Not connected to anything yet, on purpose: each callback's signature is
@@ -56,6 +58,7 @@ const SimulatorTraineeView = forwardRef<SimulatorHandle, Props>(function Simulat
   onPopOutChange = notWired,
   onStateChange = notWired,
   onSnapAttempt = notWired,
+  onCollision = notWired,
 }, ref) {
   return (
     <Simulator
@@ -69,6 +72,7 @@ const SimulatorTraineeView = forwardRef<SimulatorHandle, Props>(function Simulat
       onPopOutChange={onPopOutChange}
       onStateChange={onStateChange}
       onSnapAttempt={onSnapAttempt}
+      onCollision={onCollision}
       frameRate={10}
       style={{
         width: '100%',

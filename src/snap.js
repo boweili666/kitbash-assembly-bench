@@ -467,6 +467,7 @@
   }
 
   window.KBSnap = { begin: begin, solve: solve, end: end,
+    features: extract,
     release: releaseActive,
     hingeFor: hingeFor,
     primaryAxis: primaryAxis,

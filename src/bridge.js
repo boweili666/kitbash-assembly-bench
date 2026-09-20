@@ -113,6 +113,10 @@
     post({ type: 'kb:snapAttempt', object1: a.object1.userData.kbId, object2: a.object2.userData.kbId,
       snapPoint1: a.snapPoint1, snapPoint2: a.snapPoint2, success: a.success, reason: a.reason });
   });
+  KB.on('collision', function (c) {
+    post({ type: 'kb:collision', object1: c.object1.userData.kbId, object2: c.object2.userData.kbId,
+      kind: c.kind, depthMm: c.depthMm, snapPoint1: c.snapPoint1, snapPoint2: c.snapPoint2 });
+  });
   KB.on('place', function (node) {
     partsOf(node).forEach(function (n) { var d = describe(n); d.type = 'kb:place'; post(d); });
     var st = stateMsg(partsOf(node)[0]);

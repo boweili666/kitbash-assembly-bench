@@ -151,7 +151,7 @@ kb:state {
 }
 ```
 
-Snap attempts are reported separately as `kb:snapAttempt` (§7a).
+Snap attempts are reported separately as `kb:snapAttempt` (§7a), collisions as `kb:collision` (§7b).
 
 Host commands: `kb:getState`, `kb:showNext`, `kb:showStep {step}`,
 `kb:hideAnswer`, `kb:highlight {id, color|null}`, `kb:fuse {parentId,
@@ -192,6 +192,46 @@ Whether the hole is the one the manual wants is not judged here; that is the
 step judgement in `kb:state`. A screw offered head first still snaps on its
 shaft axis (the shaft is coaxial with the head) and is then reported as
 *inserted backwards* by the checker.
+
+## 7b. Collisions (`kb:collision`)
+
+After every move of a grabbed part (at most every 60 ms) the part is tested
+against everything it is not attached to (`src/collide.js`):
+
+- **mesh** — one BVH per part type over all of its meshes; triangle-triangle
+  intersection finds surfaces that cross, then the depth of the crossing is
+  measured (how far each crossing triangle reaches past the other's plane, and
+  sampled points' depth inside the other solid by ray-parity inside test +
+  closest surface point). Only interpenetration deeper than **1 mm** counts, so
+  touching parts and CAD undersize do not collide while a part pushed through
+  another does.
+- **feature** — a peg lined up with a hole it cannot enter (diameter more than
+  0.6 mm over the hole's), overlapping along the axis, unless another feature
+  of the same part fits that hole (a screw head over the hole its shaft is in).
+  Exact for the oversize-screw case regardless of mesh detail.
+
+Two exemptions keep correct assembly quiet: parts joined by a compatible
+peg-in-hole (screw in its hole, nut on its shaft) are not mesh-tested against
+each other, and neither are two parts the checker judges to be within
+tolerance of their relative reference pose. The animation poses and the
+decimated motor mesh interpenetrate by up to 5 mm in places, and that is the
+data's business, not the trainee's. On the full reference assembly the
+detector reports nothing; a screw pushed through a plate beside a hole reads
+2.6 mm, a motor pushed into the X-Lock 2.5 mm.
+
+Colliding parts are tinted red while the contact lasts. Once per pair per
+contact:
+
+```
+kb:collision { object1, object2,                 part being moved, part it is pushed into
+               kind: 'mesh' | 'feature',
+               depthMm,                          mesh only
+               snapPoint1, snapPoint2 }          feature only: peg and hole names
+```
+
+Nothing is blocked yet: the trainee can still push the part through. Blocking
+(stopping the part at the last free pose) is a separate change because it
+changes the feel of dragging and needs tuning by hand.
 
 ## 8. Next-step ghost (`Next` button / `kb:showNext`)
 

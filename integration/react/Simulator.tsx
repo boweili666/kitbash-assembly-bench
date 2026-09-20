@@ -60,6 +60,14 @@ export interface SimulatorProps {
    */
   onSnapAttempt?: (object1Id: string, object2Id: string, snapPoint1Id: string, snapPoint2Id: string,
                    success: boolean, reason: string | null) => void;
+  /**
+   * The part being moved (object1) is pushed into another part (object2). Fires once per contact.
+   * kind 'mesh': the solids interpenetrate by more than 1 mm (depthMm); 'feature': a peg is lined up
+   * with a hole it cannot enter (snapPoint ids name the two features). Parts joined by a compatible
+   * peg-in-hole, or sitting within tolerance of their reference assembly pose, never collide.
+   * Nothing is blocked: the simulator reports, ARISTOS decides.
+   */
+  onCollision?: (object1Id: string, object2Id: string, info: CollisionInfo) => void;
   /** Where the bench is served from. */
   src?: string;
   /** Frame callback rate, Hz. 0 disables frames. */
@@ -95,6 +103,7 @@ export interface SimState {
   next: string | null;
   score: { partsOk: number; partsTotal: number; stepsComplete: number; stepsSettled: number; stepsTotal: number };
 }
+export interface CollisionInfo { kind: 'mesh' | 'feature'; depthMm?: number; snapPoint1: string | null; snapPoint2: string | null }
 /** What the trainee just put down, and whether it landed a step. */
 export interface LastPlace { objectId: string; pose: Pose; fitsStep: string | null; ok: boolean }
 
@@ -135,6 +144,8 @@ type BenchMessage =
   | { type: 'kb:state'; state: SimState; lastPlace?: LastPlace }
   | { type: 'kb:snapAttempt'; object1: string; object2: string; snapPoint1: string; snapPoint2: string;
       success: boolean; reason: string | null }
+  | { type: 'kb:collision'; object1: string; object2: string; kind: 'mesh' | 'feature'; depthMm?: number;
+      snapPoint1: string | null; snapPoint2: string | null }
   | { type: 'kb:warn'; message: string };
 
 const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator(props, ref) {
@@ -220,6 +231,10 @@ const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator
           break;
         case 'kb:scene':
           sceneWaiters.current.splice(0).forEach((resolve) => resolve(msg.parts));
+          break;
+        case 'kb:collision':
+          cb.current.onCollision?.(msg.object1, msg.object2,
+            { kind: msg.kind, depthMm: msg.depthMm, snapPoint1: msg.snapPoint1, snapPoint2: msg.snapPoint2 });
           break;
         case 'kb:snapAttempt':
           cb.current.onSnapAttempt?.(msg.object1, msg.object2, msg.snapPoint1, msg.snapPoint2, msg.success, msg.reason);
