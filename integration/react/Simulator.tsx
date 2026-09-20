@@ -51,6 +51,15 @@ export interface SimulatorProps {
   onPopOutChange?: (poppedOut: boolean) => void;
   /** Assembly state after every place (and after the scene is set). Ground truth — no vision needed. */
   onStateChange?: (state: SimState, lastPlace?: LastPlace) => void;
+  /**
+   * The trainee tried to snap two parts together (Ctrl-drag). object1 is the part being moved,
+   * snapPoint ids are feature names from PartTypeFeatures ('H3', 'P1') or a bounding-box face
+   * ('F+y'). success is false when the pair is geometrically incompatible (peg on peg, or a peg
+   * wider than the hole); the snap is then refused. Which hole the manual wants is not judged
+   * here — see onStateChange.
+   */
+  onSnapAttempt?: (object1Id: string, object2Id: string, snapPoint1Id: string, snapPoint2Id: string,
+                   success: boolean, reason: string | null) => void;
   /** Where the bench is served from. */
   src?: string;
   /** Frame callback rate, Hz. 0 disables frames. */
@@ -124,6 +133,8 @@ type BenchMessage =
   | { type: 'kb:frame'; image: string; t: number }
   | { type: 'kb:scene'; parts: ScenePartState[] }
   | { type: 'kb:state'; state: SimState; lastPlace?: LastPlace }
+  | { type: 'kb:snapAttempt'; object1: string; object2: string; snapPoint1: string; snapPoint2: string;
+      success: boolean; reason: string | null }
   | { type: 'kb:warn'; message: string };
 
 const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator(props, ref) {
@@ -209,6 +220,9 @@ const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator
           break;
         case 'kb:scene':
           sceneWaiters.current.splice(0).forEach((resolve) => resolve(msg.parts));
+          break;
+        case 'kb:snapAttempt':
+          cb.current.onSnapAttempt?.(msg.object1, msg.object2, msg.snapPoint1, msg.snapPoint2, msg.success, msg.reason);
           break;
         case 'kb:state':
           stateWaiters.current.splice(0).forEach((resolve) => resolve(msg.state));

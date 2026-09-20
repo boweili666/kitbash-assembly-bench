@@ -27,6 +27,26 @@
   var AXIS_PERP_ON = 0.32, AXIS_PERP_OFF = 0.55; // 收紧脱离半径,方便在相邻孔位间切换
   var FACE_DOT_ON = -0.90, FACE_DOT_OFF = -0.75;
   var FACE_GAP_ON = 0.30, FACE_GAP_OFF = 0.65;
+  // Geometric compatibility of a peg in a hole: peg diameter <= hole diameter + 0.6 mm
+  // (CAD undersize allowance, same as compute_mates); hole-hole coaxial alignment is always allowed.
+  function radiusTol() { return 0.3 * (window.KBParts ? KBParts.unitScale() : 24.77) / 1000; }
+  function compatible(a, b) {
+    if (a.kind === 'peg' && b.kind === 'peg') return false;
+    var peg = a.kind === 'peg' ? a : (b.kind === 'peg' ? b : null);
+    if (!peg) return true;
+    var hole = peg === a ? b : a;
+    if (!peg.r || !hole.r) return true;
+    return peg.r <= hole.r + radiusTol();
+  }
+  var lastAttempt = null; // key of the last reported snap attempt (dedupe per gesture)
+  function attemptKey(a, b, ok) { return a.owner.uuid + '/' + a.id + '|' + b.owner.uuid + '/' + b.id + '|' + ok; }
+  function reportAttempt(a, b, ok, reason) {
+    var k = attemptKey(a, b, ok);
+    if (k === lastAttempt) return;
+    lastAttempt = k;
+    KB.emit('snapAttempt', { object1: a.owner, object2: b.owner, snapPoint1: a.id, snapPoint2: b.id,
+      success: ok, reason: reason || null });
+  }
 
   /* ---------- 特征提取 ---------- */
   function circlePts(r, y, plane) {
@@ -136,9 +156,9 @@
     var mid = [(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2];
     var hx = (mx[0] - mn[0]) / 2, hy = (mx[1] - mn[1]) / 2, hz = (mx[2] - mn[2]) / 2;
     [
-      [[1, 0, 0], [0, hy, 0], [0, 0, hz]], [[-1, 0, 0], [0, hy, 0], [0, 0, hz]],
-      [[0, 1, 0], [hx, 0, 0], [0, 0, hz]], [[0, -1, 0], [hx, 0, 0], [0, 0, hz]],
-      [[0, 0, 1], [hx, 0, 0], [0, hy, 0]], [[0, 0, -1], [hx, 0, 0], [0, hy, 0]]
+      [[1, 0, 0], [0, hy, 0], [0, 0, hz], 'F+x'], [[-1, 0, 0], [0, hy, 0], [0, 0, hz], 'F-x'],
+      [[0, 1, 0], [hx, 0, 0], [0, 0, hz], 'F+y'], [[0, -1, 0], [hx, 0, 0], [0, 0, hz], 'F-y'],
+      [[0, 0, 1], [hx, 0, 0], [0, hy, 0], 'F+z'], [[0, 0, -1], [hx, 0, 0], [0, hy, 0], 'F-z']
     ].forEach(function (fd) {
       var n = new THREE.Vector3().fromArray(fd[0]);
       var cL = new THREE.Vector3(mid[0] + n.x * hx, mid[1] + n.y * hy, mid[2] + n.z * hz);
@@ -152,7 +172,7 @@
       var cW = cL.clone().applyMatrix4(M);
       var r = 0;
       corners.forEach(function (q) { r = Math.max(r, q.distanceTo(cW)); });
-      out.faces.push({ c: cW, n: n.transformDirection(M), r: r, outline: corners });
+      out.faces.push({ c: cW, n: n.transformDirection(M), r: r, outline: corners, id: fd[3], owner: wrapper });
     });
   }
 
@@ -189,6 +209,7 @@
       });
     });
     active = null;
+    lastAttempt = null;
   }
 
   function end() {
@@ -285,14 +306,17 @@
     }
 
     // 搜索新吸附:轴优先于面
-    var best = null;
+    var best = null, rejected = null;
     for (i = 0; i < mine.axes.length; i++) {
       for (j = 0; j < cache.axes.length; j++) {
-        // 销↔销(螺丝头对螺柱柱身)没有装配意义,不作为吸附配对
-        if (mine.axes[i].kind === 'peg' && cache.axes[j].kind === 'peg') continue;
         fit = axisFit(mine.axes[i], cache.axes[j]);
         if (fit.cos < AXIS_COS_ON || fit.perp > AXIS_PERP_ON) continue;
         var s = fit.perp + (1 - fit.cos) * 2;
+        if (!compatible(mine.axes[i], cache.axes[j])) {
+          // geometrically incompatible (peg on peg, or peg wider than the hole): the snap fails
+          if (!rejected || s < rejected.s) rejected = { s: s, a: mine.axes[i], b: cache.axes[j] };
+          continue;
+        }
         // 半径匹配偏好:⌀3 螺丝优先吸 ⌀3 孔而不是旁边的大孔
         if (mine.axes[i].r && cache.axes[j].r) {
           s += Math.abs(mine.axes[i].r - cache.axes[j].r) * 3;
@@ -311,11 +335,20 @@
         }
       }
     }
+    if (rejected && (!best || best.kind !== 'axis')) {
+      // the trainee lined a peg up with a hole it cannot enter: report the failed attempt
+      // even when a face-to-face snap takes over below
+      reportAttempt(rejected.a, rejected.b, false,
+        rejected.a.kind === 'peg' && rejected.b.kind === 'peg' ? 'peg-on-peg' : 'peg wider than hole');
+    }
     if (best) {
       active = { kind: best.kind, ai: best.ai, fi: best.fi, b: best.b };
       if (best.kind === 'axis') applyAxis(node, best.a, best.b);
       else applyFace(node, best.a, best.b);
       showViz(active);
+      reportAttempt(best.a, best.b, true);
+    } else if (rejected) {
+      showViz({ b: rejected.b }, 0xd9534f);
     } else {
       hideViz();
     }
@@ -324,8 +357,8 @@
   }
 
   /* ---------- 吸附高亮 ---------- */
-  function showViz(act) {
-    var color = 0xe8a33d;
+  function showViz(act, color) {
+    color = color || 0xe8a33d;
     if (viz && viz.userData.b === act.b && viz.userData.color === color) return; // 目标未变
     hideViz();
     var group = new THREE.Group();

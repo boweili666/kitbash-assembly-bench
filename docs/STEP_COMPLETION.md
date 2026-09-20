@@ -151,6 +151,8 @@ kb:state {
 }
 ```
 
+Snap attempts are reported separately as `kb:snapAttempt` (§7a).
+
 Host commands: `kb:getState`, `kb:showNext`, `kb:showStep {step}`,
 `kb:hideAnswer`, `kb:highlight {id, color|null}`, `kb:fuse {parentId,
 childId}`, `kb:unfuse {childId}`. In `<Simulator>` these are `onStateChange`
@@ -166,6 +168,30 @@ Suggested wiring on the ARISTOS side (not done here):
 - a `grab` whose `objectId` is not a part of any `available` step → note it,
   say nothing; an `Out of order … started` issue → the trainee has begun
   seating a part where it does not belong yet → intervene.
+
+## 7a. Snap attempts (`kb:snapAttempt`)
+
+Snapping (Ctrl-drag) pairs a feature of the moved part with a feature of a
+part already on the table: peg → hole, hole ↔ hole (coaxial alignment, e.g. a
+standoff over a plate hole), or, failing that, a bounding-box face against a
+face. A pair is **geometrically incompatible** when it is peg on peg, or the
+peg's diameter exceeds the hole's by more than 0.6 mm (the CAD undersize
+allowance used everywhere else). Incompatible pairs never snap: the target is
+shown red and the part stays free (or falls back to a face snap).
+
+Every new pairing the solver settles on, and every incompatible pairing it
+refuses, is reported once per gesture:
+
+```
+kb:snapAttempt { object1, object2,            part being moved, part snapped to (Parts.uuid)
+                 snapPoint1, snapPoint2,      feature name on each ('H3', 'P1', or face 'F+y')
+                 success, reason }            reason: 'peg-on-peg' | 'peg wider than hole' | null
+```
+
+Whether the hole is the one the manual wants is not judged here; that is the
+step judgement in `kb:state`. A screw offered head first still snaps on its
+shaft axis (the shaft is coaxial with the head) and is then reported as
+*inserted backwards* by the checker.
 
 ## 8. Next-step ghost (`Next` button / `kb:showNext`)
 

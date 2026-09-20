@@ -38,6 +38,9 @@ interface Props {
   onPopOutChange?: (poppedOut: boolean) => void;
   /** Assembly state after every place: which steps are complete / available / premature / blocked, issues, next step. */
   onStateChange?: (state: SimState, lastPlace?: LastPlace) => void;
+  /** Snap attempt (Ctrl-drag): moved part, target part, feature ids on each, and whether it was geometrically valid. */
+  onSnapAttempt?: (object1Id: string, object2Id: string, snapPoint1Id: string, snapPoint2Id: string,
+                   success: boolean, reason: string | null) => void;
 }
 
 // Not connected to anything yet, on purpose: each callback's signature is
@@ -52,6 +55,7 @@ const SimulatorTraineeView = forwardRef<SimulatorHandle, Props>(function Simulat
   onViewUpdate = notWired,
   onPopOutChange = notWired,
   onStateChange = notWired,
+  onSnapAttempt = notWired,
 }, ref) {
   return (
     <Simulator
@@ -64,6 +68,7 @@ const SimulatorTraineeView = forwardRef<SimulatorHandle, Props>(function Simulat
       onViewUpdate={onViewUpdate}
       onPopOutChange={onPopOutChange}
       onStateChange={onStateChange}
+      onSnapAttempt={onSnapAttempt}
       frameRate={10}
       style={{
         width: '100%',

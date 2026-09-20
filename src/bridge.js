@@ -109,6 +109,10 @@
     lastMove = now;
     partsOf(node).forEach(function (n) { var d = describe(n); d.type = 'kb:move'; post(d); });
   });
+  KB.on('snapAttempt', function (a) {
+    post({ type: 'kb:snapAttempt', object1: a.object1.userData.kbId, object2: a.object2.userData.kbId,
+      snapPoint1: a.snapPoint1, snapPoint2: a.snapPoint2, success: a.success, reason: a.reason });
+  });
   KB.on('place', function (node) {
     partsOf(node).forEach(function (n) { var d = describe(n); d.type = 'kb:place'; post(d); });
     var st = stateMsg(partsOf(node)[0]);
