@@ -246,9 +246,11 @@ step; not done → it re-anchors on the current structure.
 ## 9. Trainee mode and fuse
 
 - `?trainee=1` (default when embedded via the bridge; `?tools=1` restores the
-  editor): no scale, delete, duplicate, group or material editing; the `R`,
-  `Delete`, `Ctrl+D`, `Ctrl+G` shortcuts are inert. Colour changes remain
-  available to the host through `kb:highlight`.
+  editor): no scale, delete, duplicate or material editing; the `R`, `Delete`,
+  `Ctrl+D` shortcuts are inert. Grouping stays (`Ctrl+G` / `Ctrl+Shift+G` and
+  the toolbar buttons) so the trainee can pick up a finished sub-assembly as
+  one piece. Colour changes remain available to the host through
+  `kb:highlight`.
 - `fuse(parent, child)` puts both under one group (the existing Ctrl+G
   mechanism), so clicking either selects and moves the whole sub-assembly;
   groups merge when fused again; `unfuse` releases a part. Nested parts stay

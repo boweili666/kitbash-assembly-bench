@@ -698,7 +698,7 @@ input[type="range"]::-moz-range-thumb {
 .embed #answerBar { bottom: 10px; width: min(94vw, 560px); }
 
 
-.trainee #mode-scale, .trainee #btnDel, .trainee #btnDup, .trainee #btnGroup, .trainee #btnUngroup,
+.trainee #mode-scale, .trainee #btnDel, .trainee #btnDup,
 .trainee #inspMaterial, .trainee #btnResetXform { display: none !important; }
 .embed #btnNext { display: inline-flex; }
 
@@ -10690,14 +10690,12 @@ input[type="range"]::-moz-range-thumb {
         }
         if (ctrl && e.code === 'KeyG' && e.shiftKey) {
             e.preventDefault();
-            if (!trainee)
-                ungroupSelection();
+            ungroupSelection();
             return;
         }
         if (ctrl && e.code === 'KeyG') {
             e.preventDefault();
-            if (!trainee)
-                groupSelection();
+            groupSelection();
             return;
         }
         if (ctrl)

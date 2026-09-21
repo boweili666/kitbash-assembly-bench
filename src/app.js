@@ -1093,8 +1093,8 @@
     if (ctrl && e.code === 'KeyZ' && !e.shiftKey) { e.preventDefault(); undo(); return; }
     if (ctrl && (e.code === 'KeyY' || (e.code === 'KeyZ' && e.shiftKey))) { e.preventDefault(); redo(); return; }
     if (ctrl && e.code === 'KeyD') { e.preventDefault(); if (!trainee) duplicateSelection(); return; }
-    if (ctrl && e.code === 'KeyG' && e.shiftKey) { e.preventDefault(); if (!trainee) ungroupSelection(); return; }
-    if (ctrl && e.code === 'KeyG') { e.preventDefault(); if (!trainee) groupSelection(); return; }
+    if (ctrl && e.code === 'KeyG' && e.shiftKey) { e.preventDefault(); ungroupSelection(); return; }
+    if (ctrl && e.code === 'KeyG') { e.preventDefault(); groupSelection(); return; }
     if (ctrl) return;
     switch (e.code) {
       case 'KeyW': setMode('translate'); break;

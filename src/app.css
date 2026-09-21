@@ -694,6 +694,6 @@ input[type="range"]::-moz-range-thumb {
 
 /* ---------- 受训者模式:?trainee=1(嵌入 ARISTOS 时默认)——
    只留装配需要的:不能缩放、删除、复制、分组,也不能改材质 ---------- */
-.trainee #mode-scale, .trainee #btnDel, .trainee #btnDup, .trainee #btnGroup, .trainee #btnUngroup,
+.trainee #mode-scale, .trainee #btnDel, .trainee #btnDup,
 .trainee #inspMaterial, .trainee #btnResetXform { display: none !important; }
 .embed #btnNext { display: inline-flex; }
