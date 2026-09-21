@@ -686,7 +686,7 @@ input[type="range"]::-moz-range-thumb {
 .embed .tool .lbl { display: none; }
 .embed #btnNew .lbl, .embed #btnDemo, .embed #btnAnswer, .embed #btnCheck { display: inline-flex; }
 .embed #btnRecord, .embed #btnAgent, .embed #btnImport, .embed #btnExportJson, .embed #btnExportGlb,
-.embed #btnGroup, .embed #btnUngroup, .embed #btnDup, .embed #btnFocus { display: none; }
+.embed #btnDup, .embed #btnFocus { display: none; }
 .embed #panel { width: 216px; top: 56px; font-size: 12px; }
 .embed #panel:not(:has(.insp-body.show)) { display: none; }  /* only show when something is selected */
 .embed #agentPanel { display: none !important; }  /* sharing keeps running headless */
