@@ -11,6 +11,22 @@
   'use strict';
 
   var KB = window.KB;
+
+  /* 虚影材质 + 深度预通道:先只写深度(不着色),再按"深度相等"画半透明层,
+   * 这样只显示最外层表面 —— 电机这种内部塞满绕组的模型不会变成 X 光片 */
+  function ghostMaterial() {
+    return new THREE.MeshBasicMaterial({
+      color: 0x9fd3ef, transparent: true, opacity: 0, depthWrite: false, depthFunc: THREE.EqualDepth
+    });
+  }
+  var depthOnly = new THREE.MeshBasicMaterial({ colorWrite: false, transparent: true, depthWrite: true });
+  function addGhost(group, geometry, mat) {
+    var pre = new THREE.Mesh(geometry, depthOnly);
+    pre.renderOrder = 1;
+    var vis = new THREE.Mesh(geometry, mat);
+    vis.renderOrder = 2;
+    group.add(pre, vis);
+  }
   // 参考装配来自零件库数据(manifest.answer,mm / GLB 原点,features_db.py answer 生成)。
   // 打开时换算到场景单位:整体 XZ 居中、最低零件原点落到 0(root 再抬 HOVER)。
   var DATA = { steps: [], parts: [], source: null };
@@ -87,11 +103,9 @@
     DATA.parts.forEach(function (d) {
       var prims = KBParts.prims(d.key);
       if (!prims) return;
-      var mat = new THREE.MeshBasicMaterial({
-        color: 0x9fd3ef, transparent: true, opacity: 0, depthWrite: false
-      });
+      var mat = ghostMaterial();
       var g = new THREE.Group();
-      prims.forEach(function (pr) { g.add(new THREE.Mesh(pr.geometry, mat)); });
+      prims.forEach(function (pr) { addGhost(g, pr.geometry, mat); });
       g.visible = false;
       root.add(g);
       // 轨迹点(位置折线 + 姿态四元数),按段长做匀速插值
@@ -160,7 +174,8 @@
       dots[i].classList.toggle('reached', t >= stepEnd[i] - 0.01);
     }
     if (focus) {
-      labelEl.textContent = 'Next: ' + focus.step.name;
+      // 同一步反复重放时说清卡在哪:光看虚影不知道判定还差什么
+      labelEl.textContent = 'Next: ' + focus.step.name + (focus.why ? ' \u2014 ' + focus.why : '');
     } else if (t >= maxT - 0.01) {
       labelEl.textContent = 'Assembly complete \u00b7 ' + items.length + ' parts';
     } else if (current) {
@@ -301,9 +316,9 @@
       if (tt.ok || tt.ref === candAnchor) return;
       var d = src.parts[tt.ref.i], prims = KBParts.prims(d.key);
       if (!prims) return;
-      var mat = new THREE.MeshBasicMaterial({ color: 0x9fd3ef, transparent: true, opacity: 0, depthWrite: false });
+      var mat = ghostMaterial();
       var g = new THREE.Group();
-      prims.forEach(function (pr) { g.add(new THREE.Mesh(pr.geometry, mat)); });
+      prims.forEach(function (pr) { addGhost(g, pr.geometry, mat); });
       g.visible = false;
       root.add(g);
       var pts = [], quats = [];
@@ -334,12 +349,34 @@
     rafId = requestAnimationFrame(tick);
     return true;
   }
+  /* 这一步为什么还没算完成:优先具体问题,其次"还没放" */
+  function reasonFor(st) {
+    var res = KBCheck.results();
+    if (!res || !res.ready) return '';
+    // 有具体问题就说具体问题(差多少毫米、插反了……)
+    var hit = res.issues.filter(function (i) {
+      return i.slot && st.slots.some(function (t) { return t.ref === i.slot; });
+    })[0];
+    if (hit) return String(hit.msg);
+    var missing = st.slots.filter(function (t) { return !t.ok && (!t.part || !t.near.length); });
+    if (!missing.length) return '';
+    // 零件就在场上、只是离该在的地方太远 —— 说成"还没放"会让人以为漏了零件
+    var loose = missing.filter(function (t) {
+      return res.users.some(function (u) { return !u.slot && u.ckey === t.ref.ckey; });
+    });
+    if (loose.length) return loose[0].ref.name + ' is not where the ghost shows it';
+    return missing.length + ' part' + (missing.length > 1 ? 's' : '') + ' still to place';
+  }
+
   function showNext() {
     if (!window.KBCheck) return false;
     KBCheck.evaluate();
     var nx = KBCheck.next();
     if (!nx) { KB.toast('Assembly complete \u2014 nothing left to do'); return false; }
-    return showStep(nx.i);
+    if (!showStep(nx.i)) return false;
+    focus.why = reasonFor(nx);
+    render();
+    return true;
   }
   if (nextBtn) nextBtn.addEventListener('click', function () {
     if (focus) { destroy(); return; }
@@ -355,7 +392,10 @@
       var cur = focus.step.i, res = KBCheck.evaluate();
       var st = res && res.steps[cur];
       var target = st && st.state !== 'complete' && st.state !== 'premature' ? st : KBCheck.next();
-      if (target) showStep(target.i); else destroy();
+      if (!target) { destroy(); return; }
+      if (!showStep(target.i)) return;
+      if (target.i === cur) focus.why = reasonFor(target);   // 又是这一步:告诉他为什么没过
+      render();
     }, 350);
   });
 

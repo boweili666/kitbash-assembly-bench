@@ -17,6 +17,7 @@ html = (root / "index.html").read_text(encoding="utf-8")
 
 import os
 import shutil
+import datetime
 import subprocess
 
 def _node_path():
@@ -61,6 +62,10 @@ def inline_style(m):
     css = strip_css_comments((root / m.group(1)).read_text(encoding="utf-8"))
     return "<style>\n" + css + "\n</style>"
 
+
+# 版本戳:页面上 KB.build() / 控制台首行都会显示,便于确认跑的是不是最新构建
+html = html.replace("window.KB_BUILD = 'dev';",
+                    "window.KB_BUILD = '%s';" % datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))
 
 inlined = re.sub(r'<script src="((?:vendor|src)/[^"]+)"></script>', inline_script, html)
 inlined = re.sub(r'<link rel="stylesheet" href="(src/[^"]+)">', inline_style, inlined)

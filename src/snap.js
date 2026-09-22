@@ -473,6 +473,8 @@
     primaryAxis: primaryAxis,
     snapKeyActive: function () { return snapKeyDown; },
     isMouseDragging: function () { return !!(drag && drag.started); },
+    /* 别的模块(mate.js 点孔)吞掉了 pointerup:收回尚未开始的拖拽,恢复视角控制 */
+    cancelPointer: function () { if (drag && !drag.started) endDrag(false); },
     isActive: function () { return !!active; } };
 
   /* ---------- gizmo 拖拽同样走吸附 ----------
@@ -521,8 +523,10 @@
     if (KB.gizmo.dragging || KB.gizmo.axis) return;
     var hit = KB.raycastTopAt(e.clientX, e.clientY);
     if (!hit) return;
+    if (KB.finishTween) KB.finishTween(hit.node); // 飞行中被抓住:先落到终点
     drag = {
       node: hit.node,
+      locked: !!(window.KBMate && KBMate.locked(hit.node)), // 锁在孔上:不跟手,提示一次
       startPos: hit.node.position.clone(),
       startQuat: hit.node.quaternion.clone(),
       grabPoint: hit.point.clone(),
@@ -536,6 +540,10 @@
     if (!drag) return;
     if (!drag.started) {
       if (Math.hypot(e.clientX - drag.downX, e.clientY - drag.downY) < 6) return;
+      if (drag.locked) {
+        if (!drag.warned) { drag.warned = true; KB.toast('Locked on the hole \u2014 use the arrow keys, or click the part to release it'); }
+        return;
+      }
       drag.started = true;
       drag.vertical = e.shiftKey;
       KB.setSelection([drag.node]);

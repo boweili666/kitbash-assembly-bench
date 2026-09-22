@@ -21,6 +21,10 @@
     <span>ASSEMBLY BENCH</span>
   </div>
 
+  <button id="btnExpert" class="tool" title="General: click holes to mate, click the grid to move. Expert: gizmo, bounding boxes, W/E/R, Ctrl-drag snap">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v14M3 10h14"/><circle cx="10" cy="10" r="3"/></svg>
+    <span class="lbl">General</span>
+  </button>
   <div class="seg" role="group" aria-label="Transform mode">
     <button id="mode-translate" title="Move (W)">Move <kbd>W</kbd></button>
     <button id="mode-rotate" title="Rotate (E)">Rotate <kbd>E</kbd></button>
@@ -68,6 +72,7 @@
 
   <button id="btnNew" class="tool" title="Clear the scene">New</button>
   <button id="btnDemo" class="tool" title="Load the Frame Bottom Assembly kit (24 parts)">Kit</button>
+  <button id="btnTutorial" class="tool" title="Tutorial: three parts, every move in the general mode">Tutorial</button>
   <button id="btnAnswer" class="tool" title="Answer: ghost animation of the assembly positions and order">Answer</button>
   <button id="btnNext" class="tool" title="Next step: ghost animation of what to do next, on your current assembly">Next</button>
   <button id="btnRecord" class="tool" title="Record a video of this page (pick this tab in the picker; microphone optional). Click again to stop and save a WebM file.">
@@ -131,6 +136,21 @@
         </div>
       </div>
 
+      <div id="inspFeatures" style="display:none">
+      <div class="insp-sep"></div>
+      <div class="field feat-head">
+        <label>Features <span class="feat-sub">holes H / pegs P</span></label>
+        <div class="feat-tools">
+          <button class="btn" id="btnLabelMode" title="Label mode: hover a hole on the part, click to add it">Label</button>
+          <select id="featKind" title="What a click adds"><option value="hole">hole</option><option value="peg">peg</option></select>
+          <button class="btn" id="btnExportFeatures" title="Download part_features.json (contributor format) for tools/features_db.py import">Export</button>
+          <button class="btn" id="btnResetFeatures" title="Drop your labels for this part type">Reset</button>
+        </div>
+        <div id="featHint" class="feat-hint"></div>
+      </div>
+      <div id="featList" class="feat-list"></div>
+      </div>
+
       <div id="inspMaterial">
       <div class="insp-sep"></div>
 
@@ -162,16 +182,42 @@
   </div>
 </aside>
 
+<!-- 新手教程卡片 -->
+<section id="tutorial" class="float" aria-label="Assembly tutorial">
+  <div class="tt-bar" role="progressbar" aria-label="Tutorial progress" aria-valuemin="0" aria-valuemax="8"><i></i></div>
+  <div class="tt-head"><span class="tt-title"><span class="tt-spark">✦</span> Assembly school</span><span class="tt-step">Lesson 1 · 1 / 8</span><button id="ttMinimize" aria-label="Minimize tutorial" aria-expanded="true">−</button><button id="ttClose" aria-label="Exit tutorial">×</button></div>
+  <div class="tt-content" id="ttContent">
+    <div class="tt-body" aria-live="polite" aria-atomic="true">
+      <div class="tt-eyebrow">LEARN BY DOING</div>
+      <h2 class="tt-text"></h2>
+      <div class="tt-hint"></div>
+    </div>
+    <div class="tt-demo">
+      <div class="tt-demo-head"><span class="tt-demo-label">OPERATION PREVIEW</span><button id="ttReplay" aria-label="Replay demonstration">↻ Replay</button></div>
+      <div class="tt-stage"></div>
+      <div class="tt-inputs"></div>
+    </div>
+    <ol class="tt-actions"></ol>
+    <details class="tt-camera"><summary>How do I move the view?</summary><div><span><b>Left drag on empty space</b> Orbit the view</span><span><b>Right drag</b> Pan</span><span><b>Scroll wheel</b> Zoom in / out</span><span><kbd>F</kbd> Focus selected part</span><span><kbd>Esc</kbd> Cancel / deselect</span></div></details>
+    <div class="tt-foot"><span class="tt-status" role="status">Your turn · try it in the scene</span><button id="ttNext" class="tool">Skip step →</button></div>
+  </div>
+</section>
+
 <!-- 底部快捷键提示 -->
 <footer id="hints" class="float">
   <b>Click</b> select
+  <span>Click hole → hole/peg to mate</span>
+  <span>On a hole it stays put: <kbd>↑</kbd><kbd>↓</kbd> slide, <kbd>←</kbd><kbd>→</kbd> turn, click it to release</span>
+  <span>Click the grid to move the selection there</span>
+  <span><kbd>↑</kbd><kbd>↓</kbd> raise / lower, <kbd>←</kbd><kbd>→</kbd> turn</span>
   <span>Drag object to move</span>
-  <span>Hold <kbd>Ctrl</kbd> assembly snap</span>
+  <span class="x">Hold <kbd>Ctrl</kbd> drag snap</span>
+  <span><kbd>S</kbd> snap the selection into its place</span>
   <span><kbd>Shift</kbd>+click multi-select</span>
   <span>Drag empty space to orbit</span>
-  <span>Right-drag pan</span>
+  <span>Right-click deselect, right-drag pan</span>
   <span>Wheel zoom</span>
-  <span><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd> move/rotate/scale</span>
+  <span class="x"><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd> move/rotate/scale</span>
   <span><kbd>Ctrl</kbd><kbd>G</kbd> group</span>
   <span><kbd>F</kbd> focus</span>
   <span><kbd>Del</kbd> delete</span>
@@ -225,6 +271,7 @@
   <div class="ag-head">
     <b style="font-size:12px">Checks</b>
     <button id="ckNow" class="tool" title="Re-evaluate against the reference assembly">Check now</button>
+    <button id="ckSnapAll" class="tool" title="Snap every part that is already close (10 mm / 25°) onto its exact place — S does one part">Snap all</button>
     <button id="ckClose" class="tool" title="Hide panel" style="margin-left:auto">
       <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
     </button>
@@ -265,6 +312,7 @@
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
+<script>window.KB_BUILD = 'dev';  /* build.py 会把它换成构建时间 */</script>
 <script src="vendor/three.min.js"></script>
 <script src="vendor/OrbitControls.js"></script>
 <script src="vendor/TransformControls.js"></script>
@@ -275,6 +323,11 @@
 <script src="src/collide.js"></script>
 <!-- PARTS_EMBED -->
 <script src="src/parts.js"></script>
+<!-- Tutorial observes keyboard input before mate consumes arrow keys. -->
+<script src="src/tutorial-preview.js"></script>
+<script src="src/tutorial.js"></script>
+<script src="src/mate.js"></script>
+<script src="src/label.js"></script>
 <script src="src/answer.js"></script>
 <script src="src/record.js"></script>
 <script src="src/stream.js"></script>

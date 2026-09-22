@@ -29,6 +29,14 @@ python3 serve.py        # 然后打开 http://localhost:8123
 | 保存 | 自动保存到浏览器 localStorage;「JSON」导出可再次「导入」编辑 |
 | 导出模型 | 「GLB」导出二进制 glTF,可直接用于 Blender / 网页 / 游戏引擎 |
 | 直接拖拽 | 鼠标按住物体拖动;Shift+拖 = 垂直升降;拖空白处转视角 |
+| 归位 `S` / Snap all | 选中零件按 `S`:离参考装配里的正确位姿够近(10 mm + 25° 以内,长零件按角度差该甩出的距离放宽)就吸到精确位置,够不着会提示。**默认不自动吸**(会和手上的微调打架),要放下即吸用 `KBCheck.autoSnap(true)`。Checks 面板的 **Snap all** 一次归位所有够得着的零件(分轮推进:每轮只吸有正确参照的,吸好的成为下一轮参照)。插反的螺丝不吸 |
+| Checks 说明 | 问题条目会写清差在哪("8.0 mm too high" / "sideways"),点一下条目会在**正确位置**画出半透明绿色虚影(再点一次收起);相同零件互换不算错,槽位由相对位姿自动匹配 |
+| Tutorial | 顶栏 Tutorial(或 `?tutorial=1`):几个小课,每课两个零件,做完自动换零件——课 1 机臂 + 前板(孔对孔、绕孔转),课 2 楔块 + 螺丝(销入孔、沿孔推拉);要点的孔口会聚光,点错了拒绝并提示 |
+| 孔位反推 | `python3 tools/holes_from_answer.py <key> [--write] [--out f.json]`:贡献方文件只标了任务用到的孔时,用参考装配里伙伴零件的销轴反推出其余孔的**位置**(与最终安装位置一致),再用网格射线量出孔径与深度;`--write` 直接补进 manifest,`--out` 生成 contributor 文件回写数据库。已用它补上机臂的 4 个电机安装孔 |
+| 孔位标注 | Expert 模式 → Properties → **Features**:列出选中零件的 H/P(直径 / 深度可改、可删);按 **Label** 后把鼠标移到零件的孔里(长槽、多边形孔也行),实时拟合出圆和轴,点一下加上。标注存在浏览器里,**Export** 导出 contributor 格式 `part_features.json`,再 `python3 tools/features_db.py import <db> part_features.json` + `manifest` 重新生成 manifest |
+| General / Expert | 顶栏第一个按钮切换(记住上次选择,`?expert=1` 强制)。**General(默认)**:选中只亮孔位,没有 gizmo 坐标轴和包围盒,用下面三行操作;**Expert**:原来的 gizmo、Move/Rotate/Scale、World/Local、网格吸附、Ctrl 拖动吸附 |
+| 点网格移动 | 选中零件后点空白网格 → 零件平移到那个点(高度不变);`↑`/`↓` 升降 0.5 mm(Shift 0.1 mm),`←`/`→` 偏航 1°(Shift 90°);右键点一下 / Esc / Shift+点空白取消选择 |
+| 点选装配 | 选中零件后点它的一个孔/销(圆片),再点另一个零件的孔/销 → 先飞到孔轴前、再沿轴插入(销插孔、孔套销、孔叠孔,端面贴平)。**每个孔上下各一个孔口圆片,点的两个孔口贴在一起**(想让板子正着落到下面的东西上,就点板子的下孔口);装上后零件锁在孔上(拖拽 / 点网格不动它,再点一下零件解锁),方向键相对孔轴:`↑`/`↓` 沿轴拔出/推入 0.25 mm(Shift 0.05 mm),`←`/`→` 绕轴转 1°(Shift 90°);Expert 模式下枢轴同时落到孔上;销对销 / 销比孔粗会拒绝并提示 |
 | 装配吸附 | **按住 Ctrl 生效**(默认自由移动):面-面贴平后沿面滑动;轴-轴(销入孔/孔对孔)对中后沿轴滑动,拖远脱开;直接拖拽与 gizmo 平移/旋转统一 |
 | 零件库 | aristos 无人机机架 10 个真实零件(碳板/机臂/螺丝/螺柱等),孔位与销轴已自动标注并参与吸附 |
 | 零件桌(Kit) | 从 ARISTOS task_graphs.db 生成的 82 件零件按类型成排摆在桌面上(板状件自动放平),每件带任务图实例 UUID |
@@ -40,7 +48,8 @@ python3 serve.py        # 然后打开 http://localhost:8123
 | 受训者模式 | `?trainee=1`(嵌入 ARISTOS 时默认):隐藏缩放/删除/复制/分组/材质编辑,只留装配 |
 | 答案演示 | 顶栏「Answer」:半透明虚影按装配顺序落位(27 步 / 53 件,步骤顺序、接近→落位轨迹、前置依赖全部由 `features_db.py answer` 从 task_graphs.db 生成);Checks 的装配顺序规则用同一份前置依赖 |
 
-接入 ARISTOS 的说明见 [docs/ARISTOS_INTEGRATION.md](docs/ARISTOS_INTEGRATION.md);孔位数据规范见 [docs/FEATURE_SCHEMA.md](docs/FEATURE_SCHEMA.md)。
+接手 ARISTOS 那一侧开发的人从 [docs/ARISTOS_HANDOVER.md](docs/ARISTOS_HANDOVER.md) 开始(现状 / 要做什么 / 怎么跑 / 踩过的坑);
+接口参考见 [docs/ARISTOS_INTEGRATION.md](docs/ARISTOS_INTEGRATION.md);孔位数据规范见 [docs/FEATURE_SCHEMA.md](docs/FEATURE_SCHEMA.md)。
 
 ## 结构
 
@@ -49,6 +58,14 @@ index.html          页面结构(开发版入口)
 src/app.css         界面样式
 src/app.js          编辑器逻辑(场景/选择/变换/组合/撤销/导入导出)
 src/snap.js         装配吸附(面-面 / 轴-轴)+ 直接拖拽
+src/mate.js         点选装配(点孔 → 点孔/销,两下装上)
+src/tutorial.js     新手教程(三个零件走一遍)
+src/label.js        孔位标注工具(Expert;拟合鼠标下的孔,导出 part_features.json)
+tools/holes_from_answer.py  从参考装配反推缺失的孔(伙伴销轴 → 轴线,网格射线 → 孔径/深度)
+
+注:electric 电机模型(motor_2207.glb)由 4624 个独立壳体组成(绕组、卡簧等),
+不能整体做边塌缩简化 —— 会把各个壳体缝在一起、炸成碎片。要减面请按连通体
+逐个简化(trimesh split → fast_simplification,小于 200 面的壳体原样保留)。
 src/parts.js        零件库(GLB 加载、孔位标签可视化、吸附特征供给)
 src/answer.js       答案虚影动画(步骤时间轴)
 src/record.js       网页内录屏(MediaRecorder)

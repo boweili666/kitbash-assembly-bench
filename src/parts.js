@@ -80,7 +80,8 @@
       prims.push({ geometry: g, material: mat });
     });
     var defaultColor = prims.length ? '#' + prims[0].material.color.getHexString() : '#c8cfd6';
-    cache[spec.key] = { prims: prims, spec: spec, defaultColor: defaultColor };
+    cache[spec.key] = { prims: prims, spec: spec, defaultColor: defaultColor,
+      original: { holes: JSON.parse(JSON.stringify(spec.holes)), pegs: JSON.parse(JSON.stringify(spec.pegs)) } }; // 标注工具 Reset 用
   }
 
   /* ---------- 实例化 / 序列化辅助(app.js 调用) ---------- */
@@ -195,6 +196,7 @@
     ready: function () { return ready; },
     unitScale: function () { return manifest ? manifest.unitScale : 24.77; },
     spec: function (key) { return cache[key] ? cache[key].spec : null; },
+    original: function (key) { return cache[key] ? cache[key].original : null; },
     prims: function (key) { return cache[key] ? cache[key].prims : null; },
     keys: function () { return manifest ? manifest.parts.map(function (p) { return p.key; }) : []; },
     /* 初始"零件摆在桌上"的布局(ScenePart[]),由 tools/scene_from_db.py --layout kit 从任务图库生成 */
@@ -318,6 +320,7 @@
           var c = new THREE.Vector3().fromArray(f.c);
           var d = new THREE.Vector3().fromArray(f.d).normalize();
           group.add(ringLine(c, d, Math.max(f.r * 1.6, 0.09), color));
+          if (KB.expert && !KB.expert()) return; // general 模式:只画圈,不写 H1/P1 字样
           var sp = makeTextSprite(f.id, color);
           sp.position.copy(c).addScaledVector(d, Math.max(f.depth * 0.9, 0.16));
           group.add(sp);

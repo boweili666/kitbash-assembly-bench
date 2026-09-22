@@ -6,8 +6,14 @@
   'use strict';
 
   var URLP = new URLSearchParams(location.search);
+  var BUILD = window.KB_BUILD || 'dev';
+  console.info('Kitbash build ' + BUILD + ' \u2014 KB.build() also tells you; hard-reload if this looks stale');
   // 受训者模式:只做装配,没有缩放 / 删除 / 复制 / 分组 / 材质编辑。嵌进 ARISTOS(bridge)时默认开,?tools=1 关
   var trainee = URLP.has('trainee') || (URLP.has('bridge') && !URLP.has('tools'));
+  /* 专家模式:gizmo 坐标轴、包围盒、Move/Rotate/Scale、Ctrl 吸附提示。
+   * 默认 general 模式:选中只亮孔位,点孔装配 / 点网格移动 / 方向键升降 */
+  var expert = URLP.has('expert') ? URLP.get('expert') !== '0'
+    : (function () { try { return localStorage.getItem('kitbash-expert') === '1'; } catch (e) { return false; } })();
 
   var STORAGE_KEY = 'kitbash-scene-v1';
   var SPAWN_COLORS = ['#c8cfd6', '#c05b4d', '#4a81a5', '#5b9279', '#c99846', '#7a6fa0', '#4e8e8a'];
@@ -72,7 +78,7 @@
   orbit.enableDamping = true;
   orbit.dampingFactor = 0.08;
   orbit.target.set(0, 1.4, 0);
-  orbit.maxPolarAngle = Math.PI * 0.495;
+  orbit.maxPolarAngle = Math.PI * 0.97; // 允许转到桌面以下看底面(留一点余量,避免正下方万向锁抖动)
   orbit.minDistance = 1.2;
   orbit.maxDistance = 60;
 
@@ -282,6 +288,7 @@
   }
 
   function autosave(json) {
+    if (URLP.has('practice')) return;
     try { localStorage.setItem(STORAGE_KEY, json); } catch (e) { /* 忽略 */ }
   }
 
@@ -308,6 +315,7 @@
   function rebuildAttachment() {
     bakePivot();
     gizmo.detach();
+    if (!expert) { refreshHelpers(); return; } // general 模式:没有 gizmo,不建枢轴
     if (selection.length === 1) {
       var n0 = selection[0];
       // 零件吸在孔上时,把变换枢轴放到孔位:gizmo 显示在洞上,旋转即绕洞转。
@@ -315,8 +323,10 @@
       var busy = window.KBSnap && KBSnap.isMouseDragging && KBSnap.isMouseDragging();
       // 仅在按住 Ctrl(吸附模式)且与其他零件孔轴同轴时,枢轴才跳到孔位
       // 并沿孔轴取向(局部空间:Y箭头=插拔,Y环=绕孔转);平时留在零件原点
+      // 点选装配(mate.js)刚装上的零件:枢轴直接落在那个孔上,不需要按 Ctrl
       var spec = null;
-      if (!busy && window.KBSnap && KBSnap.snapKeyActive && KBSnap.snapKeyActive()) {
+      if (!busy && window.KBMate) spec = KBMate.hingeFor(n0);
+      if (!spec && !busy && window.KBSnap && KBSnap.snapKeyActive && KBSnap.snapKeyActive()) {
         spec = KBSnap.hingeFor(n0);
       }
       if (spec) {
@@ -357,7 +367,7 @@
       h.geometry.dispose();
       h.material.dispose();
     });
-    helpers = selection.map(function (n) {
+    helpers = expert ? selection.map(function (n) {
       var h = new THREE.BoxHelper(n, 0xe8a33d);
       h.userData.kbOverlay = true;
       h.material.transparent = true;
@@ -365,7 +375,18 @@
       h.material.depthTest = false;
       scene.add(h);
       return h;
-    });
+    }) : [];
+  }
+
+  function setExpert(on) {
+    expert = !!on;
+    document.body.classList.toggle('general', !expert);
+    var btn = document.getElementById('btnExpert');
+    btn.classList.toggle('on', expert);
+    btn.querySelector('.lbl').textContent = expert ? 'Expert' : 'General';
+    try { localStorage.setItem('kitbash-expert', expert ? '1' : '0'); } catch (e) { /* 忽略 */ }
+    rebuildAttachment();
+    selectionHooks.forEach(function (fn) { fn(selection); }); // 孔位标签按模式重画
   }
 
   var selectionHooks = [];
@@ -413,6 +434,7 @@
     if (!downPos || downOnGizmo) { downPos = null; return; }
     var dx = e.clientX - downPos[0], dy = e.clientY - downPos[1];
     downPos = null;
+    if (Math.hypot(dx, dy) <= 5 && e.button === 2) { setSelection([]); return; } // 右键点一下:取消选择
     if (Math.hypot(dx, dy) > 5 || e.button !== 0) {
       rebuildAttachment(); // 视角拖动等操作会临时收回枢轴,这里恢复 gizmo
       return;
@@ -423,12 +445,88 @@
     raycaster.setFromCamera(pointer, camera);
     bakePivot(); // 保证物体都在 objectsRoot 树内
     var hits = raycaster.intersectObjects(objectsRoot.children, true);
-    if (!hits.length) { setSelection([]); return; }
+    if (!hits.length) {
+      // 点空白网格:有选中就把它平移到那个点(高度不变);没选中 / Shift 才是取消选择
+      var g = selection.length && !e.shiftKey ? raycaster.ray.intersectPlane(groundPlane, new THREE.Vector3()) : null;
+      if (g) moveSelectionTo(g); else setSelection([]);
+      return;
+    }
     var node = hits[0].object;
     while (node.parent && node.parent !== objectsRoot) node = node.parent;
+    if (window.KBMate) KBMate.release(node); // 锁在孔上的零件:再点一下解锁
     if (e.shiftKey) toggleSelect(node);
     else setSelection([node]);
   });
+
+  /* ---------- 点网格移动 / 方向键升降 ---------- */
+  // 编辑器单位 ↔ 毫米(1 单位 ≈ 40 mm):方向键的步长按毫米给
+  function unitsPerMm() { return (window.KBParts ? KBParts.unitScale() : 24.77) / 1000; }
+  var groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  function nudgeSelection(delta, animated) {
+    if (!selection.length) return;
+    bakePivot();
+    var nodes = selection.slice();
+    nodes.forEach(function (n) { finishTween(n); emit('grab', n); });
+    var pending = nodes.length;
+    function done() {
+      if (--pending) return;
+      nodes.forEach(function (n) { emit('place', n); });
+      pushSnapshot();
+      syncInspectorFromSelection();
+    }
+    nodes.forEach(function (n) {
+      var p = n.position.clone().add(delta);
+      if (p.y < 0) p.y = 0;
+      if (animated) {
+        // 纯升降(只有 Y)不要抛物线抬升,否则一次 ↑ 会多走一点
+        var arc = Math.abs(delta.x) + Math.abs(delta.z) > 1e-6 ? Math.min(0.5, delta.length() * 0.12) : 0;
+        tween(n, p, n.quaternion, { duration: 0.42, arc: arc, onDone: done });
+      } else {
+        n.position.copy(p);
+        n.updateMatrixWorld(true);
+        emit('move', n);
+        done();
+      }
+    });
+  }
+  // 绕竖直轴(过各自包围盒中心)转 deg 度:偏航
+  function yawSelection(deg) {
+    if (!selection.length) return;
+    bakePivot();
+    var q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(deg));
+    selection.forEach(function (n) {
+      finishTween(n);
+      emit('grab', n);
+      var c = new THREE.Box3().expandByObject(n).getCenter(new THREE.Vector3());
+      var p = n.getWorldPosition(new THREE.Vector3()).sub(c).applyQuaternion(q).add(c);
+      var wq = n.getWorldQuaternion(new THREE.Quaternion()).premultiply(q);
+      if (n.parent && n.parent !== objectsRoot) {
+        n.parent.updateMatrixWorld(true);
+        p = n.parent.worldToLocal(p);
+        wq.premultiply(n.parent.getWorldQuaternion(new THREE.Quaternion()).invert());
+      }
+      n.position.copy(p);
+      n.quaternion.copy(wq);
+      n.updateMatrixWorld(true);
+      emit('place', n);
+    });
+    pushSnapshot();
+    syncInspectorFromSelection();
+  }
+  // 选中物体的包围盒中心(XZ)移到 target,Y 保持
+  function moveSelectionTo(target) {
+    bakePivot();
+    if (window.KBMate && selection.some(KBMate.locked)) {
+      toast('Locked on the hole \u2014 use the arrow keys, or click the part to release it');
+      return;
+    }
+    var box = new THREE.Box3();
+    selection.forEach(function (n) { box.expandByObject(n); });
+    var c = box.getCenter(new THREE.Vector3());
+    var d = new THREE.Vector3(target.x - c.x, 0, target.z - c.z);
+    if (snapOn) { d.x = Math.round(d.x / 0.25) * 0.25; d.z = Math.round(d.z / 0.25) * 0.25; }
+    nudgeSelection(d, true);
+  }
 
   canvas.addEventListener('dblclick', function () {
     if (selection.length) focusOn(selection);
@@ -1054,6 +1152,11 @@
   document.getElementById('mode-rotate').addEventListener('click', function () { setMode('rotate'); });
   document.getElementById('mode-scale').addEventListener('click', function () { setMode('scale'); });
   document.getElementById('btnSpace').addEventListener('click', toggleSpace);
+  document.getElementById('btnExpert').addEventListener('click', function () {
+    setExpert(!expert);
+    toast(expert ? 'Expert mode: gizmo, bounding boxes, W/E/R, Ctrl-drag snap'
+                 : 'General mode: click a hole to mate, click the grid to move, \u2191\u2193 to raise / lower');
+  });
   document.getElementById('btnSnap').addEventListener('click', function () { setSnap(!snapOn); });
   document.getElementById('btnUndo').addEventListener('click', undo);
   document.getElementById('btnRedo').addEventListener('click', redo);
@@ -1097,12 +1200,25 @@
     if (ctrl && e.code === 'KeyG') { e.preventDefault(); groupSelection(); return; }
     if (ctrl) return;
     switch (e.code) {
-      case 'KeyW': setMode('translate'); break;
-      case 'KeyE': setMode('rotate'); break;
-      case 'KeyR': if (!trainee) setMode('scale'); break;
-      case 'KeyQ': toggleSpace(); break;
-      case 'KeyV': setSnap(!snapOn); break;
+      case 'KeyW': if (expert) setMode('translate'); break;
+      case 'KeyE': if (expert) setMode('rotate'); break;
+      case 'KeyR': if (expert && !trainee) setMode('scale'); break;
+      case 'KeyQ': if (expert) toggleSpace(); break;
+      case 'KeyV': if (expert) setSnap(!snapOn); break;
       case 'KeyF': focusOn(selection); break;
+      case 'ArrowUp':
+      case 'ArrowDown':
+        if (!selection.length) break;
+        e.preventDefault();
+        nudgeSelection(new THREE.Vector3(0, (e.shiftKey ? 0.1 : 0.5) * unitsPerMm() * (e.code === 'ArrowUp' ? 1 : -1), 0));
+        break;
+      case 'ArrowLeft':
+      case 'ArrowRight':
+        // 锁在孔上的零件由 mate.js 先截走(绕孔轴);这里是自由零件的偏航
+        if (!selection.length) break;
+        e.preventDefault();
+        yawSelection((e.shiftKey ? 90 : 1) * (e.code === 'ArrowLeft' ? 1 : -1));
+        break;
       case 'Escape':
         if (modalEl.classList.contains('show')) modalEl.classList.remove('show');
         else setSelection([]);
@@ -1119,17 +1235,80 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
+  /* ---------- 零件位姿补间:装配 / 点网格移动时飞过去而不是瞬移 ----------
+   * tween(node, pos, quat, {duration, arc, onDone}):目标为父空间位姿;arc 为飞行中的抬升高度 */
+  var tweens = [];
+  function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function tween(node, pos, quat, opts) {
+    opts = opts || {};
+    finishTween(node);
+    if (reducedMotion || opts.duration === 0) {
+      node.position.copy(pos);
+      node.quaternion.copy(quat);
+      node.updateMatrixWorld(true);
+      if (opts.onDone) opts.onDone();
+      return;
+    }
+    tweens.push({
+      node: node, t: 0, duration: opts.duration || 0.45, arc: opts.arc || 0,
+      p0: node.position.clone(), q0: node.quaternion.clone(), p1: pos.clone(), q1: quat.clone(),
+      onDone: opts.onDone
+    });
+  }
+  function finishTween(node) {
+    for (var i = tweens.length - 1; i >= 0; i--) {
+      if (node && tweens[i].node !== node) continue;
+      var tw = tweens.splice(i, 1)[0];
+      tw.node.position.copy(tw.p1);
+      tw.node.quaternion.copy(tw.q1);
+      tw.node.updateMatrixWorld(true);
+      if (tw.onDone) tw.onDone(true); // true = 被打断,直接落到终点
+    }
+  }
+  function stepTweens(dt) {
+    for (var i = tweens.length - 1; i >= 0; i--) {
+      var tw = tweens[i];
+      tw.t = Math.min(1, tw.t + dt / tw.duration);
+      var k = easeInOut(tw.t);
+      tw.node.position.lerpVectors(tw.p0, tw.p1, k);
+      tw.node.position.y += tw.arc * Math.sin(Math.PI * k);
+      tw.node.quaternion.slerpQuaternions(tw.q0, tw.q1, k);
+      tw.node.updateMatrixWorld(true);
+      if (tw.t >= 1) {
+        tweens.splice(i, 1);
+        tw.node.position.copy(tw.p1);
+        tw.node.updateMatrixWorld(true);
+        if (tw.onDone) tw.onDone();
+      }
+    }
+  }
+  function isTweening(node) {
+    return tweens.some(function (tw) { return tw.node === node; });
+  }
+  /* 相机飞到 pos / 看向 target(缓动) */
+  function flyCamera(pos, target) {
+    if (reducedMotion) {
+      camera.position.fromArray(pos); orbit.target.fromArray(target); return;
+    }
+    focusAnim = {
+      t: 0, slow: true,
+      fromT: orbit.target.clone(), toT: new THREE.Vector3().fromArray(target),
+      fromP: camera.position.clone(), toP: new THREE.Vector3().fromArray(pos)
+    };
+  }
+
   var clock = new THREE.Clock();
   function animate() {
     requestAnimationFrame(animate);
     var dt = clock.getDelta();
     if (focusAnim) {
-      focusAnim.t = Math.min(1, focusAnim.t + dt / 0.32);
+      focusAnim.t = Math.min(1, focusAnim.t + dt / (focusAnim.slow ? 0.9 : 0.32));
       var k = 1 - Math.pow(1 - focusAnim.t, 3);
       orbit.target.lerpVectors(focusAnim.fromT, focusAnim.toT, k);
       camera.position.lerpVectors(focusAnim.fromP, focusAnim.toP, k);
       if (focusAnim.t >= 1) focusAnim = null;
     }
+    stepTweens(dt);
     orbit.update();
     helpers.forEach(function (h) { h.update(); });
     renderer.render(scene, camera);
@@ -1143,7 +1322,13 @@
     gizmo: gizmo,
     objectsRoot: objectsRoot,
     setSelection: setSelection,
+    bakePivot: bakePivot,
     pushSnapshot: pushSnapshot,
+    resetHistory: function () {
+      undoStack = [JSON.stringify(serializeScene())];
+      redoStack = [];
+      updateToolStates();
+    },
     saveFile: saveFile,
     /* 立即渲染一帧并缩放到 maxW 宽,返回 {canvas, blobPromise(JPEG)} —— 供 agent 推流 */
     captureFrame: function (maxW, quality, keepOverlays) {
@@ -1182,6 +1367,14 @@
     serializeScene: serializeScene,
     newId: newId,
     trainee: function () { return trainee; },
+    build: function () { return BUILD; },
+    tween: tween,
+    finishTween: finishTween,
+    isTweening: isTweening,
+    flyCamera: flyCamera,
+    reducedMotion: reducedMotion,
+    expert: function () { return expert; },
+    setExpert: setExpert,
     fuse: fuse,
     unfuse: unfuse,
     highlight: highlight,
@@ -1217,7 +1410,7 @@
   /* ---------- 启动 ---------- */
   var restored = false;
   try {
-    var saved = localStorage.getItem(STORAGE_KEY);
+    var saved = URLP.has('practice') ? null : localStorage.getItem(STORAGE_KEY);
     if (saved) {
       var data = JSON.parse(saved);
       if (data && data.objects && data.objects.length) {
@@ -1230,6 +1423,7 @@
   undoStack.push(JSON.stringify(serializeScene()));
   setMode('translate');
   setSnap(false);
+  setExpert(expert);
   updateToolStates();
   syncInspectorFromSelection();
   refreshTree();
