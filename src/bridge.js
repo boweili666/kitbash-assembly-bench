@@ -43,12 +43,16 @@
 
   var PROTOCOL = 1;
 
+  var tutorialSession = false;
   var origin = '*';            // 首条宿主消息到达后记住其 origin
   var pendingInit = null;
   var options = { frames: true, fps: 10, width: 960, quality: 0.72, moveHz: 30 };
   var frameTimer = 0, lastMove = 0;
 
-  function post(msg) { try { host.postMessage(msg, origin); } catch (e) { /* 宿主已关闭 */ } }
+  function post(msg) {
+    // Practice must never become training frames, actions, or scored progress.
+    if (tutorialSession && /^kb:(frame|grab|move|place|state|snapAttempt|collision)$/.test(msg.type)) return;
+    try { host.postMessage(msg, origin); } catch (e) { /* 宿主已关闭 */ } }
   function warn(message) { post({ type: 'kb:warn', message: message }); }
 
   /* ---------- 位姿换算与模型识别:统一在 parts.js(与 Kit 布局、答案数据同源) ---------- */
@@ -78,6 +82,7 @@
     KB.loadSceneData({ v: 1, objects: objects }, true);
     KB.setSelection([]);
     KB.pushSnapshot();
+    KB.resetHistory();
     if (skipped.length) warn('Skipped parts with no known model: ' + skipped.join(', '));
   }
 
@@ -145,8 +150,20 @@
   }
 
   /* ---------- 宿主消息 ---------- */
+  KB.on('tutorialEnd', function (result) {
+    if (tutorialSession) post({ type: 'kb:tutorialEnd', reason: result.reason });
+    // Keep practice isolated until the host mounts the actual task scene.
+  });
+
   function applyInit(msg) {
     if (msg.options) Object.keys(msg.options).forEach(function (k) { options[k] = msg.options[k]; });
+    tutorialSession = !!options.tutorial;
+    if (tutorialSession) {
+      stopFrames();
+      if (window.KBTutorial) KBTutorial.start({ onboarding: true });
+      else warn('This simulator build does not include the tutorial.');
+      return;
+    }
     if (msg.scene) setScene(msg.scene);
     startFrames();
     var st = stateMsg();
