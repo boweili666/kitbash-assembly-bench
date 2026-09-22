@@ -1,5 +1,9 @@
 # Integrating the assembly simulator into ARISTOS
 
+**Building the ARISTOS side? Start with
+[`ARISTOS_HANDOVER.md`](ARISTOS_HANDOVER.md)** — what exists, what to build,
+how to run it, and the traps. This document is the interface reference.
+
 **Status: on branch `bowei/simulator` of `aristos_frontend` (from gin-dev
 `72cc057`, two commits). The trainee view can switch to the simulator; its
 frames reach the backend on the existing channel. The grab / move / place
@@ -138,7 +142,7 @@ session page still requires an account, as on gin-dev.
 | `onPlaceObject(id, pose)` | no-op | a new event, e.g. `session-sim-action {action:'place', objectId, pose}`; compare `pose` with the step's `Step3DPaths` target → deterministic "right part, right hole, right orientation" without VQA |
 | `onGrabObject(id, pose)` | no-op | same event, `action:'grab'`; lets the tutor react to "you picked up the wrong screw" before it is placed |
 | `onMoveObject(id, pose)` | no-op | usually not sent; useful for dwell-time / hesitation analytics |
-| `onSnapAttempt(obj1, obj2, snapPoint1, snapPoint2, success, reason)` | no-op | the trainee lined a feature of the moved part up with one of another part (Ctrl-drag); `success=false` means geometrically impossible (peg on peg, peg wider than the hole) and the snap was refused; the ids are `PartTypeFeatures.name` ('H3', 'P1') or a bounding-box face ('F+y'). Which hole the manual wants is `onStateChange`'s business |
+| `onSnapAttempt(obj1, obj2, snapPoint1, snapPoint2, success, reason)` | no-op | the trainee lined a feature of the moved part up with one of another part (Ctrl-drag, or the two-click hole→hole/peg mate); `success=false` means geometrically impossible (peg on peg, peg wider than the hole) and the snap was refused; the ids are `PartTypeFeatures.name` ('H3', 'P1') or a bounding-box face ('F+y'). Which hole the manual wants is `onStateChange`'s business |
 | `onCollision(obj1, obj2, info)` | no-op | the moved part is pushed into another: solids interpenetrating by more than 1 mm (`info.kind='mesh'`, `depthMm`), or a peg lined up with a hole it cannot enter (`'feature'`, `snapPoint1/2`). Correctly assembled pairs never collide; nothing is blocked, ARISTOS decides whether to say something |
 | `onStateChange(state, lastPlace)` | no-op | `state.steps` → task-graph node states (replaces the hand-curated linear sequence); `state.next` → what the tutor proposes; `lastPlace.fitsStep && ok` → confirm the step and `ref.fuse(mate, part)`; an *Out of order … started* issue → the trainee has begun seating a part where it does not belong yet → intervene; a `grab` of a part no `available` step uses → note, say nothing |
 
@@ -169,7 +173,7 @@ python3 build.py                                                                
 ```
 
 Part features (holes, pegs, symmetries) are **contributor data** in
-`task_graphs.db` — see `FEATURE_SCHEMA.md`. The simulator cannot snap parts
+`task_graphs.db` — see `FEATURE_SCHEMA.md`. Holes the contributor file misses (slots, polygonal cut-outs) can be added in the simulator itself: Expert mode → Properties → Features → Label, then Export gives a contributor file to import. The simulator cannot snap parts
 whose type has no features.
 
 Everything the simulator shows about the *reference* build — the Answer
@@ -198,3 +202,29 @@ Playwright, real GPU, against the gin-dev toolchain (React 19, Vite 8):
    `aristos_frontend/public`?
 4. GitLab destination for this code: a branch of `aristos_frontend`, or a new
    repository as a submodule?
+
+
+## Simulator entry: practice before assembly
+
+The ARISTOS `SimulatorTraineeView` now asks **First time using the simulator?**
+when mounted. **First time — show me how** starts the existing practice course;
+**I know how — start assembly** loads the supplied `initialScene` immediately.
+The choice is per mount, not a persisted user preference. Expanding/docking the
+same mounted stage does not ask again or reset progress.
+
+The frontend wrapper sends `kb:init` with `options.tutorial: true` for practice
+and uses `?practice=1` to disable restoring/saving the practice scene in local
+storage. In this mode the bridge suppresses training frames, action events and
+assembly-state callbacks. The tutorial emits `kb:tutorialEnd` with
+`reason: 'completed' | 'skipped'` when finished or closed. The host also provides
+an always-visible **Skip tutorial → Start assembly** button.
+
+All three exits remount the simulator in assembly mode with the task's original
+`initialScene`, preserving task part UUIDs. Host scene loads reset undo history,
+so Undo cannot return to a previous/practice scene. Only assembly mode forwards
+frames and training callbacks. The iframe stays mounted through stage resizing;
+the intentional tutorial-to-assembly remount is the session boundary.
+
+Deploy the React entry components and the rebuilt `public/simulator/kitbash-standalone.html`
+together. A `VITE_SIMULATOR_URL` override must point at a build supporting the
+same tutorial init option and completion event.
