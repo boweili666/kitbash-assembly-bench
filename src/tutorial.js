@@ -24,6 +24,7 @@
   var stageEl = el.querySelector('.tt-stage');
   var inputsEl = el.querySelector('.tt-inputs');
   var actionsEl = el.querySelector('.tt-actions');
+  var choiceEl = document.getElementById('ttChoice');
   var statusEl = el.querySelector('.tt-status');
   var advanceTimer = 0;
   var introTimers = [];
@@ -41,12 +42,90 @@
   function o(key, name, p, r) {
     return { id: KB.newId(), name: name, type: 'part:' + key, p: p, r: r || [0, 0, 0], s: [1, 1, 1] };
   }
-  var VIEW = { p: [2.6, 3.8, 5.4], t: [-0.3, 0.3, 0.5] };
+  // 教程一律在装配区里上课(KBWorkspace.bounds 的中心在 z = 11),镜头也跟着挪过去
+  var ORBIT_DRAGS = 3;   // 要分开拖三次视角
+  var PAN_DRAGS = 2;     // 右键平移练两次
+  var ZOOMS = 2;         // 滚轮缩放练两次
+  var AREA_HOPS = 3;     // 两个区之间来回跳三次
+  var VIEW = { p: [3.9, 4.8, 17.6], t: [1.0, 0.3, 11.8] };
   var courses = [
     {
-      name: 'Turn on a hole', names: { arm: 'Arm', plate: 'Front Plate' },
+      name: 'Find your way', names: { plate: 'Front Plate', arm: 'Arm' },
+      view: { p: [0, 6.2, 13.5], t: [0, 0.3, 10.5] },
       scene: function () {
-        return [o('split_front_plate', 'Front Plate', [0.4, 0, -0.6]), o('arm_5in', 'Arm', [-0.6, 0, 2.2], [0, Math.PI / 2, 0])];
+        // 两件零件摆在装配区里,转视角时有东西可看
+        return [o('split_front_plate', 'Front Plate', [-0.6, 0, 10.6]), o('arm_5in', 'Arm', [1.1, 0, 10.9], [0, Math.PI / 2, 0])];
+      },
+      steps: [
+        { tag: 'orbit', light: function () { return []; },
+          done: function () { return (flags.orbitDrags || 0) >= ORBIT_DRAGS; },
+          lesson: { title: 'Look at it from another side', hint: 'Drag on empty space with the LEFT mouse button to swing the view around. Do it a few times, from different sides: which disc of a hole you can click depends on where you are looking from.',
+            demo: 'move', label: 'Drag empty space to orbit', target: 'View',
+            actions: ['Press and hold on empty space, drag until the parts turn',
+                      'Let go and do it again \u2014 ' + ORBIT_DRAGS + ' separate drags'] } },
+        { tag: 'pan', light: function () { return []; },
+          done: function () { return (flags.panDrags || 0) >= PAN_DRAGS; },
+          status: function () {
+            if ((flags.panDrags || 0) >= PAN_DRAGS) return '';
+            return 'Panned ' + (flags.panDrags || 0) + ' of ' + PAN_DRAGS + ' times \u2014 hold the RIGHT mouse button and drag.';
+          },
+          lesson: { title: 'Slide the view sideways', hint: 'Hold the RIGHT mouse button and drag: the view slides without turning. That is how you bring a far corner of the tray, or the other side of the workspace, into the middle of the screen.',
+            demo: 'move', label: 'Right-drag to pan', target: 'View',
+            actions: ['Hold the right mouse button and drag the view sideways',
+                      'Do it ' + PAN_DRAGS + ' times \u2014 put something else in the middle'] } },
+        { tag: 'zoom', light: function () { return []; },
+          done: function () { return (flags.zooms || 0) >= ZOOMS; },
+          status: function () {
+            if ((flags.zooms || 0) >= ZOOMS) return '';
+            return 'Zoomed ' + (flags.zooms || 0) + ' of ' + ZOOMS + ' times \u2014 roll the mouse wheel.';
+          },
+          lesson: { title: 'Get closer, then back out', hint: 'Roll the mouse wheel to zoom. Close up you can tell two holes apart and click the right disc; zoomed out you can see the whole frame at once.',
+            demo: 'adjust', label: 'Wheel to zoom', target: 'View',
+            actions: ['Roll the wheel forward to come closer',
+                      'Roll it back to pull out \u2014 ' + ZOOMS + ' zooms in all'] } },
+        { tag: 'areas', light: function () { return []; },
+          done: function () { return (flags.areaCount || 0) >= AREA_HOPS; },
+          lesson: { title: 'Two areas: tray and workspace', hint: 'Parts wait in the tray, sorted by kind; screws are split by length. You assemble in the workspace in front of it. The toolbar button jumps between them \u2014 or press B. Hop back and forth a few times so you know where each one is.',
+            demo: 'adjust', label: 'Press B, or click Parts tray', target: 'View',
+            actions: ['Press B (or click the button in the toolbar)',
+                      'Hop between the two areas ' + AREA_HOPS + ' times'] } }
+      ]
+    },
+    {
+      name: 'Insert a screw', names: { wedge: 'Wedge', screw: 'Screw' },
+      preview: { source: { name: 'Screw', id: 'P1', end: 0 }, target: { name: 'Wedge', id: 'H1', end: 1 } },
+      view: { p: [1.7, 1.9, 13.8], t: [0.6, 0.1, 11.3] }, // 小零件,镜头凑近
+      scene: function () {
+        return [o('aluminum_arm_wedge_5mm', 'Wedge', [0, 0, 11]), o('screw_m3x16_socket_cap', 'Screw', [1.4, 0, 11.9])]; // 楔块平放,孔是横着的:螺丝横着插进去
+      },
+      steps: [
+        { tag: 'armScrew', light: function () { return [parts.screw]; },
+          expect: function () { return { source: [{ node: parts.screw, id: 'P1', end: 0 }], target: [] }; },
+          done: function () { var a = KBMate.armed(); return !!a && a.node === parts.screw && a.id === 'P1'; },
+          lesson: { title: 'New parts: a screw and a wedge', hint: 'Click the screw to select it, then click the glowing disc on its shaft. Green means ready to connect.',
+            demo: 'arm', label: 'Click the shaft disc', target: 'Screw', actions: ['Click the glowing screw', 'Click the glowing disc on its shaft'] } },
+        { tag: 'mateScrew', light: function () { return [parts.wedge]; },
+          expect: function () { return { source: [{ node: parts.screw, id: 'P1', end: 0 }], target: [{ node: parts.wedge, id: 'H1' }] }; },
+          done: function () { return flags.mate && flags.mate[0] === parts.screw && flags.mate[1] === parts.wedge; },
+          lesson: { title: 'Feed it through the wedge', hint: 'Click the glowing disc on the wedge\u2019s hole. The screw flies over, lines up with the hole and slides in sideways.',
+            demo: 'insert', label: 'Click the wedge hole', target: 'Wedge hole', actions: ['Keep the shaft disc armed (green)', 'Click the glowing disc on the wedge'] } },
+        { tag: 'slide', light: function () { return [parts.screw]; },
+          done: function () { return slidMm() >= SLIDE_GOAL_MM; },
+          status: function () {
+            if (!flags.slideBase || slidMm() >= SLIDE_GOAL_MM) return '';
+            if (!(window.KBMate && KBMate.hingeFor(parts.screw))) return 'Click the screw once to take hold of it again, then press \u2191 or \u2193.';
+            return 'Slid ' + slidMm().toFixed(2) + ' mm of ' + SLIDE_GOAL_MM + ' mm \u2014 keep pressing \u2191 or \u2193.';
+          },
+          lesson: { title: 'Push and pull', hint: 'The screw is locked in that hole. \u2191 / \u2193 slide it along the hole (Shift = fine steps).',
+            demo: 'adjust', label: 'Slide \u2191 \u2193', target: 'Screw', actions: ['Press \u2191 or \u2193', 'Watch the screw move along the hole'] } }
+      ]
+    },
+    {
+      name: 'Turn on a hole', names: { arm: 'Arm', plate: 'Front Plate' },
+      preview: { source: { name: 'Arm', id: 'H1', end: -1 }, target: { name: 'Front Plate', id: 'H6', end: 1 } },
+      scene: function () {
+        // 教程卡片占着画面左边,零件整体靠右摆,免得藏在卡片后面
+        return [o('split_front_plate', 'Front Plate', [1.8, 0, 10.4]), o('arm_5in', 'Arm', [0.8, 0, 13.2], [0, Math.PI / 2, 0])];
       },
       steps: [
         { tag: 'select', light: function () { return [parts.arm]; },
@@ -63,37 +142,21 @@
           lesson: { title: 'Set the arm on the plate', hint: 'The two glowing discs will touch: the LOWER disc of the arm hole and the TOP disc of the plate hole. Tilt the view a little to reach the lower one.',
             demo: 'mate', label: 'Click source \u2192 click target', target: 'Plate hole', actions: ['Click the glowing LOWER disc of the arm hole', 'Click the glowing disc on the plate'] } },
         { tag: 'turn', light: function () { return [parts.arm]; },
-          done: function () { return Math.abs(flags.turned || 0) >= 10; },
+          done: function () { return turnedDeg() >= TURN_GOAL; },
+          status: function () {
+            if (!flags.turnBase) return '';
+            if (turnedDeg() >= TURN_GOAL) return '';
+            var held = window.KBMate && KBMate.hingeFor(parts.arm);
+            if (!held) return 'Click the arm once to take hold of it again, then press \u2190 or \u2192.';
+            return 'Turned ' + Math.round(turnedDeg()) + '\u00b0 of ' + TURN_GOAL + '\u00b0 \u2014 hold \u2190 or \u2192 (Shift = 90\u00b0).';
+          },
           lesson: { title: 'Turn it on the hole', hint: 'The arm is locked on that hole. \u2190 / \u2192 turn it around the hole, 1\u00b0 a press (Shift = 90\u00b0). Turn it at least 10\u00b0.',
             demo: 'adjust', label: 'Turn \u2190 \u2192', target: 'Arm', actions: ['Hold \u2190 or \u2192 (1\u00b0 a press, Shift = 90\u00b0)', 'Watch the arm swing around the hole'] } }
-      ]
-    },
-    {
-      name: 'Insert a screw', names: { wedge: 'Wedge', screw: 'Screw' },
-      view: { p: [1.7, 1.9, 2.8], t: [0.6, 0.1, 0.3] }, // 小零件,镜头凑近
-      scene: function () {
-        return [o('aluminum_arm_wedge_5mm', 'Wedge', [0, 0, 0]), o('screw_m3x16_socket_cap', 'Screw', [1.4, 0, 0.9])]; // 楔块平放,孔是横着的:螺丝横着插进去
-      },
-      steps: [
-        { tag: 'armScrew', light: function () { return [parts.screw]; },
-          expect: function () { return { source: [{ node: parts.screw, id: 'P1', end: 0 }], target: [] }; },
-          done: function () { var a = KBMate.armed(); return !!a && a.node === parts.screw && a.id === 'P1'; },
-          lesson: { title: 'New parts: a screw and a wedge', hint: 'Click the screw to select it, then click the glowing disc on its shaft. Green means ready to connect.',
-            demo: 'arm', label: 'Click the shaft disc', target: 'Screw', actions: ['Click the glowing screw', 'Click the glowing disc on its shaft'] } },
-        { tag: 'mateScrew', light: function () { return [parts.wedge]; },
-          expect: function () { return { source: [{ node: parts.screw, id: 'P1', end: 0 }], target: [{ node: parts.wedge, id: 'H1' }] }; },
-          done: function () { return flags.mate && flags.mate[0] === parts.screw && flags.mate[1] === parts.wedge; },
-          lesson: { title: 'Feed it through the wedge', hint: 'Click the glowing disc on the wedge\u2019s hole. The screw flies over, lines up with the hole and slides in sideways.',
-            demo: 'insert', label: 'Click the wedge hole', target: 'Wedge hole', actions: ['Keep the shaft disc armed (green)', 'Click the glowing disc on the wedge'] } },
-        { tag: 'slide', light: function () { return [parts.screw]; },
-          done: function () { return !!flags.slide; },
-          lesson: { title: 'Push and pull', hint: 'The screw is locked in that hole. \u2191 / \u2193 slide it along the hole (Shift = fine steps).',
-            demo: 'adjust', label: 'Slide \u2191 \u2193', target: 'Screw', actions: ['Press \u2191 or \u2193', 'Watch the screw move along the hole'] } }
       ]
     }
   ];
   var FINAL = { light: function () { return []; }, done: function () { return false; },
-    lesson: { title: 'You\u2019ve got the basics', hint: 'Select a part, click its hole, click the receiving hole. Arrow keys fine-tune on the hole. Use Kit to try the full assembly.',
+    lesson: { title: 'You\u2019ve got the basics', hint: 'Select a part, click its hole, click the receiving hole. Arrow keys fine-tune on the hole. New puts the whole kit on the bench.',
       demo: 'complete', label: 'Ready for the full assembly', target: '', actions: ['Click a part to select', 'Click hole \u2192 hole to assemble', 'Use arrow keys to adjust the fit'] } };
   // 展平:steps[i] 带 course 索引;换课时重建场景
   var steps = [], lessons = [];
@@ -128,21 +191,85 @@
   })();
 
   function renderDemo() {
+    stageEl.classList.remove('tt-story'); delete stageEl.dataset.chapter;
     var lesson = lessons[idx];
     var mode = lesson.demo;
     el.dataset.demo = mode;
-    var firstCourse = steps[idx].course === 0;
-    KBTutorialPreview.show(stageEl, {
-      tag: steps[idx].tag || 'complete', course: steps[idx].course,
-      label: lesson.label, objects: courses[steps[idx].course].scene(),
-      source: firstCourse ? { name: 'Arm', id: 'H1', end: -1 } : { name: 'Screw', id: 'P1', end: 0 },
-      target: firstCourse ? { name: 'Front Plate', id: 'H6', end: 1 } : { name: 'Wedge', id: 'H1', end: 1 }
-    });
-    KBTutorialPreview.pause(el.classList.contains('minimized'));
+    // Camera lessons demonstrate the actual mouse gesture in an isolated SVG.
+    var course = courses[steps[idx].course], demoBox = el.querySelector('.tt-demo');
+    if (at('areas')) {
+      KBTutorialPreview.stop();
+      if (demoBox) demoBox.hidden = false;
+      stageEl.innerHTML = '<div class="tt-area-demo"><svg viewBox="0 0 320 150" role="img" aria-label="Press B to switch the camera between the parts tray and assembly workspace">' +
+        '<rect x="18" y="18" width="122" height="82" rx="10" fill="#21364d" stroke="#729bc1"/>' +
+        '<rect x="180" y="18" width="122" height="82" rx="10" fill="#183e39" stroke="#78baa4"/>' +
+        '<text x="79" y="43" text-anchor="middle" fill="#b9d5f3" font-size="11">PARTS TRAY</text>' +
+        '<text x="241" y="43" text-anchor="middle" fill="#ade2c9" font-size="11">WORKSPACE</text>' +
+        '<path d="M36 57H122 M36 70H122 M36 83H122 M207 58H275 M207 70H275 M207 82H275 M219 52V90 M231 52V90 M243 52V90 M255 52V90 M267 52V90" stroke="#93bbce" stroke-opacity=".25" fill="none"/>' +
+        '<path d="M147 59H173 M151 55L147 59L151 63 M169 55L173 59L169 63" stroke="#c2d4e9" fill="none"/>' +
+        '<g class="tt-area-camera"><rect x="176" y="14" width="130" height="90" rx="12" fill="#9ce8c1" fill-opacity=".07" stroke="#efbf78" stroke-width="2"/>' +
+        '<rect x="230" y="77" width="17" height="12" rx="3" fill="#efbf78"/><path d="M248 81L255 78V89L248 86Z" fill="#efbf78"/></g>' +
+        '<g class="tt-area-key"><rect x="143" y="112" width="34" height="28" rx="6" fill="#263a51" stroke="#efbf78"/>' +
+        '<text x="160" y="131" text-anchor="middle" fill="#fff1d8" font-size="16" font-weight="600">B</text></g>' +
+        '<text x="130" y="130" text-anchor="end" fill="#bcd0e7" font-size="10">PRESS</text>' +
+        '<text x="188" y="130" fill="#bcd0e7" font-size="10">SWITCH VIEW</text></svg></div>';
+      inputsEl.innerHTML = '<div><strong>Press B to switch areas</strong><small>Or click Parts tray / Workspace in the toolbar. Only the view moves.</small></div>';
+      return;
+    }
+    var navigation = /^(orbit|pan|zoom)$/.test(steps[idx].tag);
+    if (navigation) {
+      KBTutorialPreview.stop();
+      if (demoBox) demoBox.hidden = false;
+      var gesture = steps[idx].tag;
+      var instruction = gesture === 'orbit' ? 'Hold LEFT · drag on empty space · release' :
+        gesture === 'pan' ? 'Hold RIGHT · drag sideways · release' : 'Roll forward to zoom in · roll back to zoom out';
+      stageEl.innerHTML = '<div class="tt-nav tt-nav-' + gesture + '"><svg viewBox="0 0 320 150" role="img" aria-label="' + instruction + '">' +
+        '<defs><pattern id="ttNavGrid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#91b9dd" stroke-opacity=".12"/></pattern></defs>' +
+        '<rect width="320" height="150" fill="url(#ttNavGrid)"/>' +
+        '<path d="M70 92 Q160 18 250 92" fill="none" stroke="#7dbbff" stroke-opacity=".5" stroke-dasharray="4 6" class="tt-nav-arc"/>' +
+        '<path d="M65 80H255 M72 74L65 80L72 86 M248 74L255 80L248 86" fill="none" stroke="#7dbbff" stroke-opacity=".5" class="tt-nav-line"/>' +
+        '<g class="tt-nav-hand"><rect x="137" y="40" width="46" height="68" rx="22" fill="#17293f" stroke="#bdd9f7" stroke-width="2"/>' +
+        '<path class="tt-nav-left" d="M159 42C146 42 139 51 139 62V69H159Z" fill="#7dbbff"/>' +
+        '<path class="tt-nav-right" d="M161 42C174 42 181 51 181 62V69H161Z" fill="#7dbbff"/>' +
+        '<path d="M160 41V70 M138 70H182" stroke="#bdd9f7" fill="none"/>' +
+        '<rect x="157" y="50" width="6" height="14" rx="3" fill="#e9f4ff" class="tt-nav-wheel"/>' +
+        '<path class="tt-nav-wheel-arrows" d="M190 62V42 M186 46L190 42L194 46 M198 51V71 M194 67L198 71L202 67" stroke="#e9bd76" fill="none"/>' +
+        '</g><text x="160" y="138" text-anchor="middle" fill="#bcd0e7" font-size="11">' +
+        (gesture === 'zoom' ? 'SCROLL FORWARD  /  BACK' : gesture === 'pan' ? 'RIGHT BUTTON  +  DRAG' : 'LEFT BUTTON  +  DRAG') + '</text></svg></div>';
+      inputsEl.innerHTML = '<div><strong>' + lesson.label + '</strong><small>' + instruction + '</small></div>';
+      return;
+    }
+    if (course.preview) {
+      if (demoBox) demoBox.hidden = false;
+      KBTutorialPreview.show(stageEl, {
+        tag: steps[idx].tag || 'complete', course: steps[idx].course,
+        label: lesson.label, objects: course.scene(),
+        source: course.preview.source, target: course.preview.target
+      });
+      KBTutorialPreview.pause(el.classList.contains('minimized'));
+    } else {
+      KBTutorialPreview.stop();
+      stageEl.innerHTML = '';
+      if (demoBox) demoBox.hidden = true;
+    }
     inputsEl.innerHTML = mode === 'adjust' ?
       '<div class="tt-keyboard ' + (at('turn') ? 'tt-turn-keys' : 'tt-slide-keys') + '" aria-hidden="true"><kbd class="tt-key-up">↑</kbd><div><kbd class="tt-key-left">←</kbd><kbd class="tt-key-down">↓</kbd><kbd class="tt-key-right">→</kbd></div></div><div><strong>' + lesson.label + '</strong><small>' + (at('turn') ? 'Turn the arm around its hole' : 'Slide the screw along its axis') + '</small></div>' :
       mode === 'complete' ? '<span class="tt-finish-icon">✓</span><div><strong>' + lesson.label + '</strong><small>Esc · deselect &nbsp; Ctrl / ⌘ Z · undo</small></div>' :
       '<div class="tt-mouse" aria-hidden="true"><i></i><b></b></div><div><strong>' + lesson.label + '</strong><small>Left mouse button · one click at a time</small></div>';
+  }
+
+  var TURN_GOAL = 10;      // turn:至少转这么多度
+  var SLIDE_GOAL_MM = 0.5; // slide:至少滑这么多毫米(一次按 0.25 mm)
+  function slidMm() {
+    if (!flags.slideBase || !parts || !parts.screw) return flags.slide ? SLIDE_GOAL_MM : 0;
+    var mm = 1000 / (window.KBParts ? KBParts.unitScale() : 24.77);
+    return flags.slideBase.distanceTo(parts.screw.position) * mm;
+  }
+  function turnedDeg() {
+    var byKey = Math.abs(flags.turned || 0);
+    if (!flags.turnBase || !parts || !parts.arm) return byKey;
+    var dot = Math.min(1, Math.abs(flags.turnBase.dot(parts.arm.quaternion)));
+    return Math.max(byKey, THREE.MathUtils.radToDeg(2 * Math.acos(dot)));
   }
 
   function updateActions() {
@@ -150,13 +277,17 @@
     var armed = window.KBMate && KBMate.armed();
     var checks = [];
     var mated = function (a, b) { return !!flags.mate && flags.mate[0] === a && flags.mate[1] === b; };
+    if (at('orbit')) checks = [(flags.orbited || 0) > 3 || (flags.orbitDrags || 0) > 0, (flags.orbitDrags || 0) >= ORBIT_DRAGS];
+    if (at('pan')) checks = [(flags.panDrags || 0) > 0, (flags.panDrags || 0) >= PAN_DRAGS];
+    if (at('zoom')) checks = [(flags.zooms || 0) > 0, (flags.zooms || 0) >= ZOOMS];
+    if (at('areas')) checks = [(flags.areaCount || 0) > 0, (flags.areaCount || 0) >= AREA_HOPS];
     if (at('select')) checks = [selected === parts.arm, selected === parts.arm];
     if (at('move')) checks = [selected === parts.arm || flags.placed === parts.arm, flags.placed === parts.arm];
     if (at('mateArm')) checks = [!!armed && armed.node === parts.arm && armed.end === -1 || mated(parts.arm, parts.plate), mated(parts.arm, parts.plate)];
-    if (at('turn')) checks = [!!flags.turn, Math.abs(flags.turned || 0) >= 10];
+    if (at('turn')) checks = [turnedDeg() > 0.5, turnedDeg() >= TURN_GOAL];
     if (at('armScrew')) checks = [selected === parts.screw || !!armed && armed.node === parts.screw, !!armed && armed.node === parts.screw];
     if (at('mateScrew')) checks = [!!armed && armed.node === parts.screw || mated(parts.screw, parts.wedge), mated(parts.screw, parts.wedge)];
-    if (at('slide')) checks = [!!flags.slide, !!flags.slide];
+    if (at('slide')) checks = [slidMm() > 0.01, slidMm() >= SLIDE_GOAL_MM];
     // 本步已完成:全部打勾
     if (idx >= 0 && idx < steps.length - 1 && steps[idx].done()) checks = checks.map(function () { return true; });
     var current = checks.indexOf(false);
@@ -173,12 +304,16 @@
     var c = courses[ci];
     parts = null; // 换场景期间 onChange 看不到旧零件,别把教程当成"零件被删了"而结束
     KB.setSelection([]);
-    KB.loadSceneData({ objects: c.scene() }, true);
+    var scene = c.scene();
+    if (window.KBWorkspace) scene.forEach(function (o) { o.p[0] += KBWorkspace.center.x; });
+    KB.loadSceneData({ objects: scene }, true);
     KB.pushSnapshot();
     parts = {};
     Object.keys(c.names).forEach(function (k) { parts[k] = find(c.names[k]); });
     var v = c.view || VIEW;
-    KB.flyCamera(v.p, v.t);
+    var vp = v.p.slice(), vt = v.t.slice();
+    if (window.KBWorkspace) { vp[0] += KBWorkspace.center.x; vt[0] += KBWorkspace.center.x; }
+    KB.flyCamera(vp, vt);
     dropIn(Object.keys(parts).map(function (k) { return parts[k]; }));
   }
   // 零件依次从空中落到桌面
@@ -207,6 +342,8 @@
     idx = i;
     flags = {};
     var s = steps[i];
+    if (s.tag === 'turn' && parts && parts.arm) flags.turnBase = parts.arm.quaternion.clone();
+    if (s.tag === 'slide' && parts && parts.screw) flags.slideBase = parts.screw.position.clone();
     stepEl.textContent = 'Lesson ' + (steps[i].course + 1) + ' \u00b7 ' + (i + 1) + ' / ' + steps.length;
     textEl.textContent = lessons[i].title;
     hintEl.textContent = lessons[i].hint;
@@ -218,7 +355,11 @@
     statusEl.textContent = i === steps.length - 1 ? Object.keys(completed).length + ' / ' + (steps.length - 1) + ' steps practiced'
       : courses[steps[i].course].name + ' \u00b7 your turn';
     el.querySelector('.tt-bar').setAttribute('aria-valuenow', i + 1);
-    nextBtn.textContent = i === steps.length - 1 ? (onboarding ? 'Start assembly →' : 'Finish ✓') : 'Skip step →';
+    var last = i === steps.length - 1;
+    if (choiceEl) choiceEl.hidden = !last;
+    el.classList.toggle('finale', last);   // 收尾这屏铺满仿真窗口
+    nextBtn.style.display = last ? 'none' : '';   // CSS 给按钮设了 display,hidden 属性压不住
+    nextBtn.textContent = last ? (onboarding ? 'Start assembly →' : 'Finish ✓') : 'Skip step →';
     barEl.style.width = ((i + 1) / steps.length * 100) + '%';
     el.classList.toggle('done', i === steps.length - 1);
     // 文字滑入
@@ -271,6 +412,7 @@
   var errTimer = 0;
 
   var advancing = false;
+  var experience = null;   // 'first' / 'again':最后一屏问出来的
   function tick() {
     if (idx < 0 || advancing) return;
     updateActions();
@@ -330,11 +472,60 @@
     applyExpect(null);
     statusEl.classList.remove('err');
     el.classList.remove('show');
-    if (wasActive && reason !== 'restart') KB.emit('tutorialEnd', { reason: reason === 'completed' ? 'completed' : 'skipped' });
+    if (wasActive && reason !== 'restart') KB.emit('tutorialEnd', { reason: reason === 'completed' ? 'completed' : 'skipped', experience: experience });
   }
 
   /* ---------- 观察 ---------- */
   KB.onSelection(function (sel) { currentSelection = sel.slice(); if (idx >= 0 && sel.length === 1) flags.selected = sel[0]; });
+  KB.on('areaChange', function () { if (idx >= 0) { flags.area = true; flags.areaCount = (flags.areaCount || 0) + 1; } });
+  // 相机方位角累计转了多少度 —— 第一课靠它判断"真的转过视角了"。
+  // 只在用户真的按着鼠标拖的时候数:开场镜头飞行、按钮取景都不算
+  (function watchOrbit() {
+    var canvas = document.getElementById('viewport');
+    var dragging = false, last = null, arc = 0, counted = false;
+    var panning = false, panFrom = null, panCounted = false;
+    var ARC_PER_DRAG = 25;    // 一次拖到这么多度才算转过一次
+    var PAN_PER_DRAG = 0.8;   // 焦点挪过这么多场景单位才算平移过一次
+    if (!canvas) return;
+    function stop() { dragging = panning = false; last = panFrom = null; arc = 0; counted = panCounted = false; }
+    canvas.addEventListener('pointerdown', function (e) {
+      stop();
+      // 左键转视角,右键 / 中键平移 —— 和 OrbitControls 的分工一致
+      if (e.button === 2 || e.button === 1) { panning = true; panFrom = KB.orbit ? KB.orbit.target.clone() : null; }
+      else if (e.button === 0) dragging = true;
+    });
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('blur', stop);
+    // 滚轮:两次滚动之间隔开 400 ms 就算两次(一次滚动往往是一串 wheel 事件)
+    var lastWheel = 0;
+    canvas.addEventListener('wheel', function () {
+      if (idx < 0) return;
+      var now = performance.now();
+      if (now - lastWheel > 400) flags.zooms = (flags.zooms || 0) + 1;
+      lastWheel = now;
+    }, { passive: true });
+    setInterval(function () {
+      if (idx < 0 || !KB.camera || !KB.orbit) { last = panFrom = null; return; }
+      if (panning) {
+        if (!panFrom) panFrom = KB.orbit.target.clone();
+        else if (!panCounted && panFrom.distanceTo(KB.orbit.target) >= PAN_PER_DRAG) {
+          panCounted = true;
+          flags.panDrags = (flags.panDrags || 0) + 1;
+        }
+      }
+      if (!dragging) { last = null; return; }
+      var v = KB.camera.position.clone().sub(KB.orbit.target);
+      var a = Math.atan2(v.z, v.x) * 180 / Math.PI;
+      if (last !== null) {
+        var d = Math.abs(a - last);
+        if (d > 180) d = 360 - d;
+        flags.orbited = (flags.orbited || 0) + d;
+        arc += d;
+        if (!counted && arc >= ARC_PER_DRAG) { counted = true; flags.orbitDrags = (flags.orbitDrags || 0) + 1; }
+      }
+      last = a;
+    }, 100);
+  })();
   // Registered before mate.js: observe the key before its capture handler consumes it.
   // The place event confirms that a key actually moved the tutorial screw.
   var activeArrow = null, lastShift = false;
@@ -367,6 +558,35 @@
     this.setAttribute('aria-label', minimized ? 'Expand tutorial' : 'Minimize tutorial');
     this.textContent = minimized ? '+' : '−';
   });
+  /* 第一次装的人:关掉教程后自动弹出 Next 的逐步指引。零件库 / 场景还没就绪时多试几次 */
+  function popNextGuide(tries) {
+    var ready = window.KBAnswer && window.KBCheck && window.KBParts && KBParts.ready() &&
+      KB.objectsRoot && KB.objectsRoot.children.length;
+    if (ready) {
+      // showNext() 在第一步零件还没进装配区时返回 false,但会把 ASSEMBLY GUIDE 卡片摆出来 ——
+      // 那正是第一次装的人要看的,所以调一次就够,不看返回值
+      KBAnswer.showNext();
+      return;
+    }
+    if ((tries || 0) < 8) setTimeout(function () { popNextGuide((tries || 0) + 1); }, 700);
+  }
+  function finish(first) {
+    experience = first ? 'first' : 'again';
+    try { localStorage.setItem('kb.experience', experience); } catch (e) { /* 隐私模式 */ }
+    var embedded = document.body.classList.contains('embed');
+    stop('completed');
+    if (first) {
+      // 独立页面:教程的两个零件换成整套零件,再弹出逐步指引。
+      // 嵌在 ARISTOS 里时场景由宿主收到 tutorialEnd 后自己装,我们只等它装完
+      if (!embedded && KB.loadKit) KB.loadKit();
+      setTimeout(function () { popNextGuide(0); }, embedded ? 1200 : 700);
+    }
+    else KB.toast('Tutorial done \u2014 press Next any time for a step-by-step walkthrough');
+  }
+  var first = document.getElementById('ttFirst'), again = document.getElementById('ttAgain');
+  if (first) first.addEventListener('click', function () { finish(true); });
+  if (again) again.addEventListener('click', function () { finish(false); });
+
   nextBtn.addEventListener('click', function () {
     if (idx >= steps.length - 1) stop('completed'); else show(Math.max(idx, 0) + 1);
   });
@@ -379,7 +599,7 @@
   });
 
   window.KBTutorial = { start: start, stop: stop, active: function () { return idx >= 0; },
-    _debug: function () { return { idx: idx, advancing: advancing, parts: Object.keys(parts || {}).map(function (k) { return k + ':' + (parts[k] && parts[k].name); }), timer: timer }; } };
+    _debug: function () { return { flags: flags, idx: idx, advancing: advancing, parts: Object.keys(parts || {}).map(function (k) { return k + ':' + (parts[k] && parts[k].name); }), timer: timer }; } };
 
   if (new URLSearchParams(location.search).has('tutorial')) {
     (function wait() { if (window.KBParts && KBParts.ready()) start(); else setTimeout(wait, 100); })();

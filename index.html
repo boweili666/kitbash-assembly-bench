@@ -70,10 +70,16 @@
 
   <div class="spacer"></div>
 
-  <button id="btnNew" class="tool" title="Clear the scene">New</button>
-  <button id="btnDemo" class="tool" title="Load the Frame Bottom Assembly kit (24 parts)">Kit</button>
+  <button id="btnDemo" class="tool" title="Start over: all the parts back in the tray">New</button>
+  <button id="btnProps" class="tool" title="Properties panel (P)">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 5.5h12M4 10h12M4 14.5h8"/></svg>
+    <span class="lbl">Props</span>
+  </button>
+  <button id="btnArea" class="tool" title="Jump between the assembly workspace and the parts tray (B)">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3 12.5l5-2.5 5 2.5-5 2.5z"/><path d="M8 4.5l5-2.5 5 2.5-5 2.5z"/><path d="M6.5 7.5l-2 2M13.5 7.5l2 2"/></svg>
+    <span class="lbl">Parts tray</span>
+  </button>
   <button id="btnTutorial" class="tool" title="Tutorial: three parts, every move in the general mode">Tutorial</button>
-  <button id="btnAnswer" class="tool" title="Answer: ghost animation of the assembly positions and order">Answer</button>
   <button id="btnNext" class="tool" title="Next step: ghost animation of what to do next, on your current assembly">Next</button>
   <button id="btnRecord" class="tool" title="Record a video of this page (pick this tab in the picker; microphone optional). Click again to stop and save a WebM file.">
     <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="6"/></svg>
@@ -83,7 +89,7 @@
     <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l7 3v4c0 4-3 6.5-7 7.5C6 16.5 3 14 3 10V6z"/><path d="M7.5 10l2 2 3.5-4"/></svg>
     <span class="lbl">Checks</span>
   </button>
-  <button id="btnAgent" class="tool" title="Live view: share the viewport to another page / window, or stream it to the assembly agent">
+  <button id="btnAgent" style="display:none" class="tool" title="Live view: share the viewport to another page / window, or stream it to the assembly agent">
     <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M7 9.5h.01M13 9.5h.01M7.5 13h5"/></svg>
     <span class="lbl">Agent</span>
   </button>
@@ -94,7 +100,7 @@
 </header>
 
 <!-- 右侧:属性 -->
-<aside id="panel" class="float">
+<aside id="panel" class="float hidden">
   <div class="panel-head">Properties</div>
   <div id="inspector">
     <div id="inspEmpty" class="insp-empty">Nothing selected<br>Click an object in the viewport<br><span style="font-size:11px">Shift+click for multi-select</span></div>
@@ -198,6 +204,13 @@
       <div class="tt-inputs"></div>
     </div>
     <ol class="tt-actions"></ol>
+    <div class="tt-choice" id="ttChoice" hidden>
+      <span>Is this your first time building this drone?</span>
+      <div class="tt-choice-btns">
+        <button id="ttFirst" class="tool primary">First build — walk me through it</button>
+        <button id="ttAgain" class="tool">I’ve built it before</button>
+      </div>
+    </div>
     <details class="tt-camera"><summary>How do I move the view?</summary><div><span><b>Left drag on empty space</b> Orbit the view</span><span><b>Right drag</b> Pan</span><span><b>Scroll wheel</b> Zoom in / out</span><span><kbd>F</kbd> Focus selected part</span><span><kbd>Esc</kbd> Cancel / deselect</span></div></details>
     <div class="tt-foot"><span class="tt-status" role="status">Your turn · try it in the scene</span><button id="ttNext" class="tool">Skip step →</button></div>
   </div>
@@ -319,6 +332,8 @@
 <script src="vendor/GLTFExporter.js"></script>
 <script src="vendor/GLTFLoader.js"></script>
 <script src="src/app.js"></script>
+<script src="src/workspace.js"></script>
+<script src="src/tray.js"></script>
 <script src="src/snap.js"></script>
 <script src="src/collide.js"></script>
 <!-- PARTS_EMBED -->
@@ -328,9 +343,10 @@
 <script src="src/tutorial.js"></script>
 <script src="src/mate.js"></script>
 <script src="src/label.js"></script>
+<script src="src/guide.js"></script>
 <script src="src/answer.js"></script>
 <script src="src/record.js"></script>
-<script src="src/stream.js"></script>
+<!-- Image streaming disabled: no screenshots or JPEG encoding. -->
 <script src="src/check.js"></script>
 <script src="src/bridge.js"></script>
 

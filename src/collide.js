@@ -533,14 +533,16 @@
     return hits;
   }
 
-  KB.on('grab', function (node) { begin(node); });
+  KB.on('grab', function (node) { if (!KB.interacting()) begin(node); });
   KB.on('move', function (node) {
+    if (KB.interacting()) return;
     var t = performance.now();
     if (t - lastTest < TEST_GAP_MS) return;
     lastTest = t;
     test(node);
   });
   KB.on('place', function (node) {
+    session = null;
     test(node);
     session = null;
   });

@@ -188,6 +188,7 @@ button:focus-visible, input:focus-visible {
 .part em { font-style: normal; }
 
 /* ---------- 右侧面板 ---------- */
+#panel.hidden { display: none; }
 #panel {
   right: 12px;
   top: 70px;
@@ -506,7 +507,18 @@ input[type="range"]::-moz-range-thumb {
 }
 .ck-row:hover { background: var(--line-soft); color: var(--text); }
 .ck-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; background: var(--danger); }
-.ck-row.warn .ck-dot { background: #d9b84a; }
+/* 只有两种:装错了(红,要显眼) / 提示接下来干什么(蓝,压低) */
+.ck-row.error {
+  background: rgba(224, 96, 79, 0.14); color: #ffd7d0;
+  border-left: 3px solid var(--danger); padding-left: 7px; font-weight: 500;
+}
+.ck-row.error:hover { background: rgba(224, 96, 79, 0.24); color: #fff; }
+.ck-row.error .ck-dot { background: var(--danger); box-shadow: 0 0 0 3px rgba(224, 96, 79, 0.22); }
+.ck-row.warn .ck-dot, .ck-row.hint .ck-dot { background: #6aa6e8; }
+.ck-row.hint { color: var(--text-faint); }
+/* 有错时工具栏上的 Checks 也要看得见 */
+.tool.has-errors { color: var(--danger); background: rgba(224, 96, 79, 0.16); }
+.tool.has-errors svg { filter: drop-shadow(0 0 4px rgba(224, 96, 79, 0.6)); }
 .tool.has-errors { color: var(--danger); }
 .tool.warn { background: rgba(224, 96, 79, 0.18); color: var(--danger); }
 
@@ -664,7 +676,8 @@ input[type="range"]::-moz-range-thumb {
 
 /* ---------- 窄屏 ---------- */
 @media (max-width: 900px) {
-  #panel { width: 220px; }
+  #panel.hidden { display: none; }
+#panel { width: 220px; }
   .tool span.lbl { display: none; }
   #hints { display: none; }
 }
@@ -684,11 +697,14 @@ input[type="range"]::-moz-range-thumb {
 .embed .seg button { padding: 5px 7px; }
 .embed .tool { padding: 5px 7px; }
 .embed .tool .lbl { display: none; }
-.embed #btnNew .lbl, .embed #btnDemo, .embed #btnAnswer, .embed #btnCheck { display: inline-flex; }
+.embed #btnNew .lbl, .embed #btnDemo, .embed #btnAnswer, .embed #btnCheck,
+.embed #btnArea, .embed #btnArea .lbl { display: inline-flex; }
 .embed #btnRecord, .embed #btnAgent, .embed #btnImport, .embed #btnExportJson, .embed #btnExportGlb,
 .embed #btnDup, .embed #btnFocus { display: none; }
-.embed #panel { width: 216px; top: 56px; font-size: 12px; }
+.embed #panel.hidden { display: none; }
+#panel { width: 216px; top: 56px; font-size: 12px; }
 .embed #panel:not(:has(.insp-body.show)) { display: none; }  /* only show when something is selected */
+.general #btnProps .lbl { display: none; }
 .embed #agentPanel { display: none !important; }  /* sharing keeps running headless */
 .embed #answerBar { bottom: 10px; width: min(94vw, 560px); }
 
@@ -856,3 +872,135 @@ input[type="range"]::-moz-range-thumb {
 .tt-turn-keys .tt-key-up, .tt-turn-keys .tt-key-down,
 .tt-slide-keys .tt-key-left, .tt-slide-keys .tt-key-right { animation: none; opacity: .35; }
 @media (max-height: 740px) { .tt-stage { height: 160px; } }
+
+/* Next instructions stay readable in both standalone and ARISTOS embeds. */
+#answerBar.next-guidance { flex-wrap: wrap; }
+#answerBar.next-guidance #ansTrack { min-width: 80px; }
+#answerBar.next-guidance #ansLabel {
+  order: -1; flex: 0 0 100%; width: 100%; max-width: none;
+  white-space: normal; overflow: visible; text-overflow: clip;
+  line-height: 1.6; font-size: 13px; color: #bcebdc;
+}
+
+/* Real-time assembly guidance, separate from ghost playback controls. */
+#nextGuide { position: fixed; z-index: 19; top: 76px; left: 16px; width: min(330px, calc(100vw - 32px)); box-sizing: border-box; padding: 18px; border: 1px solid #3b5260; border-radius: 16px; background: rgba(20,29,36,.96); box-shadow: 0 12px 40px #0005; color: #e0e8ee; max-height: calc(100vh - 240px); overflow: auto; font: 13px/1.5 system-ui,sans-serif; }
+#nextGuide[hidden] { display: none; }
+.ng-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.ng-kicker { font-size:10px; letter-spacing:2px; color:#95aabb; }
+.ng-close { background:none; border:0; color:#b2c4d0; font-size:22px; cursor:pointer; padding:0 4px; }
+.ng-status { margin-top:12px; color:#83c9ed; font-size:12px; font-weight:600; }
+#nextGuide h2 { font-size:17px; line-height:1.4; margin:8px 0 16px; }
+.ng-progress { height:5px; border-radius:4px; overflow:hidden; background:#33434e; }
+.ng-progress i { display:block; height:100%; background:#67d8b0; transition:width .25s; }
+.ng-count { font-size:11px; color:#97acba; margin:8px 0 12px; }
+.ng-parts { padding:0; margin:0; list-style:none; }
+.ng-parts li { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-top:1px solid #ffffff0c; font-size:12px; }
+.ng-parts li span:last-child { flex-shrink:0; color:#d5b175; }
+.ng-parts li[data-ready="true"] span:last-child { color:#67d8b0; }
+.ng-feedback { margin-top:12px; padding:12px; border-radius:9px; background:#25405466; color:#c4ddea; }
+#nextGuide[data-state="error"] { border-color:#af7055; }
+#nextGuide[data-state="error"] .ng-status { color:#ffb58f; }
+#nextGuide[data-state="error"] .ng-feedback { background:#713c293d; color:#ffcfb7; }
+#nextGuide[data-state="success"] { border-color:#58bc96; }
+#nextGuide[data-state="success"] .ng-status { color:#7be3b8; }
+#nextGuide[data-state="success"] .ng-feedback { background:#265b483d; color:#b7f0d6; }
+#answerBar.next-guidance #ansLabel { display:none; }
+.embed #nextGuide { top:12px; }
+@media(max-width:600px) { #nextGuide { top:62px; padding:12px; max-height:38vh; } #nextGuide h2 { font-size:14px; margin:6px 0 10px; } .ng-parts { max-height:90px; overflow:auto; } }
+@media(prefers-reduced-motion:reduce) { .ng-progress i { transition:none; } }
+
+/* 教程最后一屏:问一句是不是第一次装,第一次就把 Next 的逐步指引打开 */
+.tt-choice { margin: 10px 0 2px; display: flex; flex-direction: column; gap: 8px; }
+.tt-choice > span { font-size: 12.5px; color: var(--muted, #8d97a5); }
+.tt-choice-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.tt-choice-btns button {
+  flex: 1 1 auto; padding: 9px 12px; border-radius: 9px; cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 600; text-align: center; white-space: normal;
+  border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .05); color: #dfe5ec;
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.tt-choice-btns button:hover { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .3); }
+.tt-choice-btns button:active { transform: translateY(1px); }
+.tt-choice-btns button.primary { border-color: #d7a74a; color: #1b1a17; background: #e9b756; }
+.tt-choice-btns button.primary:hover { background: #f2c66d; border-color: #f2c66d; }
+.tt-choice[hidden] { display: none; }
+
+/* 最后一屏:不用左下角的小卡片,铺满整个仿真窗口收尾 */
+#tutorial.finale {
+  left: 0; right: 0; top: 0; bottom: 0; width: auto; max-height: none;
+  border: 0; border-radius: 0; padding: 0; overflow-y: auto;
+  background: radial-gradient(ellipse at 50% 30%, rgba(30, 42, 58, .97), rgba(10, 14, 20, .985) 70%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+#tutorial.finale .tt-head { position: absolute; top: 18px; left: 0; right: 0; padding: 0 22px; margin: 0; }
+#tutorial.finale .tt-content { width: min(620px, 92vw); margin: 0 auto; padding: 56px 0 28px; }
+#tutorial.finale .tt-body { text-align: center; }
+#tutorial.finale .tt-text { font-size: 30px; line-height: 1.2; }
+#tutorial.finale .tt-hint { font-size: 14px; max-width: 30em; margin: 10px auto 0; }
+#tutorial.finale .tt-stage { height: 250px; }
+#tutorial.finale .tt-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+#tutorial.finale .tt-choice { margin-top: 20px; align-items: center; }
+#tutorial.finale .tt-choice > span { font-size: 15px; color: #cfd8e3; }
+#tutorial.finale .tt-choice-btns { width: min(520px, 90vw); }
+#tutorial.finale .tt-choice-btns button { padding: 13px 16px; font-size: 14px; }
+#tutorial.finale .tt-camera, #tutorial.finale #ttMinimize { display: none; }
+#tutorial.finale .tt-foot { justify-content: center; }
+@media (max-height: 740px) { #tutorial.finale .tt-stage { height: 170px; } #tutorial.finale .tt-text { font-size: 24px; } }
+
+/* Camera gestures: button stays lit throughout the drag, then releases. */
+.tt-nav { width:100%; }
+.tt-nav .tt-nav-left,.tt-nav .tt-nav-right { opacity:.12; }
+.tt-nav-arc,.tt-nav-line,.tt-nav-wheel-arrows { display:none; }
+.tt-nav-orbit .tt-nav-arc,.tt-nav-pan .tt-nav-line,.tt-nav-zoom .tt-nav-wheel-arrows { display:block; }
+.tt-nav-orbit .tt-nav-hand { animation:ttNavOrbit 4s infinite; }
+.tt-nav-pan .tt-nav-hand { animation:ttNavPan 4s infinite; }
+.tt-nav-orbit .tt-nav-left,.tt-nav-pan .tt-nav-right { animation:ttNavHold 4s infinite; }
+.tt-nav-zoom .tt-nav-wheel { fill:#efbd76; animation:ttNavWheel 3s infinite; }
+#tutorial.minimized .tt-nav * { animation-play-state:paused; }
+@keyframes ttNavOrbit { 0%,15% {transform:translate(-68px,18px)} 45% {transform:translate(0,-12px)} 75%,88% {transform:translate(68px,18px)} 100% {transform:translate(-68px,18px)} }
+@keyframes ttNavPan { 0%,15% {transform:translateX(-68px)} 75%,88% {transform:translateX(68px)} 100% {transform:translateX(-68px)} }
+@keyframes ttNavHold { 0%,9%,89%,100% {opacity:.12} 15%,75% {opacity:1} }
+@keyframes ttNavWheel { 0%,50%,100% {transform:translateY(0)} 25% {transform:translateY(-5px)} 75% {transform:translateY(5px)} }
+@media(prefers-reduced-motion:reduce) {
+  .tt-nav-orbit .tt-nav-left,.tt-nav-pan .tt-nav-right {opacity:1;}
+}
+
+/* The highlighted camera frame moves; the two areas stay in place. */
+.tt-area-camera { animation:ttAreaCamera 6s ease-in-out infinite; }
+.tt-area-key { animation:ttAreaKey 6s infinite; transform-origin:160px 126px; }
+#tutorial.minimized .tt-area-demo * { animation-play-state:paused; }
+@keyframes ttAreaCamera {
+  0%,14%,90%,100% {transform:translateX(0)}
+  30%,64% {transform:translateX(-162px)}
+}
+@keyframes ttAreaKey {
+  0%,10%,24%,60%,74%,100% {transform:scale(1);filter:brightness(1)}
+  14%,19%,64%,69% {transform:scale(.9);filter:brightness(1.8)}
+}
+
+/* Narrated connection preview: the canvas remains separate from task geometry. */
+.tt-stage.tt-story { height:300px; }
+.tt-story > canvas { position:absolute;inset:0;height:100%; }
+.tt-story .tt-real-caption { top:8px; font-size:10px; color:#e8eff7; }
+.tt-story-steps {position:absolute;top:31px;left:8px;right:8px;display:flex;gap:3px;pointer-events:none;}
+.tt-story-steps span {flex:1;text-align:center;font-size:8px;padding:4px 0;border-top:2px solid #40556e;color:#8fa6bf;}
+.tt-story-steps .current {color:#f1c47e;border-color:#f1c47e;}
+.tt-story-steps .done {color:#93d9bb;border-color:#73bca0;}
+.tt-story-note {position:absolute;bottom:39px;left:8px;right:8px;text-align:center;font-size:9px;color:#b5cee7;pointer-events:none;}
+.tt-story-controls {position:absolute;bottom:8px;left:8px;right:8px;display:flex;justify-content:center;gap:8px;}
+.tt-story-controls button {border:1px solid #617c9b;border-radius:5px;background:#15283e;color:#dceafa;font:10px var(--font-ui);padding:5px 9px;cursor:pointer;}
+.tt-story-controls button:hover {background:#29435f;}
+.tt-story-controls button:focus-visible {outline:2px solid #eec283;outline-offset:2px;}
+@media(max-height:740px) { .tt-stage.tt-story {height:260px;} }
+
+/* One-line Checks feedback expands from the top-right, without opening the panel. */
+#checkNotice { position:fixed;top:60px;right:12px;z-index:24;width:min(520px,calc(100vw - 24px));max-width:0;opacity:0;overflow:hidden;pointer-events:none;transition:max-width .24s ease,opacity .18s ease; }
+#checkNotice.show {max-width:520px;opacity:1;pointer-events:auto;}
+#checkNotice button {display:flex;align-items:center;gap:8px;width:100%;height:31px;padding:0 10px;border:1px solid #c8755366;border-radius:7px;background:#30221fee;color:#ffd1be;font:11px var(--font-ui);text-align:left;cursor:pointer;box-shadow:0 4px 16px #0003;}
+#checkNotice button:hover {background:#443029;}
+#checkNotice button:focus-visible {outline:2px solid #f4bc83;outline-offset:-3px;}
+.ck-notice-icon {flex:none;font-weight:700;color:#ffac83;}
+.ck-notice-text {flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ck-notice-count {flex:none;color:#f3b38e;font-size:10px;}
+.has-check-error #panel {top:99px;}
+@media(prefers-reduced-motion:reduce) {#checkNotice {transition:none;}}

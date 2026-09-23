@@ -1,0 +1,8305 @@
+{
+ "source": "task_graphs.db",
+ "steps": [
+  {
+   "i": 0,
+   "id": "65ad97a4-76f9-4ddd-83e6-f2f73070cc21",
+   "name": "Feed Screw through Arm Wedge (A)",
+   "requires": []
+  },
+  {
+   "i": 1,
+   "id": "3b3966f3-e84e-4a2b-a178-7b59e250d52d",
+   "name": "Feed Screw through Arm Wedge (B)",
+   "requires": []
+  },
+  {
+   "i": 2,
+   "id": "972c5284-031e-44eb-883f-cc040168dac0",
+   "name": "Attach Arm Wedge Assembly to X-Lock (A)",
+   "requires": [
+    0
+   ]
+  },
+  {
+   "i": 3,
+   "id": "a199bfeb-c45e-4ba0-9ede-6a183208cdec",
+   "name": "Place Assembly Aluminum X-Lock with Wedges on Rear Plate",
+   "requires": []
+  },
+  {
+   "i": 4,
+   "id": "8e6bfe19-0d08-4471-87f6-09053b939d57",
+   "name": "Feed Screw through X-Lock and Rear Plate (A)",
+   "requires": [
+    3
+   ]
+  },
+  {
+   "i": 5,
+   "id": "5eec8bdd-a094-45d3-b190-d8df90e3b92c",
+   "name": "Feed Screw through X-Lock and Rear Plate (B)",
+   "requires": [
+    3
+   ]
+  },
+  {
+   "i": 6,
+   "id": "874e9b51-a6e4-4374-9c9f-00a9edb0c46a",
+   "name": "Feed Screw through X-Lock and Rear Plate (C)",
+   "requires": [
+    3
+   ]
+  },
+  {
+   "i": 7,
+   "id": "84de15af-a037-434b-877e-4fdbb64f22fb",
+   "name": "Feed Screw through X-Lock and Rear Plate (D)",
+   "requires": [
+    3
+   ]
+  },
+  {
+   "i": 8,
+   "id": "4a36727d-3c46-4cab-85e5-daa6c5f4ec09",
+   "name": "Insert Arm into X-Lock Assembly (A)",
+   "requires": [
+    0,
+    2
+   ]
+  },
+  {
+   "i": 9,
+   "id": "89b94ace-2378-4b37-bc0e-cc7ea50c0eec",
+   "name": "Insert Arm into X-Lock Assembly (B)",
+   "requires": [
+    0,
+    2
+   ]
+  },
+  {
+   "i": 10,
+   "id": "dbba517f-91f2-480f-880b-03fe58838bb3",
+   "name": "Insert Arm into X-Lock Assembly (C)",
+   "requires": [
+    1
+   ]
+  },
+  {
+   "i": 11,
+   "id": "21830df6-67f7-488d-a921-91edf646ee7e",
+   "name": "Insert Arm into X-Lock Assembly (D)",
+   "requires": [
+    1
+   ]
+  },
+  {
+   "i": 12,
+   "id": "209399c0-2b2b-4059-a22f-9bede07b6d8c",
+   "name": "Place Front Plate on X-Lock",
+   "requires": []
+  },
+  {
+   "i": 13,
+   "id": "87a09b07-d119-4529-9fc1-e1a76fef50f8",
+   "name": "Attach Front Plate on Rear Plate and Arm Assembly",
+   "requires": [
+    12
+   ]
+  },
+  {
+   "i": 14,
+   "id": "77f1ccf4-bd4d-4b1f-b567-1922141d2aae",
+   "name": "Feed Standoff Screw through Frame Bottom (A)",
+   "requires": [
+    0,
+    2,
+    3,
+    8,
+    9,
+    12
+   ]
+  },
+  {
+   "i": 15,
+   "id": "3439423d-e6e6-4f54-86fa-f622d2bd10bd",
+   "name": "Attach Knurled Standoff to Frame Bottom (A)",
+   "requires": [
+    0,
+    2,
+    3,
+    8,
+    9,
+    12,
+    14
+   ]
+  },
+  {
+   "i": 16,
+   "id": "879b7276-1735-4721-ae9d-870ba1f4f8f3",
+   "name": "Feed Standoff Screw through Frame Bottom (B)",
+   "requires": [
+    0,
+    2,
+    3,
+    8,
+    9,
+    12
+   ]
+  },
+  {
+   "i": 17,
+   "id": "8ed7c848-93ac-4452-b80c-be571384f186",
+   "name": "Attach Knurled Standoff to Frame Bottom (B)",
+   "requires": [
+    0,
+    2,
+    3,
+    8,
+    9,
+    12,
+    16
+   ]
+  },
+  {
+   "i": 18,
+   "id": "e1001af1-7d20-4c4d-9fc4-faa7da28eab8",
+   "name": "Feed Standoff Screw through Frame Bottom (C)",
+   "requires": [
+    1,
+    3,
+    10,
+    11,
+    12
+   ]
+  },
+  {
+   "i": 19,
+   "id": "6ab4c59a-a687-45d4-a36a-242c24b271cc",
+   "name": "Attach Knurled Standoff to Frame Bottom (C)",
+   "requires": [
+    1,
+    3,
+    10,
+    11,
+    12,
+    18
+   ]
+  },
+  {
+   "i": 20,
+   "id": "66d54e07-3ac1-4041-8612-2236b4525356",
+   "name": "Feed Standoff Screw through Frame Bottom (D)",
+   "requires": [
+    1,
+    3,
+    10,
+    11,
+    12
+   ]
+  },
+  {
+   "i": 21,
+   "id": "3958faae-2f47-4e21-9a64-889c1138d884",
+   "name": "Attach Knurled Standoff to Frame Bottom (D)",
+   "requires": [
+    1,
+    3,
+    10,
+    11,
+    12,
+    20
+   ]
+  },
+  {
+   "i": 22,
+   "id": "47ef6f0b-d0ca-46e5-b0f5-e146b93b3c9a",
+   "name": "Position Motor on Arm (A)",
+   "requires": []
+  },
+  {
+   "i": 23,
+   "id": "6d8f1bcf-8bc4-4b10-ae5d-f1ec1809489f",
+   "name": "Position Motor on Arm (B)",
+   "requires": []
+  },
+  {
+   "i": 24,
+   "id": "97f911ff-796a-452e-9a0f-fe1a3248dd6e",
+   "name": "Position Motor on Arm (C)",
+   "requires": []
+  },
+  {
+   "i": 25,
+   "id": "35cab1e0-83bc-4986-b0f7-4cabfdc89b75",
+   "name": "Position Motor on Arm (D)",
+   "requires": []
+  },
+  {
+   "i": 26,
+   "id": "9eb0df82-f1cb-45e4-9f37-fb0f469e219b",
+   "name": "Orient and Place ESC onto Stack Screws",
+   "requires": [
+    3,
+    4,
+    5,
+    6,
+    7
+   ]
+  },
+  {
+   "i": 27,
+   "id": "d03b6016-ebfa-4737-bb77-9d2f01f80be0",
+   "name": "Attach Knurled Standoff to Frame Bottom (E)",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 28,
+   "id": "13454aaa-c9bc-4055-9a83-ec311c73e359",
+   "name": "Attach Knurled Standoff to Frame Bottom (F)",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 29,
+   "id": "e356b2bc-5870-43ff-a2cf-c497bd105237",
+   "name": "Place Top Plate on Top of Frame",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 30,
+   "id": "67a1e221-6b45-4d71-9af7-f36bfd9f43af",
+   "name": "Feed Screw through Top Plate and into Standoff (A)",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 31,
+   "id": "9f6d0dd9-da19-4864-9707-a4e036cff071",
+   "name": "Feed Screw through Top Plate and into Standoff (D)",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 32,
+   "id": "ac532e95-6733-4829-ad0c-f94186ea40ea",
+   "name": "Feed Screw through Top Plate and into Standoff (B)",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 33,
+   "id": "c41cd0e3-8dcf-4c78-821f-ad03e44ae6f7",
+   "name": "Feed Screw through Top Plate and into Standoff (C)",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 34,
+   "id": "6c7e811e-b9c9-47ed-8334-92fe0763cbd0",
+   "name": "Feed Screw through Top Plate and into Standoff (F)",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 35,
+   "id": "64f1dd24-d435-4dd4-a72f-85756e6b4abd",
+   "name": "Feed Screw through Top Plate and into Standoff (E)",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 36,
+   "id": "4950131f-eb09-48bc-96d6-94fdc695ee5c",
+   "name": "Place Right Camera Plate",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 37,
+   "id": "cb3c2671-83d5-42d5-bf3d-1bd828bdb9ac",
+   "name": "Attach Right Camera Plate to Split Front Plate",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 38,
+   "id": "8a478027-2068-4aee-a96a-12f990b3e31c",
+   "name": "Feed Screw through Top Plate and into Right Camera Plate",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 39,
+   "id": "fcca5e1f-9c97-47f4-88ce-4ae041bf6f9c",
+   "name": "Place Left Camera Plate",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 40,
+   "id": "697bfd65-4769-4ae2-822c-92357f2c445d",
+   "name": "Attach Left Camera Plate to Split Front Plate",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 41,
+   "id": "88cfb60b-9be0-4de9-9e25-8be3354f63d9",
+   "name": "Feed Screw through Top Plate and into Left Camera Plate",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 42,
+   "id": "6e906e83-f637-44dd-b143-d5e287068a5f",
+   "name": "Place Propeller on Motor Shaft (A)",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 43,
+   "id": "a9f4bf44-2e08-47a0-9e55-485dcabe81ee",
+   "name": "Place Propeller on Motor Shaft (B)",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 44,
+   "id": "cfa7ce3f-59cb-4d73-a29f-da0db1b32863",
+   "name": "Place Propeller on Motor Shaft (C)",
+   "requires": [],
+   "derived": true
+  },
+  {
+   "i": 45,
+   "id": "5ea74501-6788-4b60-a256-5a5aa74aa336",
+   "name": "Place Propeller on Motor Shaft (D)",
+   "requires": [],
+   "derived": true
+  }
+ ],
+ "parts": [
+  {
+   "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+   "key": "aluminum_arm_wedge_5mm",
+   "name": "Left Arm Wedge",
+   "step": 0,
+   "path": [
+    {
+     "x": -57.359,
+     "y": 4.5,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": -1.5708,
+     "yaw": 0.0
+    },
+    {
+     "x": -21.359,
+     "y": 4.5,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": -1.5708,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": 6.359,
+      "z": 0.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -21.359,
+      "y": 2.5,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -21.359,
+      "y": -2.5,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -21.359,
+      "y": 4.5,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 14.354,
+      "y": 2.5,
+      "z": -95.606,
+      "roll": -0.0,
+      "pitch": 0.6981,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 14.231,
+      "y": 2.5,
+      "z": -94.577,
+      "roll": 0.0,
+      "pitch": 0.6109,
+      "yaw": 3.1416
+     }
+    }
+   ]
+  },
+  {
+   "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+   "key": "screw_m3x16_socket_cap",
+   "name": "Left Arm Wedge Screw",
+   "step": 0,
+   "path": [
+    {
+     "x": -115.0,
+     "y": 4.5,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 1.5708
+    },
+    {
+     "x": -15.0,
+     "y": 4.5,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 1.5708
+    }
+   ],
+   "mates": [
+    {
+     "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -0.0,
+      "y": 0.0,
+      "z": -6.359,
+      "roll": 1.5708,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H10"
+      ]
+     ],
+     "rel": {
+      "x": -15.0,
+      "y": 2.5,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     }
+    },
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -15.0,
+      "y": -2.5,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -15.0,
+      "y": 4.5,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 10.267,
+      "y": 2.5,
+      "z": -100.477,
+      "roll": 3.1416,
+      "pitch": 0.8727,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 10.584,
+      "y": 2.5,
+      "z": -99.786,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -1.5708
+     }
+    }
+   ]
+  },
+  {
+   "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+   "key": "aluminum_arm_wedge_5mm",
+   "name": "Right Arm Wedge",
+   "step": 1,
+   "path": [
+    {
+     "x": 58.323,
+     "y": 4.824,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 1.5708,
+     "yaw": 0.0
+    },
+    {
+     "x": 22.323,
+     "y": 4.824,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 1.5708,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -0.324,
+      "y": 7.323,
+      "z": 0.0,
+      "roll": -1.5708,
+      "pitch": -0.0,
+      "yaw": 1.5708
+     }
+    },
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 22.323,
+      "y": 2.824,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 22.323,
+      "y": -2.176,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 22.323,
+      "y": 4.824,
+      "z": 0.0,
+      "roll": 0.0,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 14.427,
+      "y": 2.824,
+      "z": -94.03,
+      "roll": -0.0,
+      "pitch": 0.6109,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 14.783,
+      "y": 1.942,
+      "z": -94.279,
+      "roll": 0.0,
+      "pitch": 0.6109,
+      "yaw": -3.1416
+     }
+    }
+   ]
+  },
+  {
+   "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+   "key": "screw_m3x16_socket_cap",
+   "name": "Right Arm Wedge Screw",
+   "step": 1,
+   "path": [
+    {
+     "x": 115.0,
+     "y": 4.5,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": -1.5708
+    },
+    {
+     "x": 15.0,
+     "y": 4.5,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": -1.5708
+    }
+   ],
+   "mates": [
+    {
+     "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -0.324,
+      "z": -7.323,
+      "roll": 1.5708,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H10"
+      ]
+     ],
+     "rel": {
+      "x": 15.0,
+      "y": 2.5,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 15.0,
+      "y": -2.5,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 15.0,
+      "y": 4.5,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 10.227,
+      "y": 2.5,
+      "z": -100.029,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 10.582,
+      "y": 2.266,
+      "z": -100.278,
+      "roll": -3.1416,
+      "pitch": 0.9599,
+      "yaw": -1.5708
+     }
+    }
+   ]
+  },
+  {
+   "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+   "key": "aluminum_x_lock",
+   "name": "Aluminum X-Lock",
+   "step": 2,
+   "path": [
+    {
+     "x": 0.0,
+     "y": 38.0,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 2.0,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "H2",
+       "H3"
+      ],
+      [
+       "H3",
+       "H4"
+      ],
+      [
+       "H4",
+       "H11"
+      ],
+      [
+       "H5",
+       "H12"
+      ],
+      [
+       "H6",
+       "H7"
+      ],
+      [
+       "H7",
+       "H8"
+      ],
+      [
+       "H8",
+       "H16"
+      ],
+      [
+       "H9",
+       "H15"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": 2.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H7"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -5.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+     "kind": "feature",
+     "features": [
+      [
+       "H5",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": 15.425,
+      "z": 6.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+     "kind": "feature",
+     "features": [
+      [
+       "H4",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": 15.425,
+      "z": 6.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": -15.425,
+      "z": 6.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+     "kind": "feature",
+     "features": [
+      [
+       "H2",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": -15.425,
+      "z": 6.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+     "kind": "feature",
+     "features": [
+      [
+       "H10",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -2.5,
+      "y": -15.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+     "kind": "feature",
+     "features": [
+      [
+       "H10",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 2.5,
+      "y": -15.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     }
+    },
+    {
+     "id": "52e5ae62-8d7f-4975-95fd-28611d677d39",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -6.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -0.0,
+      "y": -2.5,
+      "z": -21.359,
+      "roll": 0.0,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.0,
+      "y": -2.824,
+      "z": -22.323,
+      "roll": 0.0,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 1.623,
+      "y": 0.0,
+      "z": -112.316,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 1.978,
+      "y": 4.766,
+      "z": -112.565,
+      "roll": -3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.626,
+      "y": -0.001,
+      "z": -111.968,
+      "roll": 3.1416,
+      "pitch": 0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 1.98,
+      "y": 5.0,
+      "z": -112.073,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "1f067ba6-468c-48d4-94dd-e9b65f5fe57d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -15.465,
+      "y": 3.5,
+      "z": -15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b2e830f3-9c86-4d90-8fc5-5e0115ed5d7d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 15.465,
+      "y": 3.5,
+      "z": -15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "4f1d3bb7-362e-44aa-95ac-4b5da5d2fe13",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 15.465,
+      "y": 3.5,
+      "z": 15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a83feb95-a3f7-48c9-b766-34828a66e009",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -15.465,
+      "y": 3.5,
+      "z": 15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+   "key": "split_rear_plate",
+   "name": "Split Rear Plate",
+   "step": 3,
+   "path": [
+    {
+     "x": 0.0,
+     "y": -36.0,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 0.0,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "H2"
+      ],
+      [
+       "H4",
+       "H3"
+      ],
+      [
+       "H7",
+       "H6"
+      ],
+      [
+       "H8",
+       "H7"
+      ],
+      [
+       "H11",
+       "H4"
+      ],
+      [
+       "H12",
+       "H5"
+      ],
+      [
+       "H15",
+       "H9"
+      ],
+      [
+       "H16",
+       "H8"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -2.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+     "kind": "feature",
+     "features": [
+      [
+       "H12",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": 15.425,
+      "z": 4.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+     "kind": "feature",
+     "features": [
+      [
+       "H11",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": 15.425,
+      "z": 4.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+     "kind": "feature",
+     "features": [
+      [
+       "H4",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": -15.425,
+      "z": 4.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": -15.425,
+      "z": 4.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "06151b08-07be-444d-b6c1-e960a3a90528",
+     "kind": "feature",
+     "features": [
+      [
+       "H10",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -14.821,
+      "y": -3.057,
+      "z": 26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7f4f1096-48e3-4d5e-a753-2c777f78dd29",
+     "kind": "feature",
+     "features": [
+      [
+       "H14",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -14.821,
+      "y": -3.057,
+      "z": -26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "1901797f-ee02-43de-990e-817dfeef6ea8",
+     "kind": "feature",
+     "features": [
+      [
+       "H13",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 14.821,
+      "y": -3.057,
+      "z": -26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f2460165-80e4-4c0e-ab99-5b877b8178fb",
+     "kind": "feature",
+     "features": [
+      [
+       "H9",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 14.821,
+      "y": -3.057,
+      "z": 26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7ba6ea05-098b-4c62-9ae8-a203e41652fd",
+     "kind": "feature",
+     "features": [
+      [
+       "H10",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -14.821,
+      "y": 26.463,
+      "z": -10.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "9ef7451a-519d-44b6-b309-791f2deb2927",
+     "kind": "feature",
+     "features": [
+      [
+       "H9",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 14.821,
+      "y": 26.463,
+      "z": -10.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "1f067ba6-468c-48d4-94dd-e9b65f5fe57d",
+     "kind": "feature",
+     "features": [
+      [
+       "H12",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": 1.5,
+      "z": -15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b2e830f3-9c86-4d90-8fc5-5e0115ed5d7d",
+     "kind": "feature",
+     "features": [
+      [
+       "H11",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": 1.5,
+      "z": -15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "4f1d3bb7-362e-44aa-95ac-4b5da5d2fe13",
+     "kind": "feature",
+     "features": [
+      [
+       "H4",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": 1.5,
+      "z": 15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a83feb95-a3f7-48c9-b766-34828a66e009",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": 1.5,
+      "z": 15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -0.0,
+      "y": -4.5,
+      "z": -21.359,
+      "roll": 0.0,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.0,
+      "y": -4.824,
+      "z": -22.323,
+      "roll": 0.0,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 1.623,
+      "y": -2.0,
+      "z": -112.316,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 1.978,
+      "y": 6.766,
+      "z": -112.565,
+      "roll": -3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.626,
+      "y": -2.001,
+      "z": -111.968,
+      "roll": 3.1416,
+      "pitch": 0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 1.98,
+      "y": 7.0,
+      "z": -112.073,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -4.5,
+      "y": -15.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 4.5,
+      "y": -15.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     }
+    },
+    {
+     "id": "52e5ae62-8d7f-4975-95fd-28611d677d39",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.0,
+      "y": -8.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b9d5fd44-1a47-4c0a-bdfb-c3a0b2925ca2",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -14.821,
+      "y": -26.463,
+      "z": -10.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "56281c28-09d7-4519-aed3-6aeab2a1ac49",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 14.821,
+      "y": -26.463,
+      "z": -10.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "38039c9a-ab26-4071-a759-786c982579b4",
+     "kind": "feature",
+     "features": [
+      [
+       "H5",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -9.589,
+      "y": -44.392,
+      "z": -10.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "c3b5b725-89f3-4d6e-8bac-6f59ff9c6a78",
+     "kind": "feature",
+     "features": [
+      [
+       "H5",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -9.593,
+      "y": 4.001,
+      "z": -47.138,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "07f49cc8-998b-4039-bec1-3fc9dd936433",
+     "kind": "feature",
+     "features": [
+      [
+       "H6",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 9.597,
+      "y": -44.392,
+      "z": -10.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "eebdf541-0700-4de0-8774-83ef4f3d9968",
+     "kind": "feature",
+     "features": [
+      [
+       "H6",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 9.593,
+      "y": 4.001,
+      "z": -47.138,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+   "key": "screw_m3x22_pan",
+   "name": "M3x22mm Pan Head Screw #1",
+   "step": 4,
+   "path": [
+    {
+     "x": 15.465,
+     "y": 31.803,
+     "z": 15.425,
+     "roll": -1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": 15.465,
+     "y": -4.197,
+     "z": 15.425,
+     "roll": -1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H5"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": -6.197,
+      "z": 15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H12"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": -4.197,
+      "z": 15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": -0.197,
+      "z": 15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 15.465,
+      "y": -11.197,
+      "z": 15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -2.142,
+      "y": -6.197,
+      "z": -90.8,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.9599
+     }
+    },
+    {
+     "id": "1f067ba6-468c-48d4-94dd-e9b65f5fe57d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.0,
+      "y": -2.697,
+      "z": 0.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+   "key": "screw_m3x22_pan",
+   "name": "M3x22mm Pan Head Screw #2",
+   "step": 5,
+   "path": [
+    {
+     "x": -15.465,
+     "y": 31.803,
+     "z": 15.425,
+     "roll": -1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": -15.465,
+     "y": -4.197,
+     "z": 15.425,
+     "roll": -1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H4"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": -6.197,
+      "z": 15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H11"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": -4.197,
+      "z": 15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H4"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": -0.197,
+      "z": 15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -15.465,
+      "y": -11.197,
+      "z": 15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -1.784,
+      "y": 11.197,
+      "z": -90.557,
+      "roll": 1.5708,
+      "pitch": -0.0,
+      "yaw": -2.1817
+     }
+    },
+    {
+     "id": "b2e830f3-9c86-4d90-8fc5-5e0115ed5d7d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.0,
+      "y": -2.697,
+      "z": 0.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+   "key": "screw_m3x22_pan",
+   "name": "M3x22mm Pan Head Screw #3",
+   "step": 6,
+   "path": [
+    {
+     "x": -15.465,
+     "y": 31.803,
+     "z": -15.425,
+     "roll": -1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": -15.465,
+     "y": -4.197,
+     "z": -15.425,
+     "roll": -1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": -6.197,
+      "z": -15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H4"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": -4.197,
+      "z": -15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": -0.197,
+      "z": -15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -15.465,
+      "y": -11.197,
+      "z": -15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -1.251,
+      "y": -6.197,
+      "z": -90.206,
+      "roll": -1.5708,
+      "pitch": -0.0,
+      "yaw": 2.2689
+     }
+    },
+    {
+     "id": "4f1d3bb7-362e-44aa-95ac-4b5da5d2fe13",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.0,
+      "y": -2.697,
+      "z": 0.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+   "key": "screw_m3x22_pan",
+   "name": "M3x22mm Pan Head Screw #4",
+   "step": 7,
+   "path": [
+    {
+     "x": 15.465,
+     "y": 31.803,
+     "z": -15.425,
+     "roll": -1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": 15.465,
+     "y": -4.197,
+     "z": -15.425,
+     "roll": -1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H2"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": -6.197,
+      "z": -15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": -4.197,
+      "z": -15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H2"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": -0.197,
+      "z": -15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 15.465,
+      "y": -11.197,
+      "z": -15.425,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -1.786,
+      "y": 10.963,
+      "z": -91.049,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": 0.9599
+     }
+    },
+    {
+     "id": "a83feb95-a3f7-48c9-b766-34828a66e009",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.0,
+      "y": -2.697,
+      "z": 0.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+   "key": "arm_5in",
+   "name": "5-inch Arm #1",
+   "step": 8,
+   "path": [
+    {
+     "x": 91.071,
+     "y": 38.0,
+     "z": 65.754,
+     "roll": 0.0,
+     "pitch": 0.9599,
+     "yaw": 0.0
+    },
+    {
+     "x": 91.071,
+     "y": 2.0,
+     "z": 65.754,
+     "roll": 0.0,
+     "pitch": 0.9599,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H6"
+      ]
+     ],
+     "rel": {
+      "x": 91.071,
+      "y": -5.0,
+      "z": 65.754,
+      "roll": -0.0,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -65.754,
+      "y": -2.824,
+      "z": 68.748,
+      "roll": -0.0,
+      "pitch": -0.6109,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 91.071,
+      "y": 0.0,
+      "z": 65.754,
+      "roll": -0.0,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 91.071,
+      "y": 2.0,
+      "z": 65.754,
+      "roll": -0.0,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 108.078,
+      "y": 4.767,
+      "z": -75.682,
+      "roll": -0.0,
+      "pitch": 1.2218,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -7.539,
+      "y": -0.001,
+      "z": -223.999,
+      "roll": 3.1416,
+      "pitch": -0.0872,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -104.12,
+      "y": 5.001,
+      "z": -148.956,
+      "roll": -3.1416,
+      "pitch": -1.2218,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 75.606,
+      "y": -50.329,
+      "z": 6.197,
+      "roll": 1.5708,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 2.5,
+      "y": 76.071,
+      "z": 65.754,
+      "roll": -0.9599,
+      "pitch": -0.0,
+      "yaw": 1.5708
+     }
+    },
+    {
+     "id": "52e5ae62-8d7f-4975-95fd-28611d677d39",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 91.071,
+      "y": -6.0,
+      "z": 65.754,
+      "roll": -0.0,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7f4f1096-48e3-4d5e-a753-2c777f78dd29",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 76.25,
+      "y": -1.057,
+      "z": 39.291,
+      "roll": -0.0,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b9d5fd44-1a47-4c0a-bdfb-c3a0b2925ca2",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 76.25,
+      "y": 39.291,
+      "z": -12.0,
+      "roll": -1.5708,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.037,
+      "y": 0.06,
+      "z": 0.5,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "c83c45d7-c6e4-4b7c-8184-135c528f9536",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -1.423,
+      "y": -3.0,
+      "z": -8.304,
+      "roll": -0.0,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5ebe5814-3691-4844-ab81-e8462819fdbe",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.921,
+      "y": -3.0,
+      "z": 8.499,
+      "roll": -0.0,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "6d987065-3475-403c-8080-a4abc763f65b",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -8.47,
+      "y": -3.0,
+      "z": 1.936,
+      "roll": -0.0,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "26b9c19c-be5f-4543-8879-964cf24a865f",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 8.15,
+      "y": -3.0,
+      "z": -1.202,
+      "roll": -0.0,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "1f067ba6-468c-48d4-94dd-e9b65f5fe57d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 75.606,
+      "y": 3.5,
+      "z": 50.329,
+      "roll": -0.0,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+   "key": "arm_5in",
+   "name": "5-inch Arm #2",
+   "step": 9,
+   "path": [
+    {
+     "x": 91.071,
+     "y": 42.766,
+     "z": -66.188,
+     "roll": -3.1416,
+     "pitch": 0.9599,
+     "yaw": -0.0
+    },
+    {
+     "x": 91.071,
+     "y": 6.766,
+     "z": -66.188,
+     "roll": -3.1416,
+     "pitch": 0.9599,
+     "yaw": -0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 66.188,
+      "y": 1.942,
+      "z": 68.748,
+      "roll": 0.0,
+      "pitch": 0.6109,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 91.071,
+      "y": 4.766,
+      "z": -66.188,
+      "roll": 3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 91.071,
+      "y": -0.234,
+      "z": -66.188,
+      "roll": 3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 91.071,
+      "y": 6.766,
+      "z": -66.188,
+      "roll": 3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 108.078,
+      "y": 4.766,
+      "z": -75.682,
+      "roll": 0.0,
+      "pitch": 1.2218,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -108.616,
+      "y": 4.765,
+      "z": -139.192,
+      "roll": 3.1416,
+      "pitch": -1.309,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 3.958,
+      "y": 0.234,
+      "z": -224.638,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 75.606,
+      "y": 50.763,
+      "z": 10.963,
+      "roll": -1.5708,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -2.266,
+      "y": 76.071,
+      "z": -66.188,
+      "roll": -2.1817,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "52e5ae62-8d7f-4975-95fd-28611d677d39",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 91.071,
+      "y": -1.234,
+      "z": -66.188,
+      "roll": 3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "06151b08-07be-444d-b6c1-e960a3a90528",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 76.25,
+      "y": 3.709,
+      "z": -39.725,
+      "roll": 3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7ba6ea05-098b-4c62-9ae8-a203e41652fd",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 76.25,
+      "y": -39.725,
+      "z": -16.766,
+      "roll": 1.5708,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.099,
+      "y": -0.018,
+      "z": -4.266,
+      "roll": 1.5708,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "39f5bc62-8bac-49f0-a886-e35c252f2f09",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 1.184,
+      "y": 2.382,
+      "z": -8.471,
+      "roll": 3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "da36cc28-f889-4fbe-81f7-d68e1af38b91",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -1.582,
+      "y": 2.382,
+      "z": 8.415,
+      "roll": 3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "3ff3d68e-54fd-454a-8a4f-802c7392d1cf",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -8.539,
+      "y": 2.382,
+      "z": -1.355,
+      "roll": 3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "d62e2658-6a51-49cf-9d14-9506a004d84f",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 8.375,
+      "y": 2.382,
+      "z": 1.626,
+      "roll": 3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a83feb95-a3f7-48c9-b766-34828a66e009",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 75.606,
+      "y": 8.266,
+      "z": -50.763,
+      "roll": 3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+   "key": "arm_5in",
+   "name": "5-inch Arm #3",
+   "step": 10,
+   "path": [
+    {
+     "x": -85.373,
+     "y": 38.0,
+     "z": -72.448,
+     "roll": -3.1416,
+     "pitch": -0.8727,
+     "yaw": -3.1416
+    },
+    {
+     "x": -85.373,
+     "y": 2.0,
+     "z": -72.448,
+     "roll": -3.1416,
+     "pitch": -0.8727,
+     "yaw": -3.1416
+    }
+   ],
+   "mates": [
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H4"
+      ]
+     ],
+     "rel": {
+      "x": -85.373,
+      "y": -5.0,
+      "z": -72.448,
+      "roll": 3.1416,
+      "pitch": -0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "f2460165-80e4-4c0e-ab99-5b877b8178fb",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -70.552,
+      "y": -1.057,
+      "z": -45.985,
+      "roll": 3.1416,
+      "pitch": -0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -72.448,
+      "y": -2.5,
+      "z": 64.014,
+      "roll": 0.0,
+      "pitch": -0.6981,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -85.373,
+      "y": 0.0,
+      "z": -72.448,
+      "roll": 3.1416,
+      "pitch": -0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -85.373,
+      "y": 2.0,
+      "z": -72.448,
+      "roll": 3.1416,
+      "pitch": -0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 11.997,
+      "y": 0.0,
+      "z": -223.804,
+      "roll": 3.1416,
+      "pitch": 0.0872,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -106.336,
+      "y": 4.766,
+      "z": -140.941,
+      "roll": -3.1416,
+      "pitch": -1.309,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 110.295,
+      "y": 4.999,
+      "z": -83.697,
+      "roll": 0.0,
+      "pitch": 1.309,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -69.908,
+      "y": 57.023,
+      "z": 6.197,
+      "roll": -1.5708,
+      "pitch": -0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -2.5,
+      "y": 70.373,
+      "z": -72.448,
+      "roll": -2.2689,
+      "pitch": -0.0,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "52e5ae62-8d7f-4975-95fd-28611d677d39",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -85.373,
+      "y": -6.0,
+      "z": -72.448,
+      "roll": 3.1416,
+      "pitch": -0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "9ef7451a-519d-44b6-b309-791f2deb2927",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -70.552,
+      "y": -45.985,
+      "z": -12.0,
+      "roll": 1.5708,
+      "pitch": -0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -0.026,
+      "y": -0.071,
+      "z": 0.5,
+      "roll": 1.5708,
+      "pitch": -0.0,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "2e66311a-1399-4f92-87f4-a9368df68a36",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 8.106,
+      "y": -3.0,
+      "z": -1.319,
+      "roll": 3.1416,
+      "pitch": -0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "63dcf032-2444-4962-b873-996f7ffa6b49",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -8.514,
+      "y": -3.0,
+      "z": 1.819,
+      "roll": 3.1416,
+      "pitch": -0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "576d9adf-2736-4af3-8ddc-59e5de127737",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.877,
+      "y": -3.0,
+      "z": 8.382,
+      "roll": 3.1416,
+      "pitch": -0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "d765d31b-ce11-4402-9c5f-b3763788820f",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -1.467,
+      "y": -3.0,
+      "z": -8.421,
+      "roll": 3.1416,
+      "pitch": -0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "4f1d3bb7-362e-44aa-95ac-4b5da5d2fe13",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -69.908,
+      "y": 3.5,
+      "z": -57.023,
+      "roll": 3.1416,
+      "pitch": -0.8727,
+      "yaw": 3.1416
+     }
+    }
+   ]
+  },
+  {
+   "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+   "key": "arm_5in",
+   "name": "5-inch Arm #4",
+   "step": 11,
+   "path": [
+    {
+     "x": -90.667,
+     "y": 43.0,
+     "z": 65.907,
+     "roll": -0.0,
+     "pitch": -0.9599,
+     "yaw": 3.1416
+    },
+    {
+     "x": -90.667,
+     "y": 7.0,
+     "z": 65.907,
+     "roll": -0.0,
+     "pitch": -0.9599,
+     "yaw": 3.1416
+    }
+   ],
+   "mates": [
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H5"
+      ]
+     ],
+     "rel": {
+      "x": -90.667,
+      "y": 0.0,
+      "z": 65.907,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "1901797f-ee02-43de-990e-817dfeef6ea8",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -75.846,
+      "y": 3.943,
+      "z": 39.444,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 65.907,
+      "y": 2.5,
+      "z": 69.308,
+      "roll": -0.0,
+      "pitch": 0.6109,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -90.667,
+      "y": 5.0,
+      "z": 65.907,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -90.667,
+      "y": 7.0,
+      "z": 65.907,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -104.371,
+      "y": 5.0,
+      "z": -148.78,
+      "roll": -3.1416,
+      "pitch": -1.2218,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 3.958,
+      "y": -0.233,
+      "z": -224.638,
+      "roll": -3.1416,
+      "pitch": -0.0,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 109.392,
+      "y": 5.0,
+      "z": -84.874,
+      "roll": -0.0,
+      "pitch": 1.309,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -75.202,
+      "y": -50.482,
+      "z": 11.197,
+      "roll": 1.5708,
+      "pitch": -0.9599,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 2.5,
+      "y": 75.667,
+      "z": 65.907,
+      "roll": -0.9599,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     }
+    },
+    {
+     "id": "52e5ae62-8d7f-4975-95fd-28611d677d39",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -90.667,
+      "y": -1.0,
+      "z": 65.907,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "56281c28-09d7-4519-aed3-6aeab2a1ac49",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -75.846,
+      "y": 39.444,
+      "z": -17.0,
+      "roll": -1.5708,
+      "pitch": -0.9599,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -0.065,
+      "y": 0.024,
+      "z": -4.5,
+      "roll": 1.5708,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "8a59e5bb-6e58-451c-a3c0-504fcfd7d032",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 8.434,
+      "y": 2.0,
+      "z": 1.52,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "250b1751-d5db-4cd6-86b8-9dfc5add0a30",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -8.48,
+      "y": 2.0,
+      "z": -1.461,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "f977e47d-b592-440f-b573-3484c52b1972",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -1.523,
+      "y": 2.0,
+      "z": 8.309,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "031286ef-09e1-4d25-9aa7-26fe1d1b5b34",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 1.243,
+      "y": 2.0,
+      "z": -8.577,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "b2e830f3-9c86-4d90-8fc5-5e0115ed5d7d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -75.202,
+      "y": 8.5,
+      "z": 50.482,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -3.1416
+     }
+    }
+   ]
+  },
+  {
+   "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+   "key": "split_front_plate",
+   "name": "Split Front Plate",
+   "step": 12,
+   "path": [
+    {
+     "x": 0.0,
+     "y": 43.0,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 7.0,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "feature",
+     "features": [
+      [
+       "H7",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": 5.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "feature",
+     "features": [
+      [
+       "H6",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 1.623,
+      "y": 5.0,
+      "z": -112.316,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "feature",
+     "features": [
+      [
+       "H4",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.626,
+      "y": 4.999,
+      "z": -111.968,
+      "roll": 3.1416,
+      "pitch": 0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "feature",
+     "features": [
+      [
+       "H5",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 1.98,
+      "y": -0.0,
+      "z": -112.073,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "52e5ae62-8d7f-4975-95fd-28611d677d39",
+     "kind": "feature",
+     "features": [
+      [
+       "H7",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -1.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "06151b08-07be-444d-b6c1-e960a3a90528",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -14.821,
+      "y": 3.943,
+      "z": 26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7f4f1096-48e3-4d5e-a753-2c777f78dd29",
+     "kind": "feature",
+     "features": [
+      [
+       "H6",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -14.821,
+      "y": 3.943,
+      "z": -26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "1901797f-ee02-43de-990e-817dfeef6ea8",
+     "kind": "feature",
+     "features": [
+      [
+       "H5",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 14.821,
+      "y": 3.943,
+      "z": -26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f2460165-80e4-4c0e-ab99-5b877b8178fb",
+     "kind": "feature",
+     "features": [
+      [
+       "H4",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 14.821,
+      "y": 3.943,
+      "z": 26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -0.0,
+      "y": 2.5,
+      "z": -21.359,
+      "roll": 0.0,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.0,
+      "y": 2.176,
+      "z": -22.323,
+      "roll": 0.0,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 1.978,
+      "y": -0.234,
+      "z": -112.565,
+      "roll": -3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -15.465,
+      "y": 15.425,
+      "z": 11.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 15.465,
+      "y": 15.425,
+      "z": 11.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 15.465,
+      "y": -15.425,
+      "z": 11.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -15.465,
+      "y": -15.425,
+      "z": 11.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 2.5,
+      "y": -15.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -2.5,
+      "y": -15.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     }
+    },
+    {
+     "id": "b98ed850-2445-4a57-849a-96cef769411a",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -41.736,
+      "y": 16.423,
+      "z": 12.547,
+      "roll": 1.5708,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "fca80547-77d0-43c0-a2b0-5efc17085894",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -12.851,
+      "y": 3.501,
+      "z": 46.532,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "574bb377-c01c-4b6f-8679-285d00b802f8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 41.812,
+      "y": 16.696,
+      "z": 12.547,
+      "roll": 1.5708,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "4f4eacd0-8e52-4d26-a87e-a12cb131db17",
+     "kind": "feature",
+     "features": [
+      [
+       "H2",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 12.851,
+      "y": 3.501,
+      "z": 46.532,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "52e5ae62-8d7f-4975-95fd-28611d677d39",
+   "key": "screw_m3x6_pan",
+   "name": "Center X-Lock Screw",
+   "step": 13,
+   "path": [
+    {
+     "x": 0.0,
+     "y": 44.0,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": 8.0,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": 6.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H7"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": 1.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.0,
+      "y": 8.0,
+      "z": 0.0,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 1.623,
+      "y": 6.0,
+      "z": -112.316,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 1.978,
+      "y": -1.234,
+      "z": -112.565,
+      "roll": -3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.626,
+      "y": 5.999,
+      "z": -111.968,
+      "roll": 3.1416,
+      "pitch": 0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 1.98,
+      "y": -1.0,
+      "z": -112.073,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": 3.1416
+     }
+    }
+   ]
+  },
+  {
+   "id": "06151b08-07be-444d-b6c1-e960a3a90528",
+   "key": "screw_m3x16_pan",
+   "name": "Standoff Screw #1",
+   "step": 14,
+   "path": [
+    {
+     "x": 14.821,
+     "y": 39.057,
+     "z": -26.463,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": 14.821,
+     "y": 3.057,
+     "z": -26.463,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": 14.821,
+      "y": -3.943,
+      "z": -26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H10"
+      ]
+     ],
+     "rel": {
+      "x": 14.821,
+      "y": 3.057,
+      "z": -26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7ba6ea05-098b-4c62-9ae8-a203e41652fd",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -0.0,
+      "z": -13.057,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -11.197,
+      "y": 3.709,
+      "z": -85.245,
+      "roll": -3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "7ba6ea05-098b-4c62-9ae8-a203e41652fd",
+   "key": "knurled_standoff",
+   "name": "Standoff #1",
+   "step": 15,
+   "path": [
+    {
+     "x": 14.821,
+     "y": -46.0,
+     "z": -26.463,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": 14.821,
+     "y": -10.0,
+     "z": -26.463,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H10"
+      ]
+     ],
+     "rel": {
+      "x": 14.821,
+      "y": -10.0,
+      "z": -26.463,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "06151b08-07be-444d-b6c1-e960a3a90528",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -13.057,
+      "z": 0.0,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -11.197,
+      "y": 16.766,
+      "z": -85.245,
+      "roll": -1.5708,
+      "pitch": -0.0,
+      "yaw": -0.9599
+     }
+    },
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 14.818,
+      "y": 12.502,
+      "z": -30.316,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "6e27fbca-a92f-4ea8-95e3-69cbcc6fcab3",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 0.009,
+      "y": -6.498,
+      "z": 1.298,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "7f4f1096-48e3-4d5e-a753-2c777f78dd29",
+   "key": "screw_m3x16_pan",
+   "name": "Standoff Screw #2",
+   "step": 16,
+   "path": [
+    {
+     "x": 14.821,
+     "y": 39.057,
+     "z": 26.463,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": 14.821,
+     "y": 3.057,
+     "z": 26.463,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H6"
+      ]
+     ],
+     "rel": {
+      "x": 14.821,
+      "y": -3.943,
+      "z": 26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H14"
+      ]
+     ],
+     "rel": {
+      "x": 14.821,
+      "y": 3.057,
+      "z": 26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b9d5fd44-1a47-4c0a-bdfb-c3a0b2925ca2",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -0.0,
+      "z": -13.057,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -11.553,
+      "y": 1.057,
+      "z": -84.996,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "b9d5fd44-1a47-4c0a-bdfb-c3a0b2925ca2",
+   "key": "knurled_standoff",
+   "name": "Standoff #2",
+   "step": 17,
+   "path": [
+    {
+     "x": 14.821,
+     "y": -46.0,
+     "z": 26.463,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": 14.821,
+     "y": -10.0,
+     "z": 26.463,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H14"
+      ]
+     ],
+     "rel": {
+      "x": 14.821,
+      "y": -10.0,
+      "z": 26.463,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7f4f1096-48e3-4d5e-a753-2c777f78dd29",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -13.057,
+      "z": 0.0,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -11.553,
+      "y": -12.0,
+      "z": -84.996,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": 0.9599
+     }
+    },
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H5"
+      ]
+     ],
+     "rel": {
+      "x": 14.818,
+      "y": 12.502,
+      "z": 22.61,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "e1924a53-5b49-42f6-957f-ac4653603351",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -0.234,
+      "y": -6.498,
+      "z": 2.394,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "1901797f-ee02-43de-990e-817dfeef6ea8",
+   "key": "screw_m3x16_pan",
+   "name": "Standoff Screw #3",
+   "step": 18,
+   "path": [
+    {
+     "x": -14.821,
+     "y": 39.057,
+     "z": 26.463,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": -14.821,
+     "y": 3.057,
+     "z": 26.463,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H5"
+      ]
+     ],
+     "rel": {
+      "x": -14.821,
+      "y": -3.943,
+      "z": 26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H13"
+      ]
+     ],
+     "rel": {
+      "x": -14.821,
+      "y": 3.057,
+      "z": 26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -11.195,
+      "y": 3.943,
+      "z": -84.753,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "56281c28-09d7-4519-aed3-6aeab2a1ac49",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -0.0,
+      "z": -13.057,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "56281c28-09d7-4519-aed3-6aeab2a1ac49",
+   "key": "knurled_standoff",
+   "name": "Standoff #3",
+   "step": 19,
+   "path": [
+    {
+     "x": -14.821,
+     "y": -46.0,
+     "z": 26.463,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": -14.821,
+     "y": -10.0,
+     "z": 26.463,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H13"
+      ]
+     ],
+     "rel": {
+      "x": -14.821,
+      "y": -10.0,
+      "z": 26.463,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "1901797f-ee02-43de-990e-817dfeef6ea8",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -13.057,
+      "z": 0.0,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -11.195,
+      "y": 17.0,
+      "z": -84.753,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": 2.1817
+     }
+    },
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H6"
+      ]
+     ],
+     "rel": {
+      "x": -14.824,
+      "y": 12.502,
+      "z": 22.61,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "706fbaca-71d5-4a51-9151-0862576756d3",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 0.228,
+      "y": -6.5,
+      "z": 2.394,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "f2460165-80e4-4c0e-ab99-5b877b8178fb",
+   "key": "screw_m3x16_pan",
+   "name": "Standoff Screw #4",
+   "step": 20,
+   "path": [
+    {
+     "x": -14.821,
+     "y": 39.057,
+     "z": -26.463,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": -14.821,
+     "y": 3.057,
+     "z": -26.463,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H4"
+      ]
+     ],
+     "rel": {
+      "x": -14.821,
+      "y": -3.943,
+      "z": -26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H9"
+      ]
+     ],
+     "rel": {
+      "x": -14.821,
+      "y": 3.057,
+      "z": -26.463,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -10.12,
+      "y": 1.057,
+      "z": -83.605,
+      "roll": 3.1416,
+      "pitch": 0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "9ef7451a-519d-44b6-b309-791f2deb2927",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -0.0,
+      "z": -13.057,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "9ef7451a-519d-44b6-b309-791f2deb2927",
+   "key": "knurled_standoff",
+   "name": "Standoff #4",
+   "step": 21,
+   "path": [
+    {
+     "x": -14.821,
+     "y": -46.0,
+     "z": -26.463,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": -14.821,
+     "y": -10.0,
+     "z": -26.463,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H9"
+      ]
+     ],
+     "rel": {
+      "x": -14.821,
+      "y": -10.0,
+      "z": -26.463,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f2460165-80e4-4c0e-ab99-5b877b8178fb",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -13.057,
+      "z": 0.0,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -10.12,
+      "y": -12.0,
+      "z": -83.605,
+      "roll": 1.5708,
+      "pitch": -0.0,
+      "yaw": -2.2689
+     }
+    },
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H2"
+      ]
+     ],
+     "rel": {
+      "x": -14.824,
+      "y": 12.502,
+      "z": -30.316,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a1db5ee5-3be8-47d4-b69f-83416728eb7c",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -0.014,
+      "y": -6.5,
+      "z": 1.298,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "c83c45d7-c6e4-4b7c-8184-135c528f9536",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #1-1",
+   "step": 22,
+   "path": [
+    {
+     "x": 92.494,
+     "y": 5.0,
+     "z": 74.058,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H2"
+      ]
+     ],
+     "rel": {
+      "x": -5.948,
+      "y": 5.989,
+      "z": -2.5,
+      "roll": -1.5708,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -5.986,
+      "y": 3.0,
+      "z": 5.929,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "5ebe5814-3691-4844-ab81-e8462819fdbe",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #1-2",
+   "step": 22,
+   "path": [
+    {
+     "x": 90.15,
+     "y": 5.0,
+     "z": 57.255,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": 6.471,
+      "y": -5.569,
+      "z": -2.5,
+      "roll": -1.5708,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 6.434,
+      "y": 3.0,
+      "z": -5.629,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "6d987065-3475-403c-8080-a4abc763f65b",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #1-3",
+   "step": 22,
+   "path": [
+    {
+     "x": 99.541,
+     "y": 5.0,
+     "z": 63.818,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 6.482,
+      "y": 5.888,
+      "z": -2.5,
+      "roll": -1.5708,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 6.444,
+      "y": 3.0,
+      "z": 5.828,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "26b9c19c-be5f-4543-8879-964cf24a865f",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #1-4",
+   "step": 22,
+   "path": [
+    {
+     "x": 82.921,
+     "y": 5.0,
+     "z": 66.956,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H4"
+      ]
+     ],
+     "rel": {
+      "x": -5.622,
+      "y": -5.926,
+      "z": -2.5,
+      "roll": -1.5708,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -5.659,
+      "y": 3.0,
+      "z": -5.986,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+   "key": "motor_2207",
+   "name": "Motor #1",
+   "step": 22,
+   "path": [
+    {
+     "x": 91.0,
+     "y": -33.5,
+     "z": 65.75,
+     "roll": 1.5708,
+     "pitch": -0.0,
+     "yaw": -0.9599
+    },
+    {
+     "x": 91.0,
+     "y": 2.5,
+     "z": 65.75,
+     "roll": 1.5708,
+     "pitch": -0.0,
+     "yaw": -0.9599
+    }
+   ],
+   "mates": [
+    {
+     "id": "c83c45d7-c6e4-4b7c-8184-135c528f9536",
+     "kind": "feature",
+     "features": [
+      [
+       "H2",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -1.494,
+      "y": -2.5,
+      "z": -8.308,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.9599
+     }
+    },
+    {
+     "id": "5ebe5814-3691-4844-ab81-e8462819fdbe",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 0.85,
+      "y": -2.5,
+      "z": 8.495,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.9599
+     }
+    },
+    {
+     "id": "6d987065-3475-403c-8080-a4abc763f65b",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -8.541,
+      "y": -2.5,
+      "z": 1.932,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.9599
+     }
+    },
+    {
+     "id": "26b9c19c-be5f-4543-8879-964cf24a865f",
+     "kind": "feature",
+     "features": [
+      [
+       "H4",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 8.079,
+      "y": -2.5,
+      "z": -1.206,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.9599
+     }
+    },
+    {
+     "id": "b4e6ca7b-0f42-48aa-96db-bdc272b153a5",
+     "kind": "feature",
+     "features": [
+      [
+       "P2",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -20.1,
+      "z": -0.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.9599
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -0.037,
+      "y": 0.5,
+      "z": -0.06,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "bc9660e8-5b5c-4adc-834a-3ffd4c698de9",
+     "kind": "feature",
+     "features": [
+      [
+       "P2",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -2.715,
+      "y": 53.747,
+      "z": -18.959,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.9599
+     }
+    }
+   ]
+  },
+  {
+   "id": "b4e6ca7b-0f42-48aa-96db-bdc272b153a5",
+   "key": "motor_nut_m5",
+   "name": "Propeller Nut #1",
+   "step": 22,
+   "path": [
+    {
+     "x": 91.0,
+     "y": -53.6,
+     "z": 65.75,
+     "roll": -3.1416,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": 91.0,
+     "y": -17.6,
+     "z": 65.75,
+     "roll": -3.1416,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P2"
+      ]
+     ],
+     "rel": {
+      "x": -0.0,
+      "y": 0.0,
+      "z": 20.1,
+      "roll": 1.5708,
+      "pitch": 0.9599,
+      "yaw": 0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "39f5bc62-8bac-49f0-a886-e35c252f2f09",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #2-1",
+   "step": 23,
+   "path": [
+    {
+     "x": 89.887,
+     "y": 4.384,
+     "z": -57.717,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H2"
+      ]
+     ],
+     "rel": {
+      "x": -5.729,
+      "y": 6.241,
+      "z": -1.884,
+      "roll": -1.5708,
+      "pitch": -0.6109,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 6.26,
+      "y": 2.382,
+      "z": -5.829,
+      "roll": -3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "da36cc28-f889-4fbe-81f7-d68e1af38b91",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #2-2",
+   "step": 23,
+   "path": [
+    {
+     "x": 92.653,
+     "y": 4.384,
+     "z": -74.603,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": 6.222,
+      "y": -6.004,
+      "z": -1.884,
+      "roll": -1.5708,
+      "pitch": -0.6109,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -5.986,
+      "y": 2.382,
+      "z": 6.123,
+      "roll": -3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "3ff3d68e-54fd-454a-8a4f-802c7392d1cf",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #2-3",
+   "step": 23,
+   "path": [
+    {
+     "x": 99.61,
+     "y": 4.384,
+     "z": -64.833,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 6.317,
+      "y": 5.99,
+      "z": -1.884,
+      "roll": -1.5708,
+      "pitch": -0.6109,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 6.008,
+      "y": 2.382,
+      "z": 6.217,
+      "roll": -3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "d62e2658-6a51-49cf-9d14-9506a004d84f",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #2-4",
+   "step": 23,
+   "path": [
+    {
+     "x": 82.696,
+     "y": 4.384,
+     "z": -67.814,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H4"
+      ]
+     ],
+     "rel": {
+      "x": -5.828,
+      "y": -6.154,
+      "z": -1.884,
+      "roll": -1.5708,
+      "pitch": -0.6109,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -6.136,
+      "y": 2.382,
+      "z": -5.928,
+      "roll": -3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+   "key": "motor_2207",
+   "name": "Motor #2",
+   "step": 23,
+   "path": [
+    {
+     "x": 91.0,
+     "y": -33.5,
+     "z": -66.116,
+     "roll": 1.5708,
+     "pitch": -0.0,
+     "yaw": -0.6109
+    },
+    {
+     "x": 91.0,
+     "y": 2.5,
+     "z": -66.116,
+     "roll": 1.5708,
+     "pitch": -0.0,
+     "yaw": -0.6109
+    }
+   ],
+   "mates": [
+    {
+     "id": "39f5bc62-8bac-49f0-a886-e35c252f2f09",
+     "kind": "feature",
+     "features": [
+      [
+       "H2",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 1.113,
+      "y": -1.884,
+      "z": -8.399,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.6109
+     }
+    },
+    {
+     "id": "da36cc28-f889-4fbe-81f7-d68e1af38b91",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -1.653,
+      "y": -1.884,
+      "z": 8.487,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.6109
+     }
+    },
+    {
+     "id": "3ff3d68e-54fd-454a-8a4f-802c7392d1cf",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -8.61,
+      "y": -1.884,
+      "z": -1.283,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.6109
+     }
+    },
+    {
+     "id": "d62e2658-6a51-49cf-9d14-9506a004d84f",
+     "kind": "feature",
+     "features": [
+      [
+       "H4",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 8.304,
+      "y": -1.884,
+      "z": 1.698,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.6109
+     }
+    },
+    {
+     "id": "b0e480aa-818a-4eea-84d0-3000f13a6a23",
+     "kind": "feature",
+     "features": [
+      [
+       "P2",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -20.1,
+      "z": -0.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.6109
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.018,
+      "y": 4.266,
+      "z": -0.099,
+      "roll": -1.5708,
+      "pitch": -0.0,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "86ef85f7-e748-4447-8f1c-5e12e7c7c144",
+     "kind": "feature",
+     "features": [
+      [
+       "P2",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -16.41,
+      "y": 35.865,
+      "z": -17.942,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.6109
+     }
+    }
+   ]
+  },
+  {
+   "id": "b0e480aa-818a-4eea-84d0-3000f13a6a23",
+   "key": "motor_nut_m5",
+   "name": "Propeller Nut #2",
+   "step": 23,
+   "path": [
+    {
+     "x": 91.0,
+     "y": -53.6,
+     "z": -66.116,
+     "roll": -3.1416,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": 91.0,
+     "y": -17.6,
+     "z": -66.116,
+     "roll": -3.1416,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P2"
+      ]
+     ],
+     "rel": {
+      "x": -0.0,
+      "y": 0.0,
+      "z": 20.1,
+      "roll": 1.5708,
+      "pitch": 0.6109,
+      "yaw": 0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "8a59e5bb-6e58-451c-a3c0-504fcfd7d032",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #3-1",
+   "step": 24,
+   "path": [
+    {
+     "x": -99.101,
+     "y": 5.0,
+     "z": 64.387,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H4"
+      ]
+     ],
+     "rel": {
+      "x": -6.101,
+      "y": -6.059,
+      "z": -2.5,
+      "roll": -1.5708,
+      "pitch": -0.6109,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 6.083,
+      "y": 2.0,
+      "z": 6.037,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": 3.1416
+     }
+    }
+   ]
+  },
+  {
+   "id": "250b1751-d5db-4cd6-86b8-9dfc5add0a30",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #3-2",
+   "step": 24,
+   "path": [
+    {
+     "x": -82.187,
+     "y": 5.0,
+     "z": 67.368,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 6.044,
+      "y": 6.085,
+      "z": -2.5,
+      "roll": -1.5708,
+      "pitch": -0.6109,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -6.061,
+      "y": 2.0,
+      "z": -6.108,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": 3.1416
+     }
+    }
+   ]
+  },
+  {
+   "id": "f977e47d-b592-440f-b573-3484c52b1972",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #3-3",
+   "step": 24,
+   "path": [
+    {
+     "x": -89.144,
+     "y": 5.0,
+     "z": 57.598,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": 5.949,
+      "y": -5.908,
+      "z": -2.5,
+      "roll": -1.5708,
+      "pitch": -0.6109,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 5.933,
+      "y": 2.0,
+      "z": -6.014,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": 3.1416
+     }
+    }
+   ]
+  },
+  {
+   "id": "031286ef-09e1-4d25-9aa7-26fe1d1b5b34",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #3-4",
+   "step": 24,
+   "path": [
+    {
+     "x": -91.91,
+     "y": 5.0,
+     "z": 74.484,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H2"
+      ]
+     ],
+     "rel": {
+      "x": -6.003,
+      "y": 6.337,
+      "z": -2.5,
+      "roll": -1.5708,
+      "pitch": -0.6109,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -6.313,
+      "y": 2.0,
+      "z": 5.938,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": 3.1416
+     }
+    }
+   ]
+  },
+  {
+   "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+   "key": "motor_2207",
+   "name": "Motor #3",
+   "step": 24,
+   "path": [
+    {
+     "x": -90.628,
+     "y": -33.5,
+     "z": 65.85,
+     "roll": 1.5708,
+     "pitch": -0.0,
+     "yaw": -0.6109
+    },
+    {
+     "x": -90.628,
+     "y": 2.5,
+     "z": 65.85,
+     "roll": 1.5708,
+     "pitch": -0.0,
+     "yaw": -0.6109
+    }
+   ],
+   "mates": [
+    {
+     "id": "8a59e5bb-6e58-451c-a3c0-504fcfd7d032",
+     "kind": "feature",
+     "features": [
+      [
+       "H4",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 8.473,
+      "y": -2.5,
+      "z": 1.463,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.6109
+     }
+    },
+    {
+     "id": "250b1751-d5db-4cd6-86b8-9dfc5add0a30",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -8.441,
+      "y": -2.5,
+      "z": -1.518,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.6109
+     }
+    },
+    {
+     "id": "f977e47d-b592-440f-b573-3484c52b1972",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -1.484,
+      "y": -2.5,
+      "z": 8.252,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.6109
+     }
+    },
+    {
+     "id": "031286ef-09e1-4d25-9aa7-26fe1d1b5b34",
+     "kind": "feature",
+     "features": [
+      [
+       "H2",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 1.282,
+      "y": -2.5,
+      "z": -8.634,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.6109
+     }
+    },
+    {
+     "id": "484cb3e1-4d98-4509-8c7d-35a83ae123ed",
+     "kind": "feature",
+     "features": [
+      [
+       "P2",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -20.1,
+      "z": -0.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.6109
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.024,
+      "y": 4.5,
+      "z": -0.065,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     }
+    },
+    {
+     "id": "b4481aa8-168a-4725-9d9b-9e639c52ede6",
+     "kind": "feature",
+     "features": [
+      [
+       "P2",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -16.41,
+      "y": 35.865,
+      "z": -17.942,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.6109
+     }
+    }
+   ]
+  },
+  {
+   "id": "484cb3e1-4d98-4509-8c7d-35a83ae123ed",
+   "key": "motor_nut_m5",
+   "name": "Propeller Nut #3",
+   "step": 24,
+   "path": [
+    {
+     "x": -90.628,
+     "y": -53.6,
+     "z": 65.85,
+     "roll": -3.1416,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": -90.628,
+     "y": -17.6,
+     "z": 65.85,
+     "roll": -3.1416,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P2"
+      ]
+     ],
+     "rel": {
+      "x": -0.0,
+      "y": 0.0,
+      "z": 20.1,
+      "roll": 1.5708,
+      "pitch": 0.6109,
+      "yaw": 0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "2e66311a-1399-4f92-87f4-a9368df68a36",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #4-1",
+   "step": 25,
+   "path": [
+    {
+     "x": -93.479,
+     "y": 5.0,
+     "z": -71.129,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H4"
+      ]
+     ],
+     "rel": {
+      "x": -6.246,
+      "y": -5.433,
+      "z": -2.5,
+      "roll": -1.5708,
+      "pitch": -0.8727,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 6.221,
+      "y": 3.0,
+      "z": 5.362,
+      "roll": 3.1416,
+      "pitch": 0.8727,
+      "yaw": 3.1416
+     }
+    }
+   ]
+  },
+  {
+   "id": "63dcf032-2444-4962-b873-996f7ffa6b49",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #4-2",
+   "step": 25,
+   "path": [
+    {
+     "x": -76.859,
+     "y": 5.0,
+     "z": -74.267,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 6.84,
+      "y": 5.282,
+      "z": -2.5,
+      "roll": -1.5708,
+      "pitch": -0.8727,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -6.866,
+      "y": 3.0,
+      "z": -5.353,
+      "roll": 3.1416,
+      "pitch": 0.8727,
+      "yaw": 3.1416
+     }
+    }
+   ]
+  },
+  {
+   "id": "576d9adf-2736-4af3-8ddc-59e5de127737",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #4-3",
+   "step": 25,
+   "path": [
+    {
+     "x": -86.25,
+     "y": 5.0,
+     "z": -80.83,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": 5.832,
+      "y": -6.131,
+      "z": -2.5,
+      "roll": -1.5708,
+      "pitch": -0.8727,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -5.857,
+      "y": 3.0,
+      "z": 6.059,
+      "roll": 3.1416,
+      "pitch": 0.8727,
+      "yaw": 3.1416
+     }
+    }
+   ]
+  },
+  {
+   "id": "d765d31b-ce11-4402-9c5f-b3763788820f",
+   "key": "screw_m3x8_socket_cap",
+   "name": "M3x8mm Motor Screw #4-4",
+   "step": 25,
+   "path": [
+    {
+     "x": -83.906,
+     "y": 5.0,
+     "z": -64.027,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H2"
+      ]
+     ],
+     "rel": {
+      "x": -5.534,
+      "y": 6.465,
+      "z": -2.5,
+      "roll": -1.5708,
+      "pitch": -0.8727,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 5.508,
+      "y": 3.0,
+      "z": -6.537,
+      "roll": 3.1416,
+      "pitch": 0.8727,
+      "yaw": 3.1416
+     }
+    }
+   ]
+  },
+  {
+   "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+   "key": "motor_2207",
+   "name": "Motor #4",
+   "step": 25,
+   "path": [
+    {
+     "x": -85.302,
+     "y": -33.5,
+     "z": -72.422,
+     "roll": 1.5708,
+     "pitch": -0.0,
+     "yaw": -0.8727
+    },
+    {
+     "x": -85.302,
+     "y": 2.5,
+     "z": -72.422,
+     "roll": 1.5708,
+     "pitch": -0.0,
+     "yaw": -0.8727
+    }
+   ],
+   "mates": [
+    {
+     "id": "2e66311a-1399-4f92-87f4-a9368df68a36",
+     "kind": "feature",
+     "features": [
+      [
+       "H4",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 8.177,
+      "y": -2.5,
+      "z": -1.293,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.8727
+     }
+    },
+    {
+     "id": "63dcf032-2444-4962-b873-996f7ffa6b49",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -8.443,
+      "y": -2.5,
+      "z": 1.845,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.8727
+     }
+    },
+    {
+     "id": "576d9adf-2736-4af3-8ddc-59e5de127737",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 0.948,
+      "y": -2.5,
+      "z": 8.408,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.8727
+     }
+    },
+    {
+     "id": "d765d31b-ce11-4402-9c5f-b3763788820f",
+     "kind": "feature",
+     "features": [
+      [
+       "H2",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -1.396,
+      "y": -2.5,
+      "z": -8.395,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.8727
+     }
+    },
+    {
+     "id": "61970440-40d5-44f7-a718-a79591c70524",
+     "kind": "feature",
+     "features": [
+      [
+       "P2",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.0,
+      "y": -20.1,
+      "z": -0.0,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.8727
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -0.026,
+      "y": 0.5,
+      "z": -0.071,
+      "roll": 1.5708,
+      "pitch": -0.0,
+      "yaw": -3.1416
+     }
+    },
+    {
+     "id": "4bbffd97-2ba1-4494-9a64-23b0ef859f16",
+     "kind": "feature",
+     "features": [
+      [
+       "P2",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -1.987,
+      "y": 52.798,
+      "z": -18.959,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.8727
+     }
+    }
+   ]
+  },
+  {
+   "id": "61970440-40d5-44f7-a718-a79591c70524",
+   "key": "motor_nut_m5",
+   "name": "Propeller Nut #4",
+   "step": 25,
+   "path": [
+    {
+     "x": -85.302,
+     "y": -53.6,
+     "z": -72.422,
+     "roll": -3.1416,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": -85.302,
+     "y": -17.6,
+     "z": -72.422,
+     "roll": -3.1416,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P2"
+      ]
+     ],
+     "rel": {
+      "x": -0.0,
+      "y": 0.0,
+      "z": 20.1,
+      "roll": 1.5708,
+      "pitch": 0.8727,
+      "yaw": 0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+   "key": "esc_4in1",
+   "name": "4-in-1 ESC",
+   "step": 26,
+   "path": [
+    {
+     "x": 0.0,
+     "y": -64.0,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    },
+    {
+     "x": 0.0,
+     "y": -4.0,
+     "z": 0.0,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": 15.425,
+      "z": 0.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+     "kind": "feature",
+     "features": [
+      [
+       "H4",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": 15.425,
+      "z": 0.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": -15.425,
+      "z": 0.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+     "kind": "feature",
+     "features": [
+      [
+       "H2",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": -15.425,
+      "z": 0.197,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "1f067ba6-468c-48d4-94dd-e9b65f5fe57d",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": -2.5,
+      "z": -15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b2e830f3-9c86-4d90-8fc5-5e0115ed5d7d",
+     "kind": "feature",
+     "features": [
+      [
+       "H4",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": -2.5,
+      "z": -15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "4f1d3bb7-362e-44aa-95ac-4b5da5d2fe13",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": -2.5,
+      "z": 15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a83feb95-a3f7-48c9-b766-34828a66e009",
+     "kind": "feature",
+     "features": [
+      [
+       "H2",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": -2.5,
+      "z": 15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "1f067ba6-468c-48d4-94dd-e9b65f5fe57d",
+   "key": "damper_m2",
+   "name": "ESC Spacer Grommet #1",
+   "step": 26,
+   "path": [
+    {
+     "x": 15.465,
+     "y": -1.5,
+     "z": 15.425,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H12"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": -1.5,
+      "z": 15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": 2.5,
+      "z": 15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 15.465,
+      "y": -3.5,
+      "z": 15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -2.142,
+      "y": -3.5,
+      "z": -90.8,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.0,
+      "y": -0.0,
+      "z": 2.697,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "b2e830f3-9c86-4d90-8fc5-5e0115ed5d7d",
+   "key": "damper_m2",
+   "name": "ESC Spacer Grommet #2",
+   "step": 26,
+   "path": [
+    {
+     "x": -15.465,
+     "y": -1.5,
+     "z": 15.425,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H11"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": -1.5,
+      "z": 15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H4"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": 2.5,
+      "z": 15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -15.465,
+      "y": -3.5,
+      "z": 15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -1.784,
+      "y": 8.5,
+      "z": -90.557,
+      "roll": -0.0,
+      "pitch": -0.9599,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.0,
+      "y": -0.0,
+      "z": 2.697,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "4f1d3bb7-362e-44aa-95ac-4b5da5d2fe13",
+   "key": "damper_m2",
+   "name": "ESC Spacer Grommet #3",
+   "step": 26,
+   "path": [
+    {
+     "x": -15.465,
+     "y": -1.5,
+     "z": -15.425,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H4"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": -1.5,
+      "z": -15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -15.465,
+      "y": 2.5,
+      "z": -15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -15.465,
+      "y": -3.5,
+      "z": -15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -1.251,
+      "y": -3.5,
+      "z": -90.206,
+      "roll": 3.1416,
+      "pitch": 0.8727,
+      "yaw": 3.1416
+     }
+    },
+    {
+     "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.0,
+      "y": -0.0,
+      "z": 2.697,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "a83feb95-a3f7-48c9-b766-34828a66e009",
+   "key": "damper_m2",
+   "name": "ESC Spacer Grommet #4",
+   "step": 26,
+   "path": [
+    {
+     "x": 15.465,
+     "y": -1.5,
+     "z": -15.425,
+     "roll": 0.0,
+     "pitch": 0.0,
+     "yaw": 0.0
+    }
+   ],
+   "mates": [
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": -1.5,
+      "z": -15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H2"
+      ]
+     ],
+     "rel": {
+      "x": 15.465,
+      "y": 2.5,
+      "z": -15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 15.465,
+      "y": -3.5,
+      "z": -15.425,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -1.786,
+      "y": 8.266,
+      "z": -91.049,
+      "roll": -3.1416,
+      "pitch": 0.9599,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 0.0,
+      "y": -0.0,
+      "z": 2.697,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ]
+  },
+  {
+   "id": "38039c9a-ab26-4071-a759-786c982579b4",
+   "key": "knurled_standoff",
+   "name": "Standoff #5",
+   "step": 27,
+   "derived": true,
+   "mates": [
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H5"
+      ]
+     ],
+     "rel": {
+      "x": 9.589,
+      "y": -10.0,
+      "z": 44.392,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "c3b5b725-89f3-4d6e-8bac-6f59ff9c6a78",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -0.004,
+      "y": -5.999,
+      "z": -2.746,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H4"
+      ]
+     ],
+     "rel": {
+      "x": 9.586,
+      "y": 12.502,
+      "z": 69.98,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "6c1fe787-77ec-480b-8d98-5631c5b1973f",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -0.62,
+      "y": -6.5,
+      "z": 4.545,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": 9.5891,
+     "y": -45.99999999975714,
+     "z": 73.83226776461629,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": 9.5891,
+     "y": -10.0,
+     "z": 73.8324,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "c3b5b725-89f3-4d6e-8bac-6f59ff9c6a78",
+   "key": "screw_m3x6_pan",
+   "name": "Standoff Screw #5",
+   "step": 27,
+   "derived": true,
+   "mates": [
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H5"
+      ]
+     ],
+     "rel": {
+      "x": 9.593,
+      "y": -4.001,
+      "z": 47.138,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "38039c9a-ab26-4071-a759-786c982579b4",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.004,
+      "y": 2.746,
+      "z": -5.999,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": 9.5931,
+     "y": 36.49879999975714,
+     "z": 73.82803223538372,
+     "roll": 4e-06,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": 9.5931,
+     "y": 0.4988,
+     "z": 73.8279,
+     "roll": 4e-06,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "07f49cc8-998b-4039-bec1-3fc9dd936433",
+   "key": "knurled_standoff",
+   "name": "Standoff #6",
+   "step": 28,
+   "derived": true,
+   "mates": [
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H6"
+      ]
+     ],
+     "rel": {
+      "x": -9.597,
+      "y": -10.0,
+      "z": 44.392,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "eebdf541-0700-4de0-8774-83ef4f3d9968",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -0.004,
+      "y": -5.999,
+      "z": -2.746,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": -9.6,
+      "y": 12.502,
+      "z": 69.98,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "d800b229-b7f1-4794-a2b3-45eaffb9877d",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 0.607,
+      "y": -6.5,
+      "z": 4.545,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": -9.5972,
+     "y": -45.99999999975714,
+     "z": 73.83226776461629,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": -9.5972,
+     "y": -10.0,
+     "z": 73.8324,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "eebdf541-0700-4de0-8774-83ef4f3d9968",
+   "key": "screw_m3x6_pan",
+   "name": "Standoff Screw #6",
+   "step": 28,
+   "derived": true,
+   "mates": [
+    {
+     "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H6"
+      ]
+     ],
+     "rel": {
+      "x": -9.593,
+      "y": -4.001,
+      "z": 47.138,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "07f49cc8-998b-4039-bec1-3fc9dd936433",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.004,
+      "y": 2.746,
+      "z": -5.999,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": -9.5931,
+     "y": 36.49879999975714,
+     "z": 73.82803223538372,
+     "roll": 4e-06,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": -9.5931,
+     "y": 0.4988,
+     "z": 73.8279,
+     "roll": 4e-06,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+   "key": "top_plate",
+   "name": "Top Plate",
+   "step": 29,
+   "derived": true,
+   "mates": [
+    {
+     "id": "7ba6ea05-098b-4c62-9ae8-a203e41652fd",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -14.818,
+      "y": 30.316,
+      "z": 12.502,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "9ef7451a-519d-44b6-b309-791f2deb2927",
+     "kind": "feature",
+     "features": [
+      [
+       "H2",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 14.824,
+      "y": 30.316,
+      "z": 12.502,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b9d5fd44-1a47-4c0a-bdfb-c3a0b2925ca2",
+     "kind": "feature",
+     "features": [
+      [
+       "H5",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -14.818,
+      "y": -22.61,
+      "z": 12.502,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "56281c28-09d7-4519-aed3-6aeab2a1ac49",
+     "kind": "feature",
+     "features": [
+      [
+       "H6",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 14.824,
+      "y": -22.61,
+      "z": 12.502,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "07f49cc8-998b-4039-bec1-3fc9dd936433",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 9.6,
+      "y": -69.98,
+      "z": 12.502,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "38039c9a-ab26-4071-a759-786c982579b4",
+     "kind": "feature",
+     "features": [
+      [
+       "H4",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -9.586,
+      "y": -69.98,
+      "z": 12.502,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "6e27fbca-a92f-4ea8-95e3-69cbcc6fcab3",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -14.81,
+      "y": 6.004,
+      "z": -29.018,
+      "roll": 3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "a1db5ee5-3be8-47d4-b69f-83416728eb7c",
+     "kind": "feature",
+     "features": [
+      [
+       "H2",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 14.81,
+      "y": 6.002,
+      "z": -29.018,
+      "roll": 3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "e1924a53-5b49-42f6-957f-ac4653603351",
+     "kind": "feature",
+     "features": [
+      [
+       "H5",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -15.052,
+      "y": 6.004,
+      "z": 25.004,
+      "roll": 3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "706fbaca-71d5-4a51-9151-0862576756d3",
+     "kind": "feature",
+     "features": [
+      [
+       "H6",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 15.052,
+      "y": 6.002,
+      "z": 25.004,
+      "roll": 3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "d800b229-b7f1-4794-a2b3-45eaffb9877d",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 10.207,
+      "y": 6.002,
+      "z": 74.524,
+      "roll": 3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "6c1fe787-77ec-480b-8d98-5631c5b1973f",
+     "kind": "feature",
+     "features": [
+      [
+       "H4",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -10.207,
+      "y": 6.002,
+      "z": 74.524,
+      "roll": 3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b98ed850-2445-4a57-849a-96cef769411a",
+     "kind": "feature",
+     "features": [
+      [
+       "H7",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": -68.048,
+      "y": 16.421,
+      "z": -16.956,
+      "roll": 1.5708,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "a29925a4-cf40-4a27-8c08-c86e8ec7a0a5",
+     "kind": "feature",
+     "features": [
+      [
+       "H7",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -12.367,
+      "y": 6.004,
+      "z": -73.713,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "574bb377-c01c-4b6f-8679-285d00b802f8",
+     "kind": "feature",
+     "features": [
+      [
+       "H8",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": 68.125,
+      "y": 16.699,
+      "z": -16.956,
+      "roll": 1.5708,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     }
+    },
+    {
+     "id": "d38abbbe-d0e6-4ebb-944c-ce1f9954b0d3",
+     "kind": "feature",
+     "features": [
+      [
+       "H8",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 12.367,
+      "y": 6.004,
+      "z": -73.713,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": 0.0027,
+     "y": -58.502099999757135,
+     "z": 3.3224677646162797,
+     "roll": -0.0,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": 0.0027,
+     "y": -22.5021,
+     "z": 3.3226,
+     "roll": -0.0,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "6e27fbca-a92f-4ea8-95e3-69cbcc6fcab3",
+   "key": "screw_m3x6_pan",
+   "name": "Standoff Screw #7",
+   "step": 30,
+   "derived": true,
+   "mates": [
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 14.81,
+      "y": 6.004,
+      "z": -29.018,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "7ba6ea05-098b-4c62-9ae8-a203e41652fd",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -0.009,
+      "y": 1.298,
+      "z": 6.498,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": 14.8123,
+     "y": -56.99839999975714,
+     "z": -27.91513223538372,
+     "roll": -3.141589,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": 14.8123,
+     "y": -20.9984,
+     "z": -27.915,
+     "roll": -3.141589,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "a1db5ee5-3be8-47d4-b69f-83416728eb7c",
+   "key": "screw_m3x6_countersunk",
+   "name": "Standoff Screw #10",
+   "step": 31,
+   "derived": true,
+   "mates": [
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H2"
+      ]
+     ],
+     "rel": {
+      "x": -14.81,
+      "y": 6.002,
+      "z": -29.018,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "9ef7451a-519d-44b6-b309-791f2deb2927",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.014,
+      "y": 1.298,
+      "z": 6.5,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": -14.8069,
+     "y": -52.500399999757136,
+     "z": -27.91513223538372,
+     "roll": -3.141589,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": -14.8069,
+     "y": -16.5004,
+     "z": -27.915,
+     "roll": -3.141589,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "e1924a53-5b49-42f6-957f-ac4653603351",
+   "key": "screw_m3x6_pan",
+   "name": "Standoff Screw #8",
+   "step": 32,
+   "derived": true,
+   "mates": [
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H5"
+      ]
+     ],
+     "rel": {
+      "x": 15.052,
+      "y": 6.004,
+      "z": 25.004,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b9d5fd44-1a47-4c0a-bdfb-c3a0b2925ca2",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.234,
+      "y": 2.394,
+      "z": 6.498,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": 15.0545,
+     "y": -56.99839999975714,
+     "z": 26.10676776461628,
+     "roll": -3.141589,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": 15.0545,
+     "y": -20.9984,
+     "z": 26.1069,
+     "roll": -3.141589,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "706fbaca-71d5-4a51-9151-0862576756d3",
+   "key": "screw_m3x6_countersunk",
+   "name": "Standoff Screw #9",
+   "step": 33,
+   "derived": true,
+   "mates": [
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H6"
+      ]
+     ],
+     "rel": {
+      "x": -15.052,
+      "y": 6.002,
+      "z": 25.004,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "56281c28-09d7-4519-aed3-6aeab2a1ac49",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -0.228,
+      "y": 2.394,
+      "z": 6.5,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": -15.0491,
+     "y": -52.500399999757136,
+     "z": 26.10676776461628,
+     "roll": -3.141589,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": -15.0491,
+     "y": -16.5004,
+     "z": 26.1069,
+     "roll": -3.141589,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "d800b229-b7f1-4794-a2b3-45eaffb9877d",
+   "key": "screw_m3x6_countersunk",
+   "name": "Standoff Screw #12",
+   "step": 34,
+   "derived": true,
+   "mates": [
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": -10.207,
+      "y": 6.002,
+      "z": 74.524,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "07f49cc8-998b-4039-bec1-3fc9dd936433",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": -0.607,
+      "y": 4.545,
+      "z": 6.5,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": -10.2041,
+     "y": -52.500399999757136,
+     "z": 75.62676776461629,
+     "roll": -3.141589,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": -10.2041,
+     "y": -16.5004,
+     "z": 75.6269,
+     "roll": -3.141589,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "6c1fe787-77ec-480b-8d98-5631c5b1973f",
+   "key": "screw_m3x6_countersunk",
+   "name": "Standoff Screw #11",
+   "step": 35,
+   "derived": true,
+   "mates": [
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H4"
+      ]
+     ],
+     "rel": {
+      "x": 10.207,
+      "y": 6.002,
+      "z": 74.524,
+      "roll": -3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "38039c9a-ab26-4071-a759-786c982579b4",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 0.62,
+      "y": 4.545,
+      "z": 6.5,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": 10.2095,
+     "y": -52.500399999757136,
+     "z": 75.62676776461629,
+     "roll": -3.141589,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": 10.2095,
+     "y": -16.5004,
+     "z": 75.6269,
+     "roll": -3.141589,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "b98ed850-2445-4a57-849a-96cef769411a",
+   "key": "camera_plate_right",
+   "name": "Right Camera Plate",
+   "step": 36,
+   "derived": true,
+   "mates": [
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "H7"
+      ]
+     ],
+     "rel": {
+      "x": 16.421,
+      "y": 16.956,
+      "z": -68.048,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     }
+    },
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": 16.423,
+      "y": -12.547,
+      "z": -41.736,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     }
+    },
+    {
+     "id": "fca80547-77d0-43c0-a2b0-5efc17085894",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 3.572,
+      "y": -9.046,
+      "z": 4.797,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     }
+    },
+    {
+     "id": "a29925a4-cf40-4a27-8c08-c86e8ec7a0a5",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": 4.054,
+      "y": -10.952,
+      "z": -5.665,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": 1.5708
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": 16.4232,
+     "y": -4.7166,
+     "z": -104.7456,
+     "roll": -1.570796,
+     "pitch": 0.0,
+     "yaw": 1.570796
+    },
+    {
+     "x": 16.4232,
+     "y": -4.7166,
+     "z": -68.7456,
+     "roll": -1.570796,
+     "pitch": 0.0,
+     "yaw": 1.570796
+    }
+   ]
+  },
+  {
+   "id": "fca80547-77d0-43c0-a2b0-5efc17085894",
+   "key": "screw_m3x6_pan",
+   "name": "M3x6 Right Camera Plate Lower Screw",
+   "step": 37,
+   "derived": true,
+   "mates": [
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H1"
+      ]
+     ],
+     "rel": {
+      "x": 12.851,
+      "y": -3.501,
+      "z": -46.532,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b98ed850-2445-4a57-849a-96cef769411a",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": 4.797,
+      "y": 3.572,
+      "z": 9.046,
+      "roll": 1.5708,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": 12.8514,
+     "y": 43.9995,
+     "z": -71.7423,
+     "roll": -0.0,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": 12.8514,
+     "y": 7.9995,
+     "z": -71.7423,
+     "roll": -0.0,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "a29925a4-cf40-4a27-8c08-c86e8ec7a0a5",
+   "key": "screw_m3x6_pan",
+   "name": "M3x6 Right Camera Plate Upper Screw",
+   "step": 38,
+   "derived": true,
+   "mates": [
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H7"
+      ]
+     ],
+     "rel": {
+      "x": 12.367,
+      "y": 6.004,
+      "z": -73.713,
+      "roll": 3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "b98ed850-2445-4a57-849a-96cef769411a",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": 5.665,
+      "y": 4.054,
+      "z": -10.952,
+      "roll": -1.5708,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": 12.3696,
+     "y": -56.998400000000004,
+     "z": -72.6102,
+     "roll": 3.141593,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": 12.3696,
+     "y": -20.9984,
+     "z": -72.6102,
+     "roll": 3.141593,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "574bb377-c01c-4b6f-8679-285d00b802f8",
+   "key": "camera_plate_left",
+   "name": "Left Camera Plate",
+   "step": 39,
+   "derived": true,
+   "mates": [
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "H8"
+      ]
+     ],
+     "rel": {
+      "x": -16.699,
+      "y": 16.956,
+      "z": -68.125,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "contact",
+     "features": [],
+     "rel": {
+      "x": -16.696,
+      "y": -12.547,
+      "z": -41.812,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "4f4eacd0-8e52-4d26-a87e-a12cb131db17",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -3.845,
+      "y": -9.046,
+      "z": 4.72,
+      "roll": -1.5708,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     }
+    },
+    {
+     "id": "d38abbbe-d0e6-4ebb-944c-ce1f9954b0d3",
+     "kind": "feature",
+     "features": [
+      [
+       "H3",
+       "P1"
+      ]
+     ],
+     "rel": {
+      "x": -4.332,
+      "y": -10.952,
+      "z": -5.588,
+      "roll": 1.5708,
+      "pitch": 0.0,
+      "yaw": -1.5708
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": -16.6964,
+     "y": -4.7166,
+     "z": -104.8223,
+     "roll": -1.570796,
+     "pitch": 0.0,
+     "yaw": -1.570796
+    },
+    {
+     "x": -16.6964,
+     "y": -4.7166,
+     "z": -68.8223,
+     "roll": -1.570796,
+     "pitch": 0.0,
+     "yaw": -1.570796
+    }
+   ]
+  },
+  {
+   "id": "4f4eacd0-8e52-4d26-a87e-a12cb131db17",
+   "key": "screw_m3x6_pan",
+   "name": "M3x6 Left Camera Plate Lower Screw",
+   "step": 40,
+   "derived": true,
+   "mates": [
+    {
+     "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H2"
+      ]
+     ],
+     "rel": {
+      "x": -12.851,
+      "y": -3.501,
+      "z": -46.532,
+      "roll": -0.0,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "574bb377-c01c-4b6f-8679-285d00b802f8",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": -4.72,
+      "y": 3.845,
+      "z": 9.046,
+      "roll": 1.5708,
+      "pitch": 1.5708,
+      "yaw": 0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": -12.8514,
+     "y": 43.9995,
+     "z": -71.7423,
+     "roll": -0.0,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": -12.8514,
+     "y": 7.9995,
+     "z": -71.7423,
+     "roll": -0.0,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "d38abbbe-d0e6-4ebb-944c-ce1f9954b0d3",
+   "key": "screw_m3x6_pan",
+   "name": "M3x6 Left Camera Plate Upper Screw",
+   "step": 41,
+   "derived": true,
+   "mates": [
+    {
+     "id": "7e93b133-4de4-456f-8474-8dd11696c0a8",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H8"
+      ]
+     ],
+     "rel": {
+      "x": -12.367,
+      "y": 6.004,
+      "z": -73.713,
+      "roll": 3.1416,
+      "pitch": 0.0,
+      "yaw": -0.0
+     }
+    },
+    {
+     "id": "574bb377-c01c-4b6f-8679-285d00b802f8",
+     "kind": "feature",
+     "features": [
+      [
+       "P1",
+       "H3"
+      ]
+     ],
+     "rel": {
+      "x": -5.588,
+      "y": 4.332,
+      "z": -10.952,
+      "roll": -1.5708,
+      "pitch": -1.5708,
+      "yaw": 0.0
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": -12.3642,
+     "y": -56.998400000000004,
+     "z": -72.6102,
+     "roll": 3.141593,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": -12.3642,
+     "y": -20.9984,
+     "z": -72.6102,
+     "roll": 3.141593,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "bc9660e8-5b5c-4adc-834a-3ffd4c698de9",
+   "key": "propeller_cw",
+   "name": "Propeller #1",
+   "step": 42,
+   "derived": true,
+   "mates": [
+    {
+     "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P2"
+      ]
+     ],
+     "rel": {
+      "x": 45.583,
+      "y": -28.606,
+      "z": 18.959,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.9599
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": 91.0005,
+     "y": -66.0995,
+     "z": 65.7511,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": 91.0005,
+     "y": -30.0995,
+     "z": 65.7511,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "86ef85f7-e748-4447-8f1c-5e12e7c7c144",
+   "key": "propeller_ccw",
+   "name": "Propeller #2",
+   "step": 43,
+   "derived": true,
+   "mates": [
+    {
+     "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P2"
+      ]
+     ],
+     "rel": {
+      "x": 34.014,
+      "y": -19.965,
+      "z": 17.942,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.6109
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": 91.0017,
+     "y": -71.00200000000001,
+     "z": -66.1138,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": 91.0017,
+     "y": -35.002,
+     "z": -66.1138,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "b4481aa8-168a-4725-9d9b-9e639c52ede6",
+   "key": "propeller_ccw",
+   "name": "Propeller #3",
+   "step": 44,
+   "derived": true,
+   "mates": [
+    {
+     "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P2"
+      ]
+     ],
+     "rel": {
+      "x": 34.014,
+      "y": -19.965,
+      "z": 17.942,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.6109
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": -90.6263,
+     "y": -71.00200000000001,
+     "z": 65.8522,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": -90.6263,
+     "y": -35.002,
+     "z": 65.8522,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  },
+  {
+   "id": "4bbffd97-2ba1-4494-9a64-23b0ef859f16",
+   "key": "propeller_cw",
+   "name": "Propeller #4",
+   "step": 45,
+   "derived": true,
+   "mates": [
+    {
+     "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+     "kind": "feature",
+     "features": [
+      [
+       "H1",
+       "P2"
+      ]
+     ],
+     "rel": {
+      "x": 41.724,
+      "y": -32.414,
+      "z": 18.959,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.8727
+     }
+    }
+   ],
+   "path": [
+    {
+     "x": -85.3018,
+     "y": -66.0995,
+     "z": -72.4208,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": -0.0
+    },
+    {
+     "x": -85.3018,
+     "y": -30.0995,
+     "z": -72.4208,
+     "roll": 1.5708,
+     "pitch": 0.0,
+     "yaw": -0.0
+    }
+   ]
+  }
+ ]
+}

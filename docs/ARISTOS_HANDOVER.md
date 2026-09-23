@@ -237,6 +237,70 @@ python3 build.py
 - `answer.json` (reference assembly: per-part approach → installed paths, step
   order, prerequisites) drives the Answer/Next ghosts **and** the Checks.
 
+### The reference assembly is part captured, part derived
+
+`task_graphs.db` holds 353 steps but only **52 of them carry `Step3DPaths`**, and
+every one of those snapshots contains the same **53 parts** — the last one
+(`End Frame, ESC, Motors, and FC Assembly`) included. Steps named
+`Place Propeller on Motor Shaft (A–D)`, `Place Top Plate on Top of Frame`,
+`Feed Screw through Top Plate and into Standoff (A–F)` and
+`Place Left/Right Camera Plate` exist **with zero pose rows**. Per part type:
+propellers 4 parts / 0 posed, top plate 1/0, camera plates 2/0, knurled standoff
+6/**4**, M3×6 pan 9/**1**, M2 dampers 16/**4**.
+
+So the kit has 82 parts while ARISTOS captured poses for 53. The remaining
+positions are **computed from the parts' own hole/peg features** by
+
+```sh
+python3 tools/derive_final_assembly.py            # rewrites manifest.answer in place
+python3 tools/derive_final_assembly.py --dry-run  # prints what it would add
+```
+
+which appends 21 parts / 19 steps (steps 27–45), each flagged `derived: true` on
+both the step and the part, with `mates` wired in both directions so the checker
+can judge them. It is re-runnable: it strips its own previous output first.
+What it derives, and on what evidence:
+
+Which part goes in which step is **not guessed** — `StepParts` in the task graph
+names the exact part instance for every one of these steps, down to which screws
+are pan and which are countersunk. The derivation follows it:
+
+| part | how its pose is fixed |
+| --- | --- |
+| Top Plate | least-squares fit of its 6 holes onto the 6 standoff free ends (max residual 1.9 mm) |
+| Standoff #5/#6 | the free M3 pair at the rear of the Split Rear Plate; attitude copied from the four captured standoffs |
+| Standoff Screw #5/#6 | M3×6 pan, through the rear plate into each new standoff |
+| Standoff Screw #7/#8 | M3×6 pan, through the top plate into standoffs A/B |
+| Standoff Screw #9–#12 | M3×6 **countersunk**, through the top plate into standoffs C–F, head flush with the plate |
+| Left/Right Camera Plate | standing between top plate and front plate, `H3` over the top plate's front hole pair, M2 camera holes facing the centreline |
+| 4 × M3×6 pan | camera plates: one up through the top plate, one down through the front plate, into the same through-hole |
+| 4 × Propeller | hub bore on the motor shaft axis, seated on the motor's outermost face |
+
+That accounts for all nine M3×6 pan screws in the task graph exactly.
+
+**The countersunk screw is modelled by us.** `PartTypes.model` for
+`Screw - M3x6mm Countersunk` is the literal string `TODO_MODEL` — ARISTOS has no
+mesh for it, so those four steps had no part at all. `tools/make_countersunk_screw.py`
+turns one to ISO 10642 / DIN 7991 dimensions (Ø3 × 4.5 mm shank, 90° head Ø6 ×
+1.5 mm, 6 mm overall, length measured over the head) and registers it in the
+manifest as `screw_m3x6_countersunk` plus four kit instances. It is re-runnable.
+If ARISTOS later ships the real mesh, drop it in and delete the generated one.
+`aristos_frontend/src/components/Simulator/kit_scene.ts` carries the matching
+four kit entries at the end of the array.
+
+Two honest caveats:
+
+- **The propeller seats on the motor's end face, not on a shaft.** In this model
+  the shaft (`motor_2207` peg `P2`) lies entirely inside the bell, so there is no
+  protruding shaft to slide a hub onto. The captured propeller-nut poses sit
+  inside the bell too, so nothing overlaps and **no ARISTOS pose was modified**.
+- **Which diagonal takes CW vs CCW is not in the data.** The steps are named but
+  carry no part type, so `check.js` maps `propeller_ccw → propeller_cw` in `SAME`:
+  either diagonal assignment passes, exactly as M3×16 cap/pan are interchangeable.
+
+The 12 spare M2 dampers are still unplaced: they belong to the flight
+controller, which has no model in the kit.
+
 ---
 
 ## 6. What the judgement actually guarantees
@@ -245,8 +309,9 @@ Read [`STEP_COMPLETION.md`](STEP_COMPLETION.md) for the full definition. The
 parts that surprise people:
 
 - **Relative, not absolute.** A part is judged by its pose *relative to the
-  parts it mates with*, so a sub-assembly built anywhere on the table counts,
-  and moving the whole build changes nothing.
+  parts it mates with*. The whole footprint must also lie inside the marked
+  assembly workspace. Moving a build within the workspace preserves its score;
+  moving it outside invalidates the affected parts.
 - **Identical parts are interchangeable.** Slots are assigned by matching poses
   (greedy propagation + a pairwise-swap correction that uses the *mean* error
   over all placed neighbours). Swapping arm #1 and #3 still scores 53/53.
@@ -255,7 +320,14 @@ parts that surprise people:
   neighbours agree, not all. This matters: error is asymmetric — a screw turned
   5° reads as 0.3 mm from its own side and 3.9 mm from the far end of an arm.
   Requiring unanimity blamed three innocent arms for one crooked screw.
-- **`S` / Snap all** move a part onto its exact reference pose when it is
+- **Workspace first.** Next/showNext/showStep first animate the actual receiving
+  part into the workspace if it is outside, then switch to assembly guidance
+  after the trainee moves it in. Hole mating rejects an outside receiver or a
+  final pose crossing the boundary. X/Z mesh bounds are checked; height is free.
+  Bounds live in `src/workspace.js` (X 8–18, Z −5–5, scene units). Tutorial
+  fixtures start inside. No host protocol change is required.
+- **`S` / Snap all** require both current and final footprints inside the workspace
+  and move a part onto its exact reference pose when it is
   already close (10 mm / 25°, widened by the swing a rotation error explains).
   Automatic snapping on place is **off** by default (`KBCheck.autoSnap(true)`
   turns it on) because it fights arrow-key fine-tuning.
@@ -318,10 +390,17 @@ or the public APIs (`KBMate.mate`, `KBCheck.snapAll`), then assert on
 
 Minimum regression set before shipping a change to the judgement:
 
-- the complete reference assembly scores 53/53 parts, 27/27 steps, 0 issues
-- arms placed in shuffled order still score 53/53
+- the complete reference assembly scores 74/74 parts, 46/46 steps, 0 issues
+  (53 parts / 27 steps ARISTOS-captured, 21 / 19 derived — see §5)
+- arms placed in shuffled order still score 74/74
+- no step has zero slots: a step whose part has no model must not be emitted,
+  or it sits at `available` forever and 100% becomes unreachable
 - a part genuinely 8 mm off is still reported
-- Snap all clears a jittered build to 15/15 of the parts placed so far
+- Next shows wedge transfer before screw insertion; after moving the wedge inside,
+  guidance switches automatically without moving any real part on its own.
+- Outside mating and outside Snap all are rejected; an exact assembly outside
+  does not count as complete, and counts again after being moved inside.
+- Snap all clears a jittered build inside the workspace to 15/15 of the parts placed so far
 - both tutorial lessons complete by clicking
 
 ---

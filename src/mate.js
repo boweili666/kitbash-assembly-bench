@@ -328,6 +328,11 @@
     var a = worldFeature(src), b = worldFeature(dst);
     var top = topOf(src.node);
     if (topOf(dst.node) === top) return false;
+    if (window.KBWorkspace && !KBWorkspace.contains(topOf(dst.node))) {
+      report(a, b, false, 'receiving part outside workspace');
+      KB.toast(KBWorkspace.message(dst.node));
+      return false;
+    }
 
     var reason = null;
     if (a.kind === 'peg' && b.kind === 'peg') reason = 'peg-on-peg';
@@ -408,6 +413,12 @@
       }
       if (off > 0) center.addScaledVector(b.tip, off);
     }
+    if (window.KBWorkspace && !KBWorkspace.contains(top)) {
+      top.position.copy(p0); top.quaternion.copy(q0); top.updateMatrixWorld(true);
+      report(a, b, false, 'assembly would cross workspace boundary');
+      KB.toast('Move the receiving part further inside the workspace before connecting.');
+      return false;
+    }
     var p1 = top.position.clone(), q1 = top.quaternion.clone();
     top.position.copy(p0); top.quaternion.copy(q0); top.updateMatrixWorld(true);
     mating = true;
@@ -431,8 +442,8 @@
         mating = false;
         report(a, b, true);
         burst(center, axisDir, Math.max(b.r || 0.05, a.r || 0.05));
+        KB.setSelection([]); // Successful seating ends the selection; retain the hole hinge for arrow-key adjustments.
         KB.pushSnapshot();
-        KB.setSelection([top]);
         KB.syncInspector();
         KB.toast((a.owner.name || 'Part') + ' \u2192 ' + (b.owner.name || 'part') + ' mated \u2014 locked on the hole. \u2191\u2193 slide, \u2190\u2192 turn; click it to release');
       }
@@ -563,6 +574,9 @@
     var tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea') return;
     if (e.code === 'Escape' && armed) { e.stopImmediatePropagation(); disarm(); return; }
+    // 装好的零件还锁在孔上,但选择被清掉了(比如挪动一次后自动取消选择):
+    // 这时按方向键不该石沉大海 —— 没有别的零件被选中就把它重新拿回来
+    if (lastMate && !selection.length && /^Arrow(Up|Down|Left|Right)$/.test(e.code)) KB.setSelection([lastMate.node]);
     if (!lastMate || selection.indexOf(lastMate.node) < 0) return;
     var arrow = e.code === 'ArrowLeft' || e.code === 'ArrowRight' || e.code === 'ArrowUp' || e.code === 'ArrowDown';
     if (arrow) {
@@ -580,6 +594,7 @@
         q = new THREE.Quaternion().setFromAxisAngle(lastMate.dir, THREE.MathUtils.degToRad(deg));
         t = lastMate.point.clone().sub(lastMate.point.clone().applyQuaternion(q));
       }
+      KB.beginInteraction('key', e.code);
       KB.bakePivot();
       mating = true;
       KB.emit('grab', lastMate.node);

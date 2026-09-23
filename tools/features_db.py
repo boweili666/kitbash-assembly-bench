@@ -456,6 +456,14 @@ def cmd_answer(a):
                           "step": step_i, "path": [pose_dict(v) for v in path],
                           "mates": [{"id": parts[m["pid"]]["uuid"], "kind": m["kind"], "features": m["features"],
                                      "rel": pose_dict(m["rel"])} for m in mates.get(pid, [])]})
+    # The motor shafts face downward in this reference assembly. Nuts approach
+    # from underneath (+Y motion), without changing the installed scoring pose.
+    for part in out_parts:
+        if part['key'] == 'motor_nut_m5' and len(part['path']) > 1:
+            seated = part['path'][-1]
+            start = dict(seated)
+            start['y'] = round(seated['y'] - 36.0, 4)
+            part['path'] = [start, seated]
     out_parts.sort(key=lambda d: (d["step"], d["name"]))      # the animation scheduler walks parts step by step
     out_steps = [{"i": i, "id": steps[sid]["uuid"], "name": steps[sid]["name"],
                   "requires": sorted(index[x] for x in anc[sid])} for i, sid in enumerate(order)]

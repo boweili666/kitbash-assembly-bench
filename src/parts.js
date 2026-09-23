@@ -192,6 +192,27 @@
     return { id: part.id, name: part.name || cache[key].spec.label, type: 'part:' + key, p: t.p, r: t.r, s: [1, 1, 1] };
   }
 
+  // The task graph records the X-Lock's first appearance, but the operation
+  // mounts two previously prepared assemblies onto that fixed receiving part.
+  var operationAnswer = null;
+  function assemblyAnswer() {
+    var a = manifest && manifest.answer;
+    if (!a || a === operationAnswer) return a || null;
+    operationAnswer = a;
+    var st = a.steps.find(function (s) { return s.id === '972c5284-031e-44eb-883f-cc040168dac0'; });
+    var base = a.parts.find(function (p) { return st && p.step === st.i && p.key === 'aluminum_x_lock'; });
+    if (!base) return a;
+    var wedges = a.parts.filter(function (p) { return p.key === 'aluminum_arm_wedge_5mm' && p.step < st.i && p.mates.some(function (m) { return m.id === base.id; }); });
+    if (wedges.length !== 2) return a;
+    var groups = wedges.map(function (w) { return a.parts.filter(function (p) { return p.step === w.step; }).map(function (p) { return p.id; }); });
+    st.name = 'Attach both Wedge Assemblies to X-Lock';
+    st.requires = wedges.map(function (w) { return w.step; });
+    st.assembly = { base: base.id, groups: groups };
+    var rear = a.parts.find(function (p) { return p.key === 'split_rear_plate'; });
+    if (rear && rear.step > st.i && a.steps[rear.step].requires.indexOf(st.i) < 0) a.steps[rear.step].requires.push(st.i);
+    return a;
+  }
+
   window.KBParts = {
     ready: function () { return ready; },
     unitScale: function () { return manifest ? manifest.unitScale : 24.77; },
@@ -202,7 +223,7 @@
     /* 初始"零件摆在桌上"的布局(ScenePart[]),由 tools/scene_from_db.py --layout kit 从任务图库生成 */
     kit: function () { return (manifest && manifest.kit) || null; },
     /* 参考装配(步骤顺序 / 每件的接近→落位轨迹 / 前置依赖),由 features_db.py answer 从任务图库生成;mm · GLB 原点 */
-    answer: function () { return (manifest && manifest.answer) || null; },
+    answer: assemblyAnswer,
     keyForModel: keyForModel,
     poseOf: poseOf,
     nodeTransform: nodeTransform,

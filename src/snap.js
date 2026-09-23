@@ -265,6 +265,21 @@
       node.position.copy(desired);
     }
     if (!cache) return null;
+    var homeP = node.position.clone(), homeQ = node.quaternion.clone();
+    var workspaceCache = new Map();
+    function inside(owner) {
+      if (!window.KBWorkspace) return true;
+      if (owner === node) return KBWorkspace.contains(owner);
+      if (!workspaceCache.has(owner)) workspaceCache.set(owner, KBWorkspace.contains(owner));
+      return workspaceCache.get(owner);
+    }
+    function keepInside() {
+      if (inside(node)) return true;
+      node.position.copy(homeP); node.quaternion.copy(homeQ); node.updateMatrixWorld(true);
+      active = null; hideViz(); return false;
+    }
+    if (!inside(node)) { active = null; hideViz(); return null; }
+    if (active && !inside(active.b.owner)) active = null;
     var mine = extract(node);
     var i, j, fit;
 
@@ -276,6 +291,7 @@
         fit = axisFit(ka, active.b);
         if (fit.cos > AXIS_COS_OFF && fit.perp < AXIS_PERP_OFF) {
           applyAxis(node, ka, active.b);
+          if (!keepInside()) return null;
           showViz(active);
           node.updateMatrixWorld(true);
           return active;
@@ -290,6 +306,7 @@
         if (fit.dot < FACE_DOT_OFF && Math.abs(fit.gap) < FACE_GAP_OFF &&
             fit.lat < (kf.r + active.b.r) * 0.95) {
           applyFace(node, kf, active.b);
+          if (!keepInside()) return null;
           showViz(active);
           node.updateMatrixWorld(true);
           return active;
@@ -309,6 +326,7 @@
     var best = null, rejected = null;
     for (i = 0; i < mine.axes.length; i++) {
       for (j = 0; j < cache.axes.length; j++) {
+        if (!inside(cache.axes[j].owner)) continue;
         fit = axisFit(mine.axes[i], cache.axes[j]);
         if (fit.cos < AXIS_COS_ON || fit.perp > AXIS_PERP_ON) continue;
         var s = fit.perp + (1 - fit.cos) * 2;
@@ -327,6 +345,7 @@
     if (!best) {
       for (i = 0; i < mine.faces.length; i++) {
         for (j = 0; j < cache.faces.length; j++) {
+          if (!inside(cache.faces[j].owner)) continue;
           fit = faceFit(mine.faces[i], cache.faces[j]);
           if (fit.dot > FACE_DOT_ON || Math.abs(fit.gap) > FACE_GAP_ON) continue;
           if (fit.lat > (mine.faces[i].r + cache.faces[j].r) * 0.85) continue;
@@ -345,6 +364,7 @@
       active = { kind: best.kind, ai: best.ai, fi: best.fi, b: best.b };
       if (best.kind === 'axis') applyAxis(node, best.a, best.b);
       else applyFace(node, best.a, best.b);
+      if (!keepInside()) return null;
       showViz(active);
       reportAttempt(best.a, best.b, true);
     } else if (rejected) {
@@ -431,6 +451,7 @@
    * app.js 用它把变换枢轴(gizmo)放到孔位上并沿孔轴取向 */
   function hingeFor(node) {
     node.updateMatrixWorld(true);
+    if (window.KBWorkspace && !KBWorkspace.contains(node)) return null;
     var mine = extract(node);
     if (!mine.axes.length) return null;
     var others = { faces: [], axes: [] };

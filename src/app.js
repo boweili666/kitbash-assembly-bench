@@ -57,12 +57,12 @@
   fill.position.set(-5, 4, -5);
   scene.add(fill);
 
-  var grid = new THREE.GridHelper(24, 24, 0x39424e, 0x252c35);
+  var grid = new THREE.GridHelper(14, 14, 0x39424e, 0x252c35);
   grid.position.y = 0.001;
   scene.add(grid);
   var shadowPlane = new THREE.Mesh(
     new THREE.PlaneGeometry(80, 80),
-    new THREE.ShadowMaterial({ opacity: 0.28 })
+    new THREE.ShadowMaterial({ opacity: 0.28, depthWrite: false, side: THREE.FrontSide })
   );
   shadowPlane.rotation.x = -Math.PI / 2;
   shadowPlane.receiveShadow = true;
@@ -87,13 +87,16 @@
   scene.add(gizmo);
   gizmo.addEventListener('dragging-changed', function (e) {
     orbit.enabled = !e.value;
-    if (gizmo.object) emit(e.value ? 'grab' : 'place', gizmo.object);
+    if (gizmo.mode === 'rotate') {
+      if (e.value) { beginInteraction('pointer'); if (gizmo.object) emit('grab', gizmo.object); }
+      else finishInteraction();
+    } else if (gizmo.object) emit(e.value ? 'grab' : 'place', gizmo.object);
   });
   gizmo.addEventListener('objectChange', function () {
     syncInspectorFromSelection();
     if (gizmo.dragging && gizmo.object) emit('move', gizmo.object);
   });
-  gizmo.addEventListener('mouseUp', function () { pushSnapshot(); });
+  gizmo.addEventListener('mouseUp', function () { if (gizmo.mode !== 'rotate') pushSnapshot(); });
 
   canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
@@ -252,7 +255,10 @@
   }
 
   /* ---------- 撤销 / 重做 ---------- */
-  function pushSnapshot() {
+  function pushSnapshot(skipAutoGroup) {
+    if (interaction) { interaction.changed = true; return; }
+    bakePivot();
+    if (skipAutoGroup !== true && window.KBCheck && KBCheck.groupReadySteps) KBCheck.groupReadySteps();
     var json = JSON.stringify(serializeScene()); // serialize 会临时收回多选枢轴
     if (undoStack.length && undoStack[undoStack.length - 1] !== json) {
       undoStack.push(json);
@@ -392,7 +398,38 @@
   var selectionHooks = [];
   var changeHooks = [];   // 场景变化(快照)回调,供 Checks 面板重算
   var eventHooks = {};    // 交互事件('grab' | 'move' | 'place'),供外部集成(bridge.js)
+  // One rotation gesture = one placement, validation pass and undo snapshot.
+  var interaction = null;
+  function beginInteraction(kind, key) {
+    if (interaction && interaction.kind !== kind) finishInteraction();
+    if (!interaction) interaction = { kind: kind, keys: {}, nodes: [], changed: false };
+    if (key) interaction.keys[key] = true;
+  }
+  function finishInteraction() {
+    if (!interaction) return;
+    var session = interaction; interaction = null;
+    if (!session.changed) return;
+    pushSnapshot();
+    session.nodes.forEach(function (node) {
+      if (objectsRoot.getObjectById(node.id)) emit('place', node);
+    });
+  }
+  window.addEventListener('keyup', function (e) {
+    if (!interaction || interaction.kind !== 'key' || !interaction.keys[e.code]) return;
+    delete interaction.keys[e.code];
+    if (!Object.keys(interaction.keys).length) finishInteraction();
+  }, true);
+  window.addEventListener('blur', finishInteraction);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) finishInteraction(); });
+  window.addEventListener('pointercancel', function () { if (interaction && interaction.kind === 'pointer') finishInteraction(); });
   function emit(type, node) {
+    if (interaction && (type === 'grab' || type === 'move' || type === 'place')) {
+      var known = interaction.nodes.indexOf(node) >= 0;
+      if (!known) interaction.nodes.push(node);
+      if (type === 'grab' && known) return;
+      if (type === 'place') type = 'move';
+      if (type === 'move') interaction.changed = true;
+    }
     var list = eventHooks[type];
     if (!list) return;
     for (var i = 0; i < list.length; i++) list[i](node);
@@ -462,7 +499,7 @@
   // 编辑器单位 ↔ 毫米(1 单位 ≈ 40 mm):方向键的步长按毫米给
   function unitsPerMm() { return (window.KBParts ? KBParts.unitScale() : 24.77) / 1000; }
   var groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-  function nudgeSelection(delta, animated) {
+  function nudgeSelection(delta, animated, clearAfter) {
     if (!selection.length) return;
     bakePivot();
     var nodes = selection.slice();
@@ -472,6 +509,8 @@
       if (--pending) return;
       nodes.forEach(function (n) { emit('place', n); });
       pushSnapshot();
+      // 挪完就放手:一次点网格移动一次,再点空白就是取消选择,不会不小心又挪一下
+      if (clearAfter && nodes.some(function (n) { return selection.indexOf(n) >= 0; })) setSelection([]);
       syncInspectorFromSelection();
     }
     nodes.forEach(function (n) {
@@ -525,7 +564,7 @@
     var c = box.getCenter(new THREE.Vector3());
     var d = new THREE.Vector3(target.x - c.x, 0, target.z - c.z);
     if (snapOn) { d.x = Math.round(d.x / 0.25) * 0.25; d.z = Math.round(d.z / 0.25) * 0.25; }
-    nudgeSelection(d, true);
+    nudgeSelection(d, true, true);
   }
 
   canvas.addEventListener('dblclick', function () {
@@ -655,7 +694,7 @@
     if (top.children.length === 1) { objectsRoot.attach(top.children[0]); objectsRoot.remove(top); }
     else if (!top.children.length) objectsRoot.remove(top);
     refreshTree();
-    pushSnapshot();
+    pushSnapshot(true);
   }
   /* 高亮一个零件(宿主指示"就是这个");color 为空则取消 */
   function highlight(node, color) {
@@ -670,6 +709,31 @@
     var found = null;
     objectsRoot.traverse(function (o) { if (!found && isPartNode(o) && o.userData.kbId === id) found = o; });
     return found;
+  }
+
+  // Reparent entire existing subassemblies, preserving all world poses. The caller
+  // records one snapshot for both the placement and its automatic grouping.
+  function groupNodes(nodes, name) {
+    bakePivot();
+    var roots = [];
+    nodes.forEach(function (n) {
+      var root = topOf(n);
+      if (root.parent === objectsRoot && roots.indexOf(root) < 0) roots.push(root);
+    });
+    if (roots.length < 2 || (window.KBWorkspace && roots.some(function (n) { return !KBWorkspace.contains(n); }))) return null;
+    var selected = selection.some(function (n) { return roots.indexOf(topOf(n)) >= 0; });
+    var group = new THREE.Group(), box = new THREE.Box3();
+    roots.forEach(function (n) { n.updateWorldMatrix(true, true); box.expandByObject(n); });
+    var center = box.getCenter(new THREE.Vector3());
+    group.position.set(center.x, box.min.y, center.z);
+    group.name = name || 'Assembly';
+    objectsRoot.add(group); group.updateMatrixWorld(true);
+    roots.forEach(function (n) {
+      if (window.KBMate) KBMate.release(n);
+      group.attach(n);
+    });
+    if (selected) setSelection([group]);
+    return group;
   }
 
   function groupSelection() {
@@ -704,7 +768,7 @@
       parent.remove(g);
     });
     setSelection(released);
-    pushSnapshot();
+    pushSnapshot(true);
     toast('Ungrouped');
   }
 
@@ -860,11 +924,13 @@
     if (!kit) return KIT_SCENE;
     var objects = [];
     kit.forEach(function (part) { var o = KBParts.sceneObject(part); if (o) objects.push(o); });
+    if (window.KBTray) KBTray.arrange(objects);   // 物料区按零件类型 / 螺丝长度分格
     return { v: 1, counter: objects.length, camera: KIT_SCENE.camera, objects: objects };
   }
 
   function buildDemoScene() {
     loadSceneData(kitSceneData(), false);
+    if (window.KBWorkspace) KBWorkspace.overview();
     if (window.KBParts && KBParts.ready()) {
       objectsRoot.children.slice().forEach(function (n) {
         if (n.userData.kbPending) KBParts.resolve(n);
@@ -1158,6 +1224,21 @@
                  : 'General mode: click a hole to mate, click the grid to move, \u2191\u2193 to raise / lower');
   });
   document.getElementById('btnSnap').addEventListener('click', function () { setSnap(!snapOn); });
+  /* 属性面板默认收起 —— 装配用不到它,需要时按 P 或点 Props 打开 */
+  var panelEl = document.getElementById('panel');
+  function setPanel(on) {
+    panelEl.classList.toggle('hidden', !on);
+    document.getElementById('btnProps').classList.toggle('on', on);
+    try { localStorage.setItem('kitbash-props', on ? '1' : '0'); } catch (e) { /* 忽略 */ }
+  }
+  document.getElementById('btnProps').addEventListener('click', function () {
+    setPanel(panelEl.classList.contains('hidden'));
+  });
+  (function () {
+    var want = false;
+    try { want = localStorage.getItem('kitbash-props') === '1'; } catch (e) { /* 忽略 */ }
+    setPanel(want);
+  })();
   document.getElementById('btnUndo').addEventListener('click', undo);
   document.getElementById('btnRedo').addEventListener('click', redo);
   document.getElementById('btnGroup').addEventListener('click', groupSelection);
@@ -1165,7 +1246,8 @@
   document.getElementById('btnDup').addEventListener('click', duplicateSelection);
   document.getElementById('btnDel').addEventListener('click', deleteSelection);
   document.getElementById('btnFocus').addEventListener('click', function () { focusOn(selection); });
-  document.getElementById('btnNew').addEventListener('click', function () {
+  var elNew = document.getElementById('btnNew');
+  if (elNew) elNew.addEventListener('click', function () {
     if (confirm('Clear the scene? This can be undone.')) {
       clearSceneObjects();
       pushSnapshot();
@@ -1173,7 +1255,8 @@
     }
   });
   document.getElementById('btnDemo').addEventListener('click', function () {
-    if (confirm('Load the assembly kit? The current scene will be replaced (undoable).')) {
+    // New 就是 Kit:重新开始 = 所有零件回到物料区
+    if (confirm('Start over? Every part goes back to the tray (undoable).')) {
       buildDemoScene();
       pushSnapshot();
       toast('Kit loaded (' + objectsRoot.children.length + ' parts)');
@@ -1206,6 +1289,7 @@
       case 'KeyQ': if (expert) toggleSpace(); break;
       case 'KeyV': if (expert) setSnap(!snapOn); break;
       case 'KeyF': focusOn(selection); break;
+      case 'KeyP': setPanel(panelEl.classList.contains('hidden')); break;
       case 'ArrowUp':
       case 'ArrowDown':
         if (!selection.length) break;
@@ -1217,6 +1301,7 @@
         // 锁在孔上的零件由 mate.js 先截走(绕孔轴);这里是自由零件的偏航
         if (!selection.length) break;
         e.preventDefault();
+        beginInteraction('key', e.code);
         yawSelection((e.shiftKey ? 90 : 1) * (e.code === 'ArrowLeft' ? 1 : -1));
         break;
       case 'Escape':
@@ -1324,6 +1409,10 @@
     setSelection: setSelection,
     bakePivot: bakePivot,
     pushSnapshot: pushSnapshot,
+    beginInteraction: beginInteraction,
+    finishInteraction: finishInteraction,
+    interacting: function () { return !!interaction; },
+    groupNodes: groupNodes,
     resetHistory: function () {
       undoStack = [JSON.stringify(serializeScene())];
       redoStack = [];
@@ -1368,6 +1457,7 @@
     newId: newId,
     trainee: function () { return trainee; },
     build: function () { return BUILD; },
+    loadKit: function () { buildDemoScene(); pushSnapshot(); },
     tween: tween,
     finishTween: finishTween,
     isTweening: isTweening,

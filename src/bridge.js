@@ -5,11 +5,14 @@
  * 收取用户动作(拿起 / 移动 / 放下)和渲染帧。协议 v1:
  *
  *   宿主 → 仿真台
- *     {type:'kb:init',     scene:[ScenePart], options:{frames, fps, width, quality, moveHz}}
+ *     {type:'kb:init',     scene:[ScenePart], options:{frames, fps, width, quality, moveHz, guide}}
+ *                                                  guide:true 装完场景就打开逐步指引(第一次装的人)
  *     {type:'kb:setScene', scene:[ScenePart]}
  *     {type:'kb:getScene'}                         → 回 kb:scene
+ *     {type:'kb:getAnswer'}                        → 回 kb:answer{steps,parts}(参考装配的最终位姿)
  *     {type:'kb:getState'}                         → 回 kb:state
  *     {type:'kb:showNext'} / {type:'kb:showStep', step:<id|index>} / {type:'kb:hideAnswer'}
+ *     {type:'kb:look', where:'work'|'tray'|'ghost'} 镜头飞到装配区 / 物料区 / 当前虚影
  *                                                  在用户当前结构上循环演示下一步 / 某一步的虚影
  *     {type:'kb:highlight', id, color|null}        高亮某个零件(琥珀色等),null 取消
  *     {type:'kb:fuse', parentId, childId} / {type:'kb:unfuse', childId}
@@ -17,12 +20,17 @@
  *   仿真台 → 宿主
  *     {type:'kb:ready', protocol:1, keys:[...]}    仿真台就绪(零件库已加载)
  *     {type:'kb:grab' | 'kb:move' | 'kb:place', id, name, key, pose}
- *     {type:'kb:frame', image, t}                  JPEG data URL,默认 10 Hz
+ *     Automatic frame capture is disabled; no kb:frame events are emitted.
  *     {type:'kb:scene', parts:[{id, name, key, pose}]}
  *     {type:'kb:state', state, lastPlace?}         每次放下后的装配状态(见 check.js state()):
  *                                                  steps[{id,index,name,state:complete|available|premature|blocked,progress,requires}]
  *                                                  parts[{id,name,step,placed,ok,by}] issues[{severity,message,objectId,step}] next score
+ *     {type:'kb:guide', guide|null}                Next 引导卡片的内容:{step,name,state,status,
+ *                                                  message,ok,total,settled,steps,parts[{name,key,ok,state}]}
+ *     {type:'kb:pickWarn', pick}                  拿了这一步用不到的零件:{objectId,name,key,step,stepName,belongsToStep,message}
  *     {type:'kb:warn',  message}
+ *     {type:'kb:tutorialEnd', reason:'completed'|'skipped', experience:'first'|'again'|null}
+ *                                                  experience 是最后一屏问出来的:第一次装 / 装过
  *
  *   ScenePart = {id, key | glb, name?, pose}
  *     id    零件实例 UUID(装配图里的 part id),回调里原样返回
@@ -46,8 +54,8 @@
   var tutorialSession = false;
   var origin = '*';            // 首条宿主消息到达后记住其 origin
   var pendingInit = null;
-  var options = { frames: true, fps: 10, width: 960, quality: 0.72, moveHz: 30 };
-  var frameTimer = 0, lastMove = 0;
+  var options = { frames: false, fps: 10, width: 960, quality: 0.72, moveHz: 30 };
+  var lastMove = 0;
 
   function post(msg) {
     // Practice must never become training frames, actions, or scored progress.
@@ -83,6 +91,7 @@
     KB.setSelection([]);
     KB.pushSnapshot();
     KB.resetHistory();
+    if (window.KBWorkspace) KBWorkspace.overview();
     if (skipped.length) warn('Skipped parts with no known model: ' + skipped.join(', '));
   }
 
@@ -92,17 +101,10 @@
     return out;
   }
 
-  /* ---------- 帧 ---------- */
-  function startFrames() {
-    stopFrames();
-    if (options.frames === false) return;
-    var every = Math.max(20, Math.round(1000 / (options.fps || 10)));
-    frameTimer = setInterval(function () {
-      var f = KB.captureFrame(options.width || 960, options.quality || 0.72);
-      post({ type: 'kb:frame', image: f.canvas.toDataURL('image/jpeg', options.quality || 0.72), t: Date.now() });
-    }, every);
-  }
-  function stopFrames() { if (frameTimer) { clearInterval(frameTimer); frameTimer = 0; } }
+  /* Automatic image capture is disabled. Legacy frame commands remain no-ops
+   * so older ARISTOS hosts cannot restart JPEG encoding in this build. */
+  function startFrames() {}
+  function stopFrames() {}
 
   /* ---------- 动作事件 ---------- */
   KB.on('grab', function (node) {
@@ -150,8 +152,13 @@
   }
 
   /* ---------- 宿主消息 ---------- */
+  // 引导卡片的文字(Next 给出的那几句)原样转给宿主 —— 调试页面和 ARISTOS 都能用
+  KB.on('guide', function (g) { post({ type: 'kb:guide', guide: g || null }); });
+  // 学员拿了这一步用不到的零件 —— 只是提醒,没拦着
+  KB.on('pickWarn', function (w) { post({ type: 'kb:pickWarn', pick: w }); });
+
   KB.on('tutorialEnd', function (result) {
-    if (tutorialSession) post({ type: 'kb:tutorialEnd', reason: result.reason });
+    if (tutorialSession) post({ type: 'kb:tutorialEnd', reason: result.reason, experience: result.experience || null });
     // Keep practice isolated until the host mounts the actual task scene.
   });
 
@@ -168,6 +175,8 @@
     startFrames();
     var st = stateMsg();
     if (st) post(st);
+    // options.guide:第一次装的人,宿主换到任务场景后直接把逐步指引打开,不用再点 Next
+    if (options.guide && window.KBAnswer) setTimeout(function () { KBAnswer.showNext(); }, 400);
   }
 
   window.addEventListener('message', function (ev) {
@@ -182,6 +191,24 @@
       case 'kb:setScene':
         if (KBParts.ready()) setScene(msg.scene); else pendingInit = { scene: msg.scene };
         break;
+      case 'kb:getAnswer': {
+        // 参考装配(含推导补的那部分)原样给出去,调试页面拿它拼"装到第 N 步"的场景
+        var a = window.KBParts && KBParts.answer && KBParts.answer();
+        // 顺带把装配区的位置(毫米)给出去:参考位姿是绕原点的,而原点现在是物料区,
+        // 宿主 / 调试页面要把整套位姿平移到装配区里,判定才会认
+        var mm = 1000 / KBParts.unitScale();
+        var w = window.KBWorkspace;
+        post({ type: 'kb:answer',
+               workspace: w ? { center: { x: w.center.x * mm, y: w.center.y * mm, z: w.center.z * mm },
+                                bounds: { minX: w.bounds.minX * mm, maxX: w.bounds.maxX * mm,
+                                          minZ: w.bounds.minZ * mm, maxZ: w.bounds.maxZ * mm } } : null,
+               steps: a ? a.steps.map(function (st) {
+                 return { i: st.i, name: st.name, derived: !!st.derived, requires: st.requires || [] }; }) : [],
+               parts: a ? a.parts.map(function (d) {
+                 return { id: d.id, key: d.key, name: d.name, step: d.step, derived: !!d.derived,
+                          pose: d.path[d.path.length - 1] }; }) : [] });
+        break;
+      }
       case 'kb:getScene':
         post({ type: 'kb:scene', parts: currentScene() });
         break;
@@ -191,6 +218,10 @@
       case 'kb:showNext': if (window.KBAnswer) KBAnswer.showNext(); break;
       case 'kb:showStep': if (window.KBAnswer) KBAnswer.showStep(stepIndex(msg.step)); break;
       case 'kb:hideAnswer': if (window.KBAnswer) KBAnswer.hide(); break;
+      case 'kb:look':
+        if (msg.where === 'ghost') { if (window.KBAnswer) KBAnswer.frameGhost(); }
+        else if (window.KBWorkspace) KBWorkspace.look(msg.where === 'tray' ? 'tray' : 'work');
+        break;
       case 'kb:highlight': KB.highlight(KB.partById(msg.id), msg.color || null); break;
       case 'kb:fuse': KB.fuse(KB.partById(msg.parentId), KB.partById(msg.childId)); break;
       case 'kb:unfuse': KB.unfuse(KB.partById(msg.childId)); break;

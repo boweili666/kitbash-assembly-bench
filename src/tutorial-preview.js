@@ -5,9 +5,12 @@
   'use strict';
   var renderer, scene, camera, root, host, canvas, caption, cursor, sourceLabel, targetLabel;
   var source, target, sourceFeature, targetFeature, markerA, markerB;
-  var moveTarget;
+  var moveTarget, guide, storySteps, storyNote, playButton, startQuaternion;
+  var cameraCenter, cameraDirection, cameraDistance, joinedCenter, joinedDistance;
+  var elapsed = 0, tickTime = 0, userPaused = false;
+  function isStory() { return configuration && /^(mateArm|mateScrew)$/.test(configuration.tag); }
   var startPosition, endPosition, endQuaternion, axis, pivot, configuration;
-  var frame = 0, epoch = 0, lastDraw = 0, paused = false, active = false;
+  var frame = 0, lastDraw = 0, paused = false, active = false;
   var width = 0, height = 0;
   var ownedMaterials = [], ownedGeometries = [];
   var motion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -22,7 +25,7 @@
     ownedGeometries.forEach(function (g) { g.dispose(); });
     ownedMaterials = []; ownedGeometries = [];
     if (root) scene.remove(root);
-    root = null;
+    root = null; guide = null;
   }
   function part(data) {
     var node = KBParts.instantiate(data.type.slice(5));
@@ -65,7 +68,16 @@
     var tag = configuration.tag;
     if (tag === 'select' || tag === 'armScrew') source.position.copy(startPosition);
     if (tag === 'move') source.position.lerpVectors(startPosition, endPosition, smooth((t - .3) / .4));
-    if (tag === 'mateArm' || tag === 'mateScrew') source.position.lerpVectors(startPosition, endPosition, smooth((t - .42) / .34));
+    if (isStory()) {
+      // Align while separated, then approach strictly along the receiving axis.
+      source.quaternion.copy(startQuaternion).slerp(endQuaternion, smooth((t - .36) / .16));
+      source.position.lerpVectors(startPosition, endPosition, smooth((t - .54) / .23));
+      if (tag === 'mateArm' && t > .84) {
+        var turn = new THREE.Quaternion().setFromAxisAngle(axis, Math.sin(smooth((t - .84) / .12) * Math.PI * 2) * Math.PI / 12);
+        source.position.sub(pivot).applyQuaternion(turn).add(pivot);
+        source.quaternion.premultiply(turn);
+      }
+    }
     if (tag === 'turn') {
       var q = new THREE.Quaternion().setFromAxisAngle(axis, Math.sin(t * Math.PI * 2) * Math.PI / 7);
       source.position.sub(pivot).applyQuaternion(q).add(pivot);
@@ -78,14 +90,22 @@
   function fitCamera() {
     // Include the whole trajectory so no part gets clipped during the loop.
     var bounds = new THREE.Box3();
-    for (var i = 0; i <= 12; i++) { positionAt(i / 12); bounds.expandByObject(root); }
+    for (var i = 0; i <= 12; i++) { positionAt(i / 12); bounds.expandByObject(source); if (target.parent) bounds.expandByObject(target); }
     var center = bounds.getCenter(new THREE.Vector3());
     var radius = bounds.getSize(new THREE.Vector3()).length() / 2;
     camera.aspect = width / height;
     var angle = Math.min(camera.fov * Math.PI / 360, Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect));
     var distance = radius / Math.sin(angle) * 1.08;
     var direction = configuration.course === 0 ? new THREE.Vector3(1.25, 1.6, 2.2) : new THREE.Vector3(2.6, 1.4, 1.3);
-    camera.position.copy(center).addScaledVector(direction.normalize(), distance);
+    if (isStory() && configuration.tag === 'mateArm' && configuration.target.end === -1) direction.y *= -1;
+    cameraCenter = center; cameraDirection = direction.normalize(); cameraDistance = distance;
+    camera.position.copy(center).addScaledVector(cameraDirection, distance);
+    if (isStory()) {
+      positionAt(.81);
+      var joined = new THREE.Box3().setFromObject(source).expandByObject(target);
+      joinedCenter = joined.getCenter(new THREE.Vector3());
+      joinedDistance = joined.getSize(new THREE.Vector3()).length() / 2 / Math.sin(angle) * 1.35;
+    }
     camera.near = Math.max(.001, distance / 100);
     camera.far = distance * 20;
     camera.lookAt(center);
@@ -98,33 +118,60 @@
     element.style.top = Math.max(24, Math.min(height - element.offsetHeight - 4, y + dy)) + 'px';
   }
   function draw(now) {
-    var t = motion.matches ? .78 : ((now - epoch) % 5200) / 5200;
+    var t = motion.matches ? .81 : (elapsed % (isStory() ? 14000 : 5200)) / (isStory() ? 14000 : 5200);
     positionAt(t);
     markerA.material.color.set(t > .2 ? 0x7de0aa : 0x75baff);
     markerA.material.opacity = .85;
     if (markerB) markerB.material.opacity = .65 + .35 * Math.sin(t * Math.PI * 4) ** 2;
+    if (isStory()) {
+      var reveal = smooth((t - .77) / .13);
+      var direction = cameraDirection.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), reveal * .42);
+      direction.y *= 1 - reveal * .45; direction.normalize();
+      var closeup = smooth((t - .54) / .27);
+      var focus = cameraCenter.clone().lerp(joinedCenter, closeup);
+      camera.position.copy(focus).addScaledVector(direction, THREE.MathUtils.lerp(cameraDistance, joinedDistance, closeup));
+      camera.lookAt(focus);
+      var a = markerA.getWorldPosition(new THREE.Vector3()), b = markerB.getWorldPosition(new THREE.Vector3());
+      guide.geometry.setFromPoints([a, b]); guide.computeLineDistances();
+      guide.visible = t > .24 && t < .78;
+      markerB.material.color.set(t >= .77 ? 0x7de0aa : 0xf0bb69);
+    }
     renderer.render(scene, camera);
     anchor(sourceLabel, markerA, 12, -25);
     if (markerB) anchor(targetLabel, markerB, 12, 12);
     var tag = configuration.tag;
-    var clicking = tag !== 'turn' && tag !== 'slide' && tag !== 'complete';
+    var clicking = isStory() ? t < .36 : tag !== 'turn' && tag !== 'slide' && tag !== 'complete';
     cursor.hidden = !clicking;
-    var second = markerB && (tag === 'mateArm' || tag === 'mateScrew') && t > .32;
+    var second = markerB && (tag === 'mateArm' || tag === 'mateScrew') && t > .23;
     if (clicking) {
       anchor(cursor, tag === 'move' ? moveTarget : second ? markerB : markerA, 0, 0);
-      cursor.classList.toggle('press', (t > .18 && t < .27) || (second && t > .36 && t < .44));
+      cursor.classList.toggle('press', (t > .18 && t < .27) || (second && t > .29 && t < .35));
     }
     caption.textContent = tag === 'turn' ? '← / →  Rotate around the hole' : tag === 'slide' ? '↑ / ↓  Slide along the hole' :
       tag === 'move' ? 'Click the grid to move the arm' : tag === 'complete' ? 'Same parts. Same connections.' :
       second ? '2 · Click the receiving hole' : tag === 'select' ? 'Click the arm to select it' : '1 · Click the highlighted connector';
+    if (isStory()) {
+      var chapter = t < .23 ? 0 : t < .36 ? 1 : t < .54 ? 2 : t < .77 ? 3 : 4;
+      var messages = ['1 · Pick the connection on the moving part', '2 · Pick the receiving hole mouth',
+        '3 · Turn until the connectors face each other', '4 · Follow the axis — ease into contact',
+        tag === 'mateArm' ? '5 · Connected — arrow keys turn around this hole' : '5 · Connected — arrow keys slide along this hole'];
+      caption.textContent = messages[chapter];
+      storySteps.querySelectorAll('span').forEach(function (s, i) { s.classList.toggle('current', i === chapter); s.classList.toggle('done', i < chapter); });
+      host.dataset.chapter = String(chapter);
+      canvas.style.opacity = motion.matches ? '1' : String(Math.min(1, t / .035, (1 - t) / .035));
+      sourceLabel.hidden = targetLabel.hidden = chapter >= 2;
+      markerA.material.color.set(t > .16 ? 0x7de0aa : 0x75baff);
+    }
+
   }
   function loop(now) {
-    if (!active || paused || document.hidden) { frame = 0; return; }
+    if (!active || paused || userPaused || document.hidden) { frame = 0; tickTime = 0; return; }
+    if (tickTime) elapsed += now - tickTime; tickTime = now;
     if (now - lastDraw > 33) { draw(now); lastDraw = now; }
     if (!motion.matches) frame = requestAnimationFrame(loop); else frame = 0;
   }
   function resume() {
-    if (active && !paused && !frame) frame = requestAnimationFrame(loop);
+    if (active && !paused && !userPaused && !document.hidden && !frame) { tickTime = 0; frame = requestAnimationFrame(loop); }
   }
   function resize() {
     if (!active || !host.clientWidth || !host.clientHeight) return;
@@ -133,12 +180,13 @@
     fitCamera(); draw(performance.now());
   }
   var observer = new ResizeObserver(resize);
-  document.addEventListener('visibilitychange', resume);
+  document.addEventListener('visibilitychange', function () { tickTime = 0; if (document.hidden) { cancelAnimationFrame(frame); frame = 0; } else resume(); });
   motion.addEventListener('change', function () { if (active) { draw(performance.now()); resume(); } });
 
   function show(container, config) {
     clear();
-    host = container; configuration = config; active = true; paused = false;
+    host = container; configuration = config; active = true; paused = false; userPaused = false; elapsed = 0; tickTime = 0;
+    host.classList.toggle('tt-story', isStory()); delete host.dataset.chapter;
     if (!renderer) {
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
@@ -153,10 +201,28 @@
       var key = new THREE.DirectionalLight(0xffffff, 1.5); key.position.set(3, 5, 4); scene.add(key);
       var fill = new THREE.DirectionalLight(0x82b8ff, .65); fill.position.set(-3, 2, -4); scene.add(fill);
     }
-    host.replaceChildren(canvas);
+    host.replaceChildren(canvas); canvas.style.opacity = '1';
     canvas.setAttribute('aria-label', config.label + ' — actual assembly models');
     function overlay(className) { var e = document.createElement('span'); e.className = className; host.appendChild(e); return e; }
     caption = overlay('tt-real-caption');
+    if (isStory()) {
+      storySteps = overlay('tt-story-steps');
+      storySteps.innerHTML = ['Pick', 'Receive', 'Align', 'Join', 'Connected'].map(function (name) { return '<span>' + name + '</span>'; }).join('');
+      storyNote = overlay('tt-story-note');
+      storyNote.textContent = config.tag === 'mateArm' ? (config.target.end === 1 ? 'Lower arm mouth → TOP plate mouth' : 'Lower arm mouth → UNDERSIDE plate mouth') : 'Shaft disc → wedge hole mouth';
+      var controls = document.createElement('div'); controls.className = 'tt-story-controls'; host.appendChild(controls);
+      playButton = document.createElement('button'); playButton.type = 'button'; playButton.textContent = 'Pause'; playButton.setAttribute('aria-label', 'Pause connection demonstration'); controls.appendChild(playButton);
+      playButton.onclick = function () {
+        userPaused = !userPaused; tickTime = 0;
+        playButton.textContent = userPaused ? 'Play' : 'Pause';
+        playButton.setAttribute('aria-label', (userPaused ? 'Play' : 'Pause') + ' connection demonstration');
+        if (userPaused) { cancelAnimationFrame(frame); frame = 0; } else resume();
+      };
+      if (config.tag === 'mateArm') {
+        var faceButton = document.createElement('button'); faceButton.type = 'button'; faceButton.textContent = config.target.end === 1 ? 'Compare underside' : 'Back to top face'; controls.appendChild(faceButton);
+        faceButton.onclick = function () { show(host, Object.assign({}, config, { target: Object.assign({}, config.target, { end: -config.target.end }) })); };
+      }
+    }
     sourceLabel = overlay('tt-real-label'); targetLabel = overlay('tt-real-label target');
     cursor = overlay('tt-real-cursor'); cursor.setAttribute('aria-hidden', 'true');
     cursor.innerHTML = '<svg viewBox="0 0 24 32"><path d="M2 2V25L8 19L13 29L18 26L13 17H23Z" fill="#fff" stroke="#132132" stroke-width="1.5"/></svg>';
@@ -181,6 +247,12 @@
     endPosition = source.position.clone().sub(sourceFeature.c).applyQuaternion(q).add(center);
     var size = new THREE.Box3().setFromObject(source).getSize(new THREE.Vector3()).length();
     startPosition = endPosition.clone().addScaledVector(axis, size * .52);
+    startQuaternion = endQuaternion.clone();
+    if (isStory()) {
+      var tiltAxis = new THREE.Vector3(1, 0, 0);
+      if (Math.abs(axis.dot(tiltAxis)) > .9) tiltAxis.set(0, 0, 1);
+      startQuaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(tiltAxis, .38));
+    }
     if (alone) {
       endQuaternion.copy(source.quaternion); endPosition.set(0, 0, 0); startPosition.set(0, 0, 0);
       if (config.tag === 'move') { startPosition.x = -size * .24; endPosition.x = size * .24; }
@@ -189,16 +261,21 @@
     markerA = ring(source, config.source.id, config.source.end, 0x75baff);
     markerB = alone ? null : ring(target, config.target.id, config.target.end, 0xf0bb69);
     sourceLabel.textContent = config.source.name + (alone ? '' : peg ? ' · shaft' : ' · lower face');
-    targetLabel.textContent = config.target.name + (peg ? ' · hole' : ' · top face');
+    targetLabel.textContent = config.target.name + (peg ? ' · hole' : config.target.end === 1 ? ' · top face' : ' · underside');
     targetLabel.hidden = alone;
-    epoch = performance.now(); lastDraw = 0;
+    if (isStory()) {
+      guide = new THREE.Line(geometry(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()])),
+        material(new THREE.LineDashedMaterial({ color: 0xf0bb69, dashSize: size * .025, gapSize: size * .018, transparent: true, opacity: .8, depthTest: false })));
+      guide.renderOrder = 9; root.add(guide);
+    }
+    lastDraw = 0;
     observer.disconnect(); observer.observe(host);
     resize(); resume();
   }
   window.KBTutorialPreview = {
     show: show,
     stop: function () { active = false; observer.disconnect(); clear(); },
-    pause: function (value) { paused = value; if (paused) { cancelAnimationFrame(frame); frame = 0; } else { resize(); resume(); } },
+    pause: function (value) { paused = value; tickTime = 0; if (paused) { cancelAnimationFrame(frame); frame = 0; } else { resize(); resume(); } },
     // Read-only inspection for geometry/pose regression checks.
     inspect: function () { return { source: source, target: target, endPosition: endPosition.clone(), endQuaternion: endQuaternion.clone(), axis: axis.clone() }; }
   };

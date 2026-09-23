@@ -25,15 +25,45 @@
   var elNow = document.getElementById('ckNow');
   var elClose = document.getElementById('ckClose');
 
+  // Compact automatic feedback, including when the full Checks panel is closed.
+  var notice = document.createElement('div'); notice.id = 'checkNotice';
+  notice.setAttribute('role', 'status'); notice.setAttribute('aria-live', 'polite');
+  var noticeButton = document.createElement('button'); noticeButton.type = 'button';
+  noticeButton.innerHTML = '<span class="ck-notice-icon" aria-hidden="true">!</span><span class="ck-notice-text"></span><span class="ck-notice-count"></span>';
+  noticeButton.tabIndex = -1; notice.appendChild(noticeButton); document.body.appendChild(notice);
+  noticeButton.addEventListener('click', function () { panel.style.display = 'flex'; elClose.focus(); });
+  function renderNotice(issues) {
+    var errors = issues.filter(function (issue) { return issue.severity === 'error'; });
+    var message = errors.length ? errors[0].msg : '';
+    var label = errors.length ? 'Checks: ' + message : '';
+    var count = errors.length > 1 ? '+' + (errors.length - 1) : '';
+    var text = noticeButton.querySelector('.ck-notice-text');
+    if (text.textContent !== label) text.textContent = label;
+    var badge = noticeButton.querySelector('.ck-notice-count');
+    if (badge.textContent !== count) badge.textContent = count;
+    noticeButton.title = label + (count ? ' (' + errors.length + ' errors)' : '');
+    noticeButton.setAttribute('aria-label', label ? label + '. Open Checks for details.' : 'Checks');
+    noticeButton.tabIndex = errors.length ? 0 : -1;
+    notice.setAttribute('aria-hidden', String(!errors.length));
+    notice.classList.toggle('show', !!errors.length);
+    document.body.classList.toggle('has-check-error', !!errors.length);
+  }
+
+
   var POS_TOL = 0.08, ANG_TOL = 12;      // 到位:场景单位(1 = 40.4 mm)→ 3.2 mm / 12°
   var NEAR = 0.5, NEAR_ANG = 45;         // 在配合件旁边但没到位:20 mm / 45°
   var PAIR_TOL = POS_TOL * 2;            // 两个都未配对的零件互相配上的门槛(没有锚,严一点)
   var REVOLVE = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1,
-    screw_m3x8_socket_cap: 1, knurled_standoff: 1, motor_nut_m5: 1, damper_m2: 1 };
-  var SCREW = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1, screw_m3x8_socket_cap: 1 };
+    screw_m3x8_socket_cap: 1, screw_m3x6_countersunk: 1, knurled_standoff: 1, motor_nut_m5: 1, damper_m2: 1,
+    // 桨装上去绕轴转到哪个角度都一样(三叶,自己也是 120° 周期)
+    propeller_cw: 1, propeller_ccw: 1 };
+  var SCREW = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1,
+    screw_m3x8_socket_cap: 1, screw_m3x6_countersunk: 1 };
   function family(key) { return key.indexOf('screw_') === 0 ? 'screw' : key.indexOf('split_') === 0 ? 'plate' : key; }
-  // 暂不区分头型:M3×16 盘头 与 M3×16 杯头 视为同一种零件
-  var SAME = { screw_m3x16_socket_cap: 'screw_m3x16_pan' };
+  // 暂不区分头型:M3×16 盘头 与 M3×16 杯头 视为同一种零件。
+  // 正反桨同理:任务图只说"把桨装到电机轴上",没说哪条对角线装正桨,
+  // 所以两种桨互相顶替都算对(derive_final_assembly.py 里也写了这件事)
+  var SAME = { screw_m3x16_socket_cap: 'screw_m3x16_pan', propeller_ccw: 'propeller_cw' };
   function canon(key) { return SAME[key] || key; }
 
   var results = null;
@@ -135,7 +165,7 @@
       });
     });
     var steps = a.steps.map(function (st) {
-      return { i: st.i, id: st.id, name: st.name, requires: st.requires || [],
+      return { i: st.i, id: st.id, name: st.name, requires: st.requires || [], assembly: st.assembly || null,
         slots: slots.filter(function (s) { return s.step === st.i; }) };
     });
     ref = { source: a, slots: slots, steps: steps, byId: byId };
@@ -146,25 +176,50 @@
      用户:inv(M_um)·M_u;参考:inv(S_m)·inv(M_m)·M_t·S_t,取配合件对称 × 零件对称里最接近的一组。 */
   var _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _s = new THREE.Vector3();
   var _p2 = new THREE.Vector3(), _q2 = new THREE.Quaternion();
+  function screwRoll(key, delta) {
+    var spec = KBParts.spec(key), shaft = spec.pegs.reduce(function (a, b) { return a.r < b.r ? a : b; });
+    var axis = new THREE.Vector3().fromArray(shaft.d).normalize();
+    var projection = delta.x * axis.x + delta.y * axis.y + delta.z * axis.z;
+    var twist = new THREE.Quaternion(axis.x * projection, axis.y * projection, axis.z * projection, delta.w);
+    if (twist.lengthSq() < 1e-12) twist.identity(); else twist.normalize();
+    var c = new THREE.Vector3().fromArray(shaft.c);
+    return new THREE.Matrix4().makeTranslation(c.x, c.y, c.z)
+      .multiply(new THREE.Matrix4().makeRotationFromQuaternion(twist))
+      .multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z));
+  }
   function relError(t, u, m, um) {
     var Rref = new THREE.Matrix4().multiplyMatrices(m.Minv, t.M);
     var Ruser = new THREE.Matrix4().multiplyMatrices(um.Minv, u.M);
     Ruser.decompose(_p2, _q2, _s);
     var best = null;
+    function consider(expected) {
+      expected.decompose(_p, _q, _s);
+      var d = _p.distanceTo(_p2);
+      var ang = REVOLVE[t.key] ? axisAngle(t.key, _q2, _q) : { deg: angleBetween(_q2, _q), signed: false };
+      var reversed = ang.signed && ang.deg > 90;
+      var nearAng = reversed ? 180 - ang.deg : ang.deg;
+      var score = d + (reversed ? 0.02 : nearAng / 180 * 0.05);
+      if (!best || score < best.score) best = { score: score, d: d, ang: ang.deg, reversed: reversed, nearAng: nearAng,
+        want: new THREE.Matrix4().multiplyMatrices(um.M, expected) };
+    }
     symTransforms(m.key).forEach(function (Sm) {
       var left = new THREE.Matrix4().multiplyMatrices(Sm.clone().invert(), Rref);
       symTransforms(t.key).forEach(function (St) {
-        new THREE.Matrix4().multiplyMatrices(left, St).decompose(_p, _q, _s);
-        var d = _p.distanceTo(_p2);
-        var ang = REVOLVE[t.key] ? axisAngle(t.key, _q2, _q) : { deg: angleBetween(_q2, _q), signed: false };
-        var reversed = ang.signed && ang.deg > 90;
-        var nearAng = reversed ? 180 - ang.deg : ang.deg;
-        var score = d + (reversed ? 0.02 : nearAng / 180 * 0.05);
-        if (!best || score < best.score) {
-          best = { score: score, d: d, ang: ang.deg, reversed: reversed, nearAng: nearAng,
-            // 期望位姿(配合件当前所在处):用于"往哪个方向差"的说明和虚影
-            want: new THREE.Matrix4().multiplyMatrices(um.M, new THREE.Matrix4().compose(_p.clone(), _q.clone(), new THREE.Vector3(1, 1, 1))) };
+        var expected = new THREE.Matrix4().multiplyMatrices(left, St);
+        consider(expected);
+        // Continuous screw roll applies on either side of the relation. Rotate
+        // about the actual shaft line, not an arbitrary node origin.
+        var q = new THREE.Quaternion().setFromRotationMatrix(expected);
+        if (SCREW[m.key]) {
+          var roll = screwRoll(m.key, q.clone().multiply(_q2.clone().invert()));
+          var aligned = roll.clone().invert().multiply(expected);
+          consider(aligned);
+          if (SCREW[t.key]) {
+            var aq = new THREE.Quaternion().setFromRotationMatrix(aligned);
+            consider(aligned.clone().multiply(screwRoll(t.key, aq.invert().multiply(_q2))));
+          }
         }
+        if (SCREW[t.key]) consider(expected.clone().multiply(screwRoll(t.key, q.invert().multiply(_q2))));
       });
     });
     return best;
@@ -229,6 +284,7 @@
   }
 
   function evaluate() {
+    if (KB.interacting && KB.interacting()) return;
     if (!(window.KBParts && KBParts.ready() && buildRef())) {
       results = { ready: false, issues: [], correct: 0, total: 0, note: 'No reference assembly in the part library' };
       render();
@@ -380,12 +436,21 @@
     var us = KBParts.unitScale();
     var mm = function (w) { return (w / us * 1000).toFixed(1); };
     var pairSeen = {};
+    // 同一个零件可能对着好几个候选位置都"不对",只留最贴近的那条,免得刷屏
+    var misfits = {};
+    function keepClosest(node, d, msg, severity, host, reversed, ang) {
+      var id = node.uuid;
+      if (!misfits[id] || d < misfits[id].d) {
+        misfits[id] = { node: node, d: d, msg: msg, severity: severity || 'error',
+                        host: host || null, reversed: !!reversed, ang: ang || 0 };
+      }
+    }
     slots.forEach(function (t) {
       // 跟大多数配合件都对不上的零件:哪怕它自己"没有更早的参照可判",也要点名,
       // 否则真正偏了的那个零件永远不出现在清单里
       if (t.part && t.ok && t.disagree && t.agree < t.disagree) {
         t.ok = false;
-        if (!t.err) {
+        if (!t.err || isOk(t.err.e)) {
           var worst = null;
           t.ref.mates.forEach(function (m) {
             var ms = slots[m.slot.i];
@@ -395,6 +460,14 @@
           });
           if (worst) { t.err = worst; t.near.push(worst); }
         }
+      }
+      if (t.part && window.KBWorkspace && !KBWorkspace.contains(t.part.node)) {
+        var assembled = t.ok || t.near.length;
+        t.ok = false;
+        // 还没搬进装配区不算装错,是"接下来该干什么"
+        if (assembled) issues.push({ severity: 'hint', node: t.part.node, slot: t.ref,
+          msg: KBWorkspace.message(t.part.node) });
+        return;
       }
       if (t.part && t.ok) { correct += 1; return; }
       if (t.part && t.err) {
@@ -406,10 +479,10 @@
           issues.push({ severity: 'error', node: t.part.node, slot: t.ref,
             msg: t.ref.name + ' is inserted backwards into ' + mate.name + ' — the head faces the wrong way' });
         } else if (e.d >= POS_TOL) {
-          issues.push({ severity: 'warn', node: t.part.node, slot: t.ref, want: e.want,
+          issues.push({ severity: 'error', node: t.part.node, slot: t.ref, want: e.want,
             msg: t.ref.name + ' is ' + mm(e.d) + ' mm off its place on ' + mate.name + which(t.part.node, e.want) });
         } else {
-          issues.push({ severity: 'warn', node: t.part.node, slot: t.ref,
+          issues.push({ severity: 'error', node: t.part.node, slot: t.ref,
             msg: t.ref.name + ' is tilted ' + e.ang.toFixed(0) + '° on ' + mate.name });
         }
         return;
@@ -429,17 +502,168 @@
           if (d < POS_TOL * 1.5 && (!wrong || d < wrong.d)) wrong = { u: u, d: d, m: m };
         });
       });
+      // 第一步:桌上还没有任何装好的零件可当参照。退一步,用"配合件本身"当参照 ——
+      // 场上有一个型号对得上、但还没被配上的配合件(比如楔块),就按它的实际位姿算
+      // 这颗螺丝该在哪,再看那儿是不是杵着一个同族的别种零件
+      if (!wrong) {
+        t.ref.mates.forEach(function (m) {
+          if (m.slot.step > t.ref.step || slots[m.slot.i].part) return;
+          users.forEach(function (host) {
+            if (host.slot || host.ckey !== m.slot.ckey) return;
+            var expected = glbOrigin(t.ref.key).applyMatrix4(t.ref.M).applyMatrix4(m.slot.Minv).applyMatrix4(host.M);
+            users.forEach(function (u) {
+              if (u === host || u.slot || u.ckey === t.ref.ckey || family(u.ckey) !== family(t.ref.ckey)) return;
+              var d = glbOrigin(u.key).applyMatrix4(u.M).distanceTo(expected);
+              if (d < POS_TOL * 1.5 && (!wrong || d < wrong.d)) wrong = { u: u, d: d, m: m };
+            });
+          });
+        });
+      }
       if (wrong) {
-        issues.push({ severity: 'error', node: wrong.u.node, slot: t.ref,
-          msg: 'Wrong part on ' + wrong.m.slot.name + ': found ' + wrong.u.node.name + ', expected ' + t.ref.name });
+        keepClosest(wrong.u.node, wrong.d,
+          'Wrong part on ' + wrong.m.slot.name + ': found ' + wrong.u.node.name + ', expected ' + t.ref.name);
+        return;
+      }
+      // 插错孔:型号对得上的零件确实装在装配区里了,只是离它该在的位置太远,
+      // 远到 NEAR 都够不着(挪一两个孔就是这种情况),否则上面那条"差 N 毫米"会先报
+      var misplaced = null;
+      t.ref.mates.forEach(function (m) {
+        if (m.slot.step > t.ref.step) return;
+        var ms = slots[m.slot.i];
+        var host = ms.part ? ms.part : null;
+        if (!host) {
+          for (var k = 0; k < users.length; k++) {
+            if (!users[k].slot && users[k].ckey === m.slot.ckey) { host = users[k]; break; }
+          }
+        }
+        if (!host) return;
+        var expected = glbOrigin(t.ref.key).applyMatrix4(t.ref.M).applyMatrix4(m.slot.Minv).applyMatrix4(host.M);
+        users.forEach(function (u) {
+          if (u.slot || u.ckey !== t.ref.ckey) return;
+          var d = glbOrigin(u.key).applyMatrix4(u.M).distanceTo(expected);
+          if (d >= NEAR * 6) return;
+          // 位置之外还要看朝向:只比位置的话,装反会被说成"差了 8 毫米"
+          var e = relError(t.ref, u, m.slot, host);
+          var out = window.KBWorkspace && !KBWorkspace.contains(u.node);
+          if (!misplaced || e.score < misplaced.e.score) misplaced = { u: u, d: e.d, e: e, m: m, outside: out, host: host };
+        });
+      });
+      if (misplaced) {
+        var me = misplaced.e;
+        // 装配区外的零件只有一种说法:"你按答案装好了,但装在区外"。
+        // 其余(装反 / 插错孔 / 差几毫米)一律不对区外的零件下结论 ——
+        // 料盘里螺丝和立柱本来就一排排挨着、方向相反,照着几何去套必然误判
+        if (misplaced.outside && !isOk(me) && !wasMated(misplaced.u.node)) {
+          /* 躺在料盘里、从没被配过的零件:不作声 */
+        } else if (misplaced.outside && isOk(me)) {
+          // 真的按答案配好了、只是整组还在装配区外 —— 让人搬进去
+          keepClosest(misplaced.u.node, misplaced.d,
+            misplaced.u.node.name + ' is assembled outside the workspace — move it inside to be checked',
+            'hint', misplaced.host.node);
+        } else if (!me.reversed && misplaced.d < NEAR && me.nearAng >= ANG_TOL) {
+          keepClosest(misplaced.u.node, misplaced.d,
+            misplaced.u.node.name + ' is tilted ' + me.nearAng.toFixed(0) + '° in ' + misplaced.m.slot.name,
+            'error', misplaced.host.node, false, me.nearAng);
+        } else if (me.reversed) {
+          keepClosest(misplaced.u.node, misplaced.d,
+            misplaced.u.node.name + ' is inserted backwards into ' + misplaced.m.slot.name +
+            ' — the head faces the wrong way', 'error', misplaced.host.node, true);
+        } else if (misplaced.d < NEAR) {
+          keepClosest(misplaced.u.node, misplaced.d,
+            misplaced.u.node.name + ' is ' + mm(misplaced.d) + ' mm off its place on ' +
+            misplaced.m.slot.name + ' (expected ' + t.ref.name + ')', 'error', misplaced.host.node);
+        } else {
+          keepClosest(misplaced.u.node, misplaced.d,
+            misplaced.u.node.name + ' is in the wrong hole on ' + misplaced.m.slot.name +
+            ' — ' + mm(misplaced.d) + ' mm from where ' + t.ref.name + ' belongs', 'error', misplaced.host.node);
+        }
       }
     });
+    Object.keys(misfits).forEach(function (k) {
+      var it = misfits[k];
+      // A 是拿 B 当参照算出来的,而 B 自己也被判了错 —— 同一处错误的两种说法,只留说中根因的那条:
+      // 先看谁点出了"装反",都没有的话留偏得更离谱的那条
+      var hostIssue = it.host && misfits[it.host.uuid];
+      if (hostIssue && hostIssue.host === it.node) {
+        if (hostIssue.reversed && !it.reversed) return;
+        if (!(it.reversed && !hostIssue.reversed)) {
+          var meScrew = !!SCREW[it.node.userData.kbType.slice(5)];
+          var otherScrew = !!SCREW[hostIssue.node.userData.kbType.slice(5)];
+          if (otherScrew && !meScrew) return;        // 楔块没问题,是螺丝插得不对
+          if (meScrew === otherScrew && (hostIssue.d + hostIssue.ang * 0.01) > (it.d + it.ang * 0.01)) return;
+        }
+      }
+      issues.push({ severity: it.severity, node: it.node, slot: it.slot, msg: it.msg });
+    });
+
+    if (lastPick) {
+      var cur = next();
+      if (cur && cur.i === lastPick.step) {
+        issues.push({ key: 'pick', severity: 'error', node: lastPick.node, msg: lastPick.msg });
+      } else {
+        lastPick = null;
+      }
+    }
+    // 兜底:当前这一步没完成,而相关型号的零件用户明明已经配上去了、也在装配区里,
+    // 却没有任何一条说法 —— 那就明说"配上了但和这一步对不上",绝不空着让人干等
+    (function () {
+      var cur = null;
+      ref.steps.forEach(function (st) {
+        if (cur) return;
+        var ss = st.slots.map(function (sl) { return slots[sl.i]; });
+        if (ss.some(function (t) { return !t.ok; })) cur = { st: st, ss: ss };
+      });
+      if (!cur) return;
+      var spoken = {};
+      issues.forEach(function (i) { if (i.node) spoken[i.node.uuid] = true; });
+      // 这一步已经有具体说法了(装反 / 插错孔 / 差几毫米……),兜底就不再插嘴
+      var keys = {};
+      cur.ss.forEach(function (t) { keys[t.ref.ckey] = true; });
+      var explained = users.some(function (u) { return keys[u.ckey] && spoken[u.node.uuid]; });
+      if (explained) return;
+      cur.ss.forEach(function (t) {
+        if (t.ok || (t.part && spoken[t.part.node.uuid])) return;
+        users.forEach(function (u) {
+          if (u.ckey !== t.ref.ckey || spoken[u.node.uuid]) return;
+          if (u.slot) return;                      // 已经被认成别的位置(比如上一步装好的那对)
+          if (!wasMated(u.node)) return;
+          if (window.KBWorkspace && !KBWorkspace.contains(u.node)) return;
+          spoken[u.node.uuid] = true;
+          issues.push({ severity: 'error', node: u.node, slot: t.ref,
+            msg: u.node.name + ' is assembled, but not the way “' + cur.st.name +
+                 '” needs it — check which hole it goes in and which way round' });
+        });
+      });
+    })();
 
     // 6) 步骤状态:complete / available / blocked;顺序按任务图依赖
     var steps = ref.steps.map(function (st) {
       var ss = st.slots.map(function (s) { return slots[s.i]; });
+      var baseSlot = null;
+      if (st.assembly) {
+        baseSlot = slots[ref.byId[st.assembly.base].i];
+        ss = [].concat.apply([], st.assembly.groups).map(function (id) {
+          var source = slots[ref.byId[id].i];
+          var e = source.part && baseSlot.part ? relError(source.ref, source.part, baseSlot.ref, baseSlot.part) : null;
+          var inside = source.part && baseSlot.part && (!window.KBWorkspace || (KBWorkspace.contains(source.part.node) && KBWorkspace.contains(baseSlot.part.node)));
+          var link = e ? { m: { slot: baseSlot.ref, kind: 'feature' }, ms: baseSlot, e: e } : null;
+          return { ref: source.ref, part: source.part, near: link && e.d < NEAR * 2 ? [link] : [],
+            ok: !!(source.ok && inside && e && isOk(e)), err: link };
+        });
+        ss.forEach(function (t) {
+          if (t.ok || !t.part) return;
+          var msg = !baseSlot.part ? 'Bring the X-Lock into the workspace first.' :
+            !t.near.length ? 'Attach ' + t.ref.name + ' to its side of the X-Lock.' :
+            t.err.e.reversed ? t.ref.name + ' is facing the wrong direction on the X-Lock.' :
+            t.err.e.d >= POS_TOL ? t.ref.name + ' is ' + mm(t.err.e.d) + ' mm off its place on the X-Lock.' :
+            t.err.e.ang >= ANG_TOL ? t.ref.name + ' is tilted ' + t.err.e.ang.toFixed(0) + '° on the X-Lock.' :
+            'Finish preparing ' + t.ref.name + ' and keep it fully inside the workspace.';
+          issues.push({ severity: (!baseSlot.part || !t.near.length) ? 'hint' : 'error',
+            hint: !t.near.length, node: t.part.node, step: st, msg: msg });
+        });
+      }
       var okN = ss.filter(function (x) { return x.ok; }).length;
-      return { i: st.i, id: st.id, name: st.name, requires: st.requires, slots: ss,
+      return { i: st.i, id: st.id, name: st.name, requires: st.requires, slots: ss, assembly: st.assembly, base: baseSlot,
         total: ss.length, ok: okN, started: ss.some(function (x) { return x.part && x.near.length; }),
         complete: ss.length > 0 && okN === ss.length, state: null };
     });
@@ -457,7 +681,7 @@
       var pre = s.requires.map(function (r) { return steps[r]; }).filter(function (p) { return p.state !== 'complete' && !p.started; })[0];
       if (!pre) return;
       var node = (s.slots.filter(function (x) { return x.part && x.near.length; })[0] || {}).part;
-      issues.push({ key: 'order|' + s.i, severity: 'warn', node: node ? node.node : null, step: s,
+      issues.push({ key: 'order|' + s.i, severity: 'error', node: node ? node.node : null, step: s,
         msg: 'Out of order: “' + s.name + '” ' + (s.state === 'premature' ? 'done' : 'started') +
           ' before “' + pre.name + '” (' + pre.slots.map(function (x) { return x.ref.name; }).join(', ') + ')' });
     });
@@ -512,6 +736,7 @@
       elBar.style.width = '0%';
     }
     var all = results ? results.issues : [];
+    renderNotice(all);
     elList.innerHTML = '';
     if (!all.length) {
       var ok = document.createElement('div');
@@ -686,7 +911,11 @@
     return { node: node, pos: pos, quat: quat, name: t.ref.name };
   }
 
+  function inWorkspace(pl) {
+    return !window.KBWorkspace || (KBWorkspace.contains(pl.node) && KBWorkspace.contains(pl.node, pl.pos, pl.quat));
+  }
   function applySnaps(plans, label) {
+    plans = plans.filter(inWorkspace);
     if (!plans.length) return 0;
     snapping = true;
     var left = plans.length;
@@ -754,6 +983,7 @@
       });
       // 已认领的都摆好之后,再收编那些"在场上、大概就该放这儿"的零件
       if (!plans.length) plans = loosePlans(anchor);
+      plans = plans.filter(inWorkspace);
       if (!plans.length) break;
       plans.forEach(function (pl) {
         var k = pl.node.uuid;
@@ -859,7 +1089,141 @@
     return lines.join('\n');
   }
 
+  // Near-enough placement is corrected transactionally before grouping. Existing
+  // subassemblies move rigidly; failed validation restores every original pose.
+  function groupReadySteps() {
+    if ((KB.interacting && KB.interacting()) || snapping || (window.KBTutorial && KBTutorial.active())) return 0;
+    evaluate();
+    if (!results || !results.ready) return 0;
+    var limit = 5 * KBParts.unitScale() / 1000, count = 0;
+    function close(e) { return !e.reversed && e.d <= limit && e.ang <= 15; }
+    function top(n) { while (n.parent && n.parent !== KB.objectsRoot) n = n.parent; return n; }
+    var indices = results.steps.map(function (s) { return s.i; });
+    indices.forEach(function (index) {
+      var step = results.steps[index], members = [], roots = [];
+      var valid = step.slots.length && step.slots.every(function (t) {
+        if (!t.part || (window.KBWorkspace && !KBWorkspace.contains(top(t.part.node)))) return false;
+        var links = t.near.filter(function (link) {
+          return close(link.e) && (!window.KBWorkspace || KBWorkspace.contains(top(link.ms.part.node)));
+        });
+        if (!links.length || (!t.ok && links.length <= t.near.length / 2)) return false;
+        if (members.indexOf(t) < 0) members.push(t);
+        links.forEach(function (link) { if (members.indexOf(link.ms) < 0) members.push(link.ms); });
+        return true;
+      });
+      if (!valid) return;
+      members.forEach(function (t) { var n = top(t.part.node); if (roots.indexOf(n) < 0) roots.push(n); });
+      if (roots.length < 2) return;
+      // Keep the earlier receiving assembly fixed, and prefer an existing group.
+      members.sort(function (a, b) { return a.ref.step - b.ref.step || Number(KB.isPart(top(a.part.node))) - Number(KB.isPart(top(b.part.node))) || a.ref.i - b.ref.i; });
+      var fixed = [top(step.assembly ? step.base.part.node : members[0].part.node)];
+      var saved = roots.map(function (n) { return { n: n, p: n.position.clone(), q: n.quaternion.clone(), s: n.scale.clone() }; });
+      var protectedParts = results.slots.filter(function (t) { return t.ok; }).map(function (t) { return t.part.node; });
+      var expected = [];
+      roots.forEach(function (root) { root.traverse(function (n) { if (KB.isPart(n)) expected.push(n); }); });
+      function restore() {
+        saved.forEach(function (h) { h.n.position.copy(h.p); h.n.quaternion.copy(h.q); h.n.scale.copy(h.s); h.n.updateMatrixWorld(true); });
+        evaluate();
+      }
+      for (var pass = 0; pass < roots.length; pass++) {
+        var advanced = false;
+        members.forEach(function (original) {
+          var node = original.part.node, root = top(node);
+          if (fixed.indexOf(root) >= 0) return;
+          var t = step.assembly ? results.steps[index].slots.find(function (s) { return s.part && s.part.node === node; }) : slotForNode(node);
+          if (!t) return;
+          var link = t.near.filter(function (x) { return fixed.indexOf(top(x.ms.part.node)) >= 0 && close(x.e); })[0];
+          if (!link) return;
+          node.updateWorldMatrix(true, false); root.updateWorldMatrix(true, true);
+          var world = link.e.want.clone().multiply(node.matrixWorld.clone().invert()).multiply(root.matrixWorld);
+          if (root.parent) world.premultiply(root.parent.matrixWorld.clone().invert());
+          world.decompose(root.position, root.quaternion, root.scale); root.updateMatrixWorld(true);
+          fixed.push(root); advanced = true; evaluate();
+        });
+        if (!advanced) break;
+      }
+      var ok = fixed.length === roots.length && results.steps[index].complete && expected.concat(protectedParts).every(function (n) {
+        var t = slotForNode(n); return t && t.ok;
+      }) && roots.every(function (n) { return !window.KBWorkspace || KBWorkspace.contains(n); });
+      if (!ok) { restore(); return; }
+      if (KB.groupNodes(roots, step.name)) count++; else restore();
+    });
+    evaluate();
+    return count;
+  }
+
+  /* ---------- 用户真的配上去过的零件 ----------
+     料盘里的零件从没被配过,拿这个当门槛,装配区外也能放心判错,
+     不会再把托盘里挨着摆的螺丝和立柱说成"装反了" */
+  var userMated = Object.create(null);
+  KB.on('snapAttempt', function (a) {
+    if (!a || !a.success) return;
+    [a.object1, a.object2].forEach(function (n) {
+      var top = n && (KB.topOf ? KB.topOf(n) : n);
+      if (top && top.uuid) userMated[top.uuid] = true;
+      if (n && n.uuid) userMated[n.uuid] = true;
+    });
+  });
+  function wasMated(node) {
+    if (!node) return false;
+    if (userMated[node.uuid]) return true;
+    var top = KB.topOf ? KB.topOf(node) : node;
+    return !!(top && userMated[top.uuid]);
+  }
+
+  /* ---------- 拿错零件:选中 / 抓起一个这一步用不到的零件时当场提醒 ----------
+     判定本身只看"零件摆在哪",选中不改变几何,所以这条得挂在交互上。
+     说的是"这一步要什么、你手上这个是第几步用的",不拦着操作(可能只是想挪开)。 */
+  var warnedFor = null;
+  var lastPick = null;      // 手上拿着的这个零件不属于当前步骤 —— 面板里一直挂着,换零件就消
+  function stepNeeding(node) {
+    if (!ref) return null;
+    var key = canon(node.userData.kbType.slice(5));
+    var best = null;
+    ref.steps.forEach(function (st) {
+      st.slots.forEach(function (sl) {
+        if (canon(sl.key) !== key) return;
+        var slot = results && results.slots[sl.i];
+        if (slot && slot.ok) return;                 // 这个位置已经装好了
+        if (!best || sl.step < best.step) best = sl;
+      });
+    });
+    return best;
+  }
+  function checkPicked(node) {
+    if (!node || !KB.isPart(node) || !node.userData.kbType) return;
+    if (!results || !results.ready) return;
+    var nx = next();
+    if (!nx) return;
+    var slot = window.KBCheck && KBCheck.slotOf(node);
+    if (slot && slot.ok) return;                     // 已经装到位的零件,随便挪
+    var key = canon(node.userData.kbType.slice(5));
+    var wanted = nx.slots.filter(function (t) { return !t.ok; });
+    if (!wanted.length || wanted.some(function (t) { return canon(t.ref.key) === key; })) { lastPick = null; return; }
+    var tag = nx.i + '|' + node.uuid;
+    if (warnedFor === tag) return;                   // 同一步同一个零件只说一次
+    warnedFor = tag;
+    var mine = stepNeeding(node);
+    var msg = 'This step needs ' + wanted.map(function (t) { return t.ref.name; }).join(' / ') +
+      '. ' + (node.name || 'That part') +
+      (mine ? ' belongs to step ' + (mine.step + 1) + ' \u2014 ' + ref.steps[mine.step].name
+            : ' is not used in this step');
+    lastPick = { node: node, step: nx.i, msg: msg };
+    KB.toast(msg);
+    KB.emit('pickWarn', { objectId: node.userData.kbId || null, name: node.name,
+      key: node.userData.kbType.slice(5), step: nx.i, stepName: nx.name,
+      belongsToStep: mine ? mine.step : null, message: msg });
+  }
+  KB.onSelection(function (sel) {
+    if (sel.length === 1) checkPicked(sel[0]);
+    else lastPick = null;
+    if (lastPick && sel.indexOf(lastPick.node) < 0) lastPick = null;
+    if (window.KBCheck) KBCheck.evaluate();      // 让面板立刻跟上
+  });
+  KB.on('grab', function (node) { checkPicked(KB.topOf ? KB.topOf(node) : node); });
+
   window.KBCheck = {
+    groupReadySteps: groupReadySteps,
     evaluate: function () { evaluate(); return results; },
     diagnose: diagnose,
     /* 落位吸附开关:放下时离正确位置 10 mm / 25° 以内就吸到参考位姿 */

@@ -1,0 +1,265 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Next guidance debugger</title>
+<style>
+/* Next 引导调试台 —— 左边真仿真台跑动画,右边把它说的每句话摊开 */
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#0b0e13;color:#dde4ee;
+  font:13px/1.55 -apple-system,"PingFang SC","Noto Sans CJK SC","Segoe UI",system-ui,sans-serif}
+#wrap{display:grid;grid-template-columns:1fr 430px;height:100%}
+#left{position:relative;display:flex;flex-direction:column;min-width:0}
+#bench{flex:1;border:0;width:100%;background:#0b0e13}
+#toolbar{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid #1e2632;flex-wrap:wrap}
+#right{border-left:1px solid #1e2632;display:flex;flex-direction:column;min-height:0;background:#0d1118}
+button,select{font:inherit;color:#dde4ee;background:#161c26;border:1px solid #27303d;border-radius:7px;
+  padding:5px 10px;cursor:pointer}
+button:hover{background:#1e2733;border-color:#3a4759}
+button.primary{background:#2c3a4e;border-color:#42536b;color:#fff}
+button[disabled]{opacity:.45;cursor:default}
+label{color:#8494a8;font-size:12px}
+h2{margin:0;font-size:12px;letter-spacing:.14em;color:#7d8da3;font-weight:600;text-transform:uppercase}
+section{padding:12px 14px;border-bottom:1px solid #1a2130}
+#steps{overflow:auto;flex:0 0 33%;padding:6px 8px}
+#steps button{display:flex;gap:8px;width:100%;text-align:left;border:0;background:none;padding:4px 7px;
+  border-radius:6px;color:#8b9ab0;font-size:12px}
+#steps button:hover{background:#ffffff0d;color:#dfe7f2}
+#steps button.on{background:#2b3purple}
+#steps button.on{background:#27364a;color:#fff}
+#steps em{font-style:normal;font-family:ui-monospace,Menlo,monospace;font-size:11px;opacity:.65;min-width:22px}
+#steps button.derived em{color:#e9b756;opacity:1}
+#guide{flex:0 0 auto}
+#guide .state{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;
+  font-family:ui-monospace,Menlo,monospace;background:#22303f;color:#9fc1e6}
+#guide .state[data-s=error]{background:#3b2326;color:#ff9c9c}
+#guide .state[data-s=success]{background:#1f3628;color:#8fe0a8}
+#guide .state[data-s=workspace]{background:#3a3222;color:#f0c674}
+#guide h3{margin:8px 0 4px;font-size:15px}
+#guide .msg{color:#b7c4d6;min-height:2.6em}
+#guide .meta{color:#7f8fa5;font-size:12px;font-family:ui-monospace,Menlo,monospace}
+#parts{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:150px;overflow:auto}
+#parts li{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#93a2b7;
+  padding:2px 6px;border-radius:5px;background:#121924}
+#parts li[data-s=in-place]{color:#8fe0a8}
+#parts li[data-s=align]{color:#f0c674}
+#log{flex:1;overflow:auto;padding:8px 10px;font:11.5px/1.5 ui-monospace,Menlo,monospace;color:#7f8fa5}
+#log div{padding:2px 0;border-bottom:1px solid #141b26;white-space:pre-wrap;word-break:break-word}
+#log b{color:#9fc1e6;font-weight:600}
+#log .guide b{color:#f0c674}
+#log .warn b{color:#ff9c9c}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+</style></head><body>
+<div id="wrap">
+  <div id="left">
+    <div id="toolbar">
+      <button id="btnNext" class="primary">Demo this step (earlier steps correct)</button>
+      <button id="btnTour">▶ Walk every step</button>
+      <button id="btnHide">Hide</button>
+      <label style="display:flex;gap:5px;align-items:center"><input type="checkbox" id="auto" checked>Demo on select</label>
+      <span style="flex:1"></span>
+      <label>Scene</label>
+      <select id="preset">
+        <option value="before">Built up to the step before</option>
+        <option value="with">Built including this step</option>
+        <option value="off">Up to before + this part 8 mm off</option>
+        <option value="tray">Parts still outside the workspace</option>
+        <option value="all">Fully assembled</option>
+      </select>
+      <button id="apply">Apply</button>
+    </div>
+    <iframe id="bench"></iframe>
+  </div>
+  <div id="right">
+    <section id="guide">
+      <h2>What Next says</h2>
+      <div class="row"><span class="state" id="gState">—</span><span class="meta" id="gMeta"></span></div>
+      <h3 id="gTitle">(no guidance yet)</h3>
+      <div class="msg" id="gMsg"></div>
+      <ul id="parts"></ul>
+    </section>
+    <section style="flex:0 0 auto">
+      <h2>Steps (<span id="cnt">0</span>)</h2>
+    </section>
+    <div id="steps"></div>
+    <section style="flex:0 0 auto;display:flex;justify-content:space-between;align-items:center">
+      <h2>Messages</h2><button id="clear" style="padding:2px 8px">Clear</button>
+    </section>
+    <div id="log"></div>
+  </div>
+</div>
+<script>
+(function () {
+  'use strict';
+  var bench = document.getElementById('bench');
+  // 默认跑 src/ 里的源码(改完刷新即可);?bench=/dist/kitbash-standalone.html 可以跑打包版
+  var benchSrc = new URLSearchParams(location.search).get('bench') || '/index.html';
+  bench.src = benchSrc + (benchSrc.indexOf('?') < 0 ? '?' : '&') + 'bridge=1&embed=1';
+  var answer = null, selected = 0, ready = false;
+
+  function post(msg) { bench.contentWindow.postMessage(msg, '*'); }
+  function log(kind, text) {
+    var box = document.getElementById('log');
+    var d = document.createElement('div');
+    if (kind) d.className = kind;
+    var t = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+    d.innerHTML = '<b>' + t + '</b> ' + text;
+    box.insertBefore(d, box.firstChild);
+    while (box.children.length > 300) box.removeChild(box.lastChild);
+  }
+  document.getElementById('clear').onclick = function () { document.getElementById('log').textContent = ''; };
+
+  /* ---------- 场景:拿参考装配拼出想要的状态 ---------- */
+  function shift(pose) {
+    // 参考位姿是绕原点摆的,原点在物料区;整套挪到装配区里判定才认
+    var c = answer.workspace ? answer.workspace.center : { x: 0, z: 0 };
+    var out = Object.assign({}, pose);
+    out.x += c.x; out.z += c.z;
+    return out;
+  }
+  function sceneFor(mode, step) {
+    if (!answer) return [];
+    var keep = answer.parts.filter(function (p) {
+      return mode === 'all' ? true : mode === 'with' ? p.step <= step : p.step < step;
+    });
+    var out = keep.map(function (p) {
+      return { id: p.id, key: p.key, name: p.name, pose: shift(p.pose) };
+    });
+    if (mode === 'off') {
+      answer.parts.filter(function (p) { return p.step === step; }).forEach(function (p) {
+        var pose = shift(p.pose);
+        pose.x += 8;                       // 偏 8 mm:判定的容差是 3.2 mm,这算明显放错
+        out.push({ id: p.id, key: p.key, name: p.name, pose: pose });
+      });
+    }
+    if (mode === 'tray') {
+      return answer.parts.filter(function (p) { return p.step < step; }).map(function (p, i) {
+        var pose = Object.assign({}, p.pose);   // 故意不挪进装配区
+        pose.x += 260 + (i % 6) * 40;      // 留在物料区那边,用来看"先搬进装配区"那条引导
+        return { id: p.id, key: p.key, name: p.name, pose: pose };
+      });
+    }
+    return out;
+  }
+  document.getElementById('apply').onclick = function () {
+    var mode = document.getElementById('preset').value;
+    var scene = sceneFor(mode, selected);
+    post({ type: 'kb:setScene', scene: scene });
+    log('', 'scene <b>' + mode + '</b> · step ' + (selected + 1) + ' · ' + scene.length + ' parts');
+  };
+  /* ---------- 一键:把前面都摆对,再演示这一步 ---------- */
+  var busy = 0;
+  function demo(step) {
+    clearTimeout(busy);
+    var mode = document.getElementById('preset').value;
+    var scene = sceneFor(mode === 'before' ? 'before' : mode, step);
+    post({ type: 'kb:hideAnswer' });
+    post({ type: 'kb:setScene', scene: scene });
+    post({ type: 'kb:look', where: 'work' });
+    log('', 'step ' + (step + 1) + ': placed ' + scene.length + ' earlier parts, demoing this step');
+    // 场景是异步装的,等零件落位再让虚影上场
+    busy = setTimeout(function () {
+      post({ type: 'kb:showStep', step: step });
+      // 虚影建好再对镜头,不然框到的是空的
+      setTimeout(function () { post({ type: 'kb:look', where: 'ghost' }); }, 500);
+    }, 1200);
+  }
+  document.getElementById('btnNext').onclick = function () { demo(selected); };
+  document.getElementById('btnHide').onclick = function () { post({ type: 'kb:hideAnswer' }); log('', '→ kb:hideAnswer'); };
+
+  /* ---------- 逐步遍历:每步看一会儿再翻下一步 ---------- */
+  var tour = 0;
+  document.getElementById('btnTour').onclick = function () {
+    var btn = this;
+    if (tour) { clearInterval(tour); tour = 0; btn.textContent = '▶ Walk every step'; return; }
+    btn.textContent = '⏸ Stop walking';
+    var i = selected;
+    demo(i);
+    tour = setInterval(function () {
+      i += 1;
+      if (i >= answer.steps.length) { clearInterval(tour); tour = 0; btn.textContent = '▶ Walk every step'; return; }
+      select(i);
+      demo(i);
+    }, 7000);
+  };
+
+  /* ---------- 步骤列表 ---------- */
+  function select(i) {
+    selected = i;
+    var box = document.getElementById('steps');
+    Array.prototype.forEach.call(box.children, function (x, n) { x.classList.toggle('on', n === i); });
+    if (box.children[i]) box.children[i].scrollIntoView({ block: 'nearest' });
+  }
+  function drawSteps() {
+    var box = document.getElementById('steps');
+    box.textContent = '';
+    document.getElementById('cnt').textContent = answer.steps.length;
+    answer.steps.forEach(function (s, i) {
+      var b = document.createElement('button');
+      b.innerHTML = '<em>' + String(i + 1).padStart(2, '0') + '</em><span>' + s.name + '</span>';
+      if (s.derived) b.classList.add('derived');
+      b.onclick = function () {
+        select(i);
+        if (document.getElementById('auto').checked) demo(i);
+      };
+      box.appendChild(b);
+    });
+    if (box.firstChild) box.firstChild.classList.add('on');
+  }
+
+  /* ---------- 引导面板 ---------- */
+  function drawGuide(g) {
+    var st = document.getElementById('gState');
+    if (!g) {
+      st.textContent = '—'; st.removeAttribute('data-s');
+      document.getElementById('gTitle').textContent = '(guidance closed)';
+      document.getElementById('gMsg').textContent = '';
+      document.getElementById('gMeta').textContent = '';
+      document.getElementById('parts').textContent = '';
+      return;
+    }
+    st.textContent = g.status || g.state;
+    st.dataset.s = g.state;
+    document.getElementById('gTitle').textContent = (g.step + 1) + ' · ' + g.name;
+    document.getElementById('gMsg').textContent = g.message || '(no extra note)';
+    document.getElementById('gMeta').textContent = g.ok + '/' + g.total + ' parts in place'
+      + (g.steps ? ' · overall ' + g.settled + '/' + g.steps + ' steps' : '');
+    var ul = document.getElementById('parts');
+    ul.textContent = '';
+    (g.parts || []).forEach(function (p) {
+      var li = document.createElement('li');
+      li.dataset.s = p.state;
+      li.innerHTML = '<span>' + p.name + '</span><span>' + p.state + '</span>';
+      ul.appendChild(li);
+    });
+  }
+
+  addEventListener('message', function (ev) {
+    var m = ev.data;
+    if (!m || typeof m.type !== 'string' || m.type.indexOf('kb:') !== 0) return;
+    if (m.type === 'kb:ready') {
+      ready = true;
+      log('', 'bench ready, protocol v' + m.protocol);
+      post({ type: 'kb:init', scene: [], options: { frames: false } });
+      post({ type: 'kb:getAnswer' });
+      return;
+    }
+    if (m.type === 'kb:answer') {
+      answer = { steps: m.steps, parts: m.parts, workspace: m.workspace };
+      drawSteps();
+      log('', 'reference assembly: ' + m.steps.length + ' steps / ' + m.parts.length + ' parts');
+      return;
+    }
+    if (m.type === 'kb:guide') { drawGuide(m.guide); log('guide', m.guide
+      ? '<b>guide</b> ' + m.guide.state + ' · step ' + (m.guide.step + 1) + ' · ' + (m.guide.message || '')
+      : '<b>guide</b> closed'); return; }
+    if (m.type === 'kb:warn') { log('warn', '<b>warn</b> ' + m.message); return; }
+    if (m.type === 'kb:state') {
+      var s = m.state;
+      log('', '<b>state</b> ' + s.steps.filter(function (x) { return x.state === 'complete'; }).length
+        + '/' + s.steps.length + ' steps complete' + (m.lastPlace ? ' · just placed ' + m.lastPlace.objectId.slice(0, 8) : ''));
+      return;
+    }
+    if (m.type === 'kb:place' || m.type === 'kb:grab' || m.type === 'kb:move') return;  // 太吵
+    log('', '<b>' + m.type + '</b>');
+  });
+})();
+</script></body></html>
