@@ -737,7 +737,7 @@ input[type="range"]::-moz-range-thumb {
 .trainee #inspMaterial, .trainee #btnResetXform { display: none !important; }
 
 #btnNext, .embed #btnNext { display: none !important; }
-.embed #btnHelp, .embed #btnHelp .lbl { display: inline-flex; }
+.embed #btnHelp, .embed #btnHelp .lbl, .embed #btnView, .embed #btnView .lbl { display: inline-flex; }
 #btnHelp.on { background: #2a4a5e; color: #bfe9ff; }
 #btnHelp.nudge { animation: helpNudge 1.6s ease-in-out infinite; color: #ffd98a; }
 #nextGuide.ng-teach { animation: helpNudge 1.6s ease-in-out infinite; border-color: #ffc81e; }
@@ -1215,6 +1215,10 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
   </button>
   <button id="btnTutorial" class="tool" title="Tutorial: three parts, every move in the general mode">Tutorial</button>
   <button id="btnNext" class="tool" hidden title="Next step: ghost animation of what to do next, on your current assembly">Next</button>
+  <button id="btnView" class="tool" title="Back to the suggested view (V)">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="3"/><path d="M10 2.5v3M10 14.5v3M2.5 10h3M14.5 10h3"/></svg>
+    <span class="lbl">View</span>
+  </button>
   <button id="btnHelp" class="tool" title="Stuck? See how to do this step">
     <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.2"/><path d="M7.9 7.8a2.2 2.2 0 1 1 3.1 2c-.7.3-1 .8-1 1.5v.4"/><path d="M10 14.3h.01"/></svg>
     <span class="lbl">Help</span>
@@ -1459,7 +1463,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-24 19:15';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-24 19:20';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -19248,6 +19252,7 @@ KBWorkspace.overview();
         if (p.y < 0.08)
             p.y = 0.08;
         KB.flyCamera(p.toArray(), c.toArray());
+        KB.emit('suggestView', { p: p.toArray(), t: c.toArray() });
     }
     if (window.KBMate)
         hookFilter();
@@ -19360,6 +19365,9 @@ KBWorkspace.overview();
         }
         if (r.reason) {
             KBCheck.noteHole(src.node, r.reason);
+            if (guide && guideFor === src.node)
+                setTimeout(function () { if (guide && guideFor === src.node)
+                    closeUp(guide); }, 700);
             return r.reason;
         }
         KBCheck.noteHole(null);
@@ -19839,8 +19847,10 @@ KBWorkspace.overview();
         asked[shown.key] = use ? 'used' : 'dismissed';
         if (use)
             follow = true;
-        if (use)
+        if (use) {
             KB.flyCamera(shown.view.p, shown.view.t);
+            KB.emit('suggestView', shown.view);
+        }
         KB.emit('viewTip', { key: shown.key, used: !!use });
         hideCard();
     }
@@ -19932,6 +19942,7 @@ KBWorkspace.overview();
                 asked[key] = 'auto';
                 pendingKey = null;
                 KB.flyCamera(s.view.p, s.view.t);
+                KB.emit('suggestView', s.view);
                 KB.emit('viewTip', { key: key, auto: true, view: s.view });
             }, 700);
             return;
@@ -19974,6 +19985,27 @@ KBWorkspace.overview();
             box.expandByScalar(0.9);
         return { dir: dir.toArray(), view: framing(box, dir.clone()), seen: lastBest ? lastBest.seen : null, wide: wide };
     }
+    var lastView = null;
+    KB.on('suggestView', function (v) { if (v && v.p && v.t)
+        lastView = { p: v.p.slice(), t: v.t.slice() }; });
+    function backToView() {
+        if (tutorialOn())
+            return;
+        if (lastView)
+            KB.flyCamera(lastView.p, lastView.t);
+        else if (shown && shown.view)
+            KB.flyCamera(shown.view.p, shown.view.t);
+        else
+            KB.toast('No suggested view yet');
+    }
+    var viewBtn = document.getElementById('btnView');
+    if (viewBtn)
+        viewBtn.addEventListener('click', backToView);
+    window.addEventListener('keydown', function (e) {
+        if (e.code !== 'KeyV' || (KB.expert && KB.expert()) || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable)
+            return;
+        backToView();
+    });
     window.KBFocus = { refresh: refresh, following: function () { return follow; }, viewForSlot: viewForSlot,
         snapshot: snapshot, lit: function () { return lit.slice(); },
         suggestion: function () { return shown ? { key: shown.key, view: shown.view } : null; },
