@@ -1,0 +1,75 @@
+part_id,name,type,step_index,step_name,source,x,y,z,roll,pitch,yaw
+92cf9ccb-73e0-4204-a6e7-eef13c3c8260,Left Arm Wedge,aluminum_arm_wedge_5mm,0,Feed Screw through Arm Wedge (A),captured,-21.359,4.5,0.0,0.0,-1.5708,0.0
+3b8d1e48-6109-47fa-a12e-20c7bc89e464,Left Arm Wedge Screw,screw_m3x16_socket_cap,0,Feed Screw through Arm Wedge (A),captured,-15.0,4.5,0.0,0.0,0.0,1.5708
+cb234cda-1e15-4933-b9cf-9571d4da561f,Right Arm Wedge,aluminum_arm_wedge_5mm,1,Feed Screw through Arm Wedge (B),captured,22.323,4.824,0.0,0.0,1.5708,0.0
+d85dce0b-e605-4b4a-a310-3645d3b0deea,Right Arm Wedge Screw,screw_m3x16_socket_cap,1,Feed Screw through Arm Wedge (B),captured,15.0,4.5,0.0,0.0,0.0,-1.5708
+33ee88b1-9980-4e0b-ade6-1052789ff327,Aluminum X-Lock,aluminum_x_lock,2,Attach Arm Wedge Assembly to X-Lock (A),captured,0.0,2.0,0.0,0.0,0.0,0.0
+b4de5507-d10b-4784-bfa2-672125e804d6,Split Rear Plate,split_rear_plate,3,Place Assembly Aluminum X-Lock with Wedges on Rear Plate,captured,0.0,0.0,0.0,0.0,0.0,0.0
+fce4fde7-4bd0-4b9b-81b0-c35aec9addcd,M3x22mm Pan Head Screw #1,screw_m3x22_pan,4,Feed Screw through X-Lock and Rear Plate (A),captured,15.465,-4.197,15.425,-1.5708,0.0,0.0
+7b08adec-3703-453d-bb55-2e95c105edc3,M3x22mm Pan Head Screw #2,screw_m3x22_pan,5,Feed Screw through X-Lock and Rear Plate (B),captured,-15.465,-4.197,15.425,-1.5708,0.0,0.0
+f11e1f6b-6093-4e03-8672-3d4dd6c751d6,M3x22mm Pan Head Screw #3,screw_m3x22_pan,6,Feed Screw through X-Lock and Rear Plate (C),captured,-15.465,-4.197,-15.425,-1.5708,0.0,0.0
+ef8c0c00-0681-43bf-abd3-fd55137acd34,M3x22mm Pan Head Screw #4,screw_m3x22_pan,7,Feed Screw through X-Lock and Rear Plate (D),captured,15.465,-4.197,-15.425,-1.5708,0.0,0.0
+5862866f-f049-40fb-94a9-6d3b25d45e9d,5-inch Arm #1,arm_5in,8,Insert Arm into X-Lock Assembly (A),captured,91.071,2.0,65.754,0.0,0.9599,0.0
+f521bee8-6351-43c9-aebd-a883d7d0e991,5-inch Arm #2,arm_5in,9,Insert Arm into X-Lock Assembly (B),captured,91.071,6.766,-66.188,-3.1416,0.9599,-0.0
+5608b061-50d6-40cb-9b06-fae565a0ede8,5-inch Arm #3,arm_5in,10,Insert Arm into X-Lock Assembly (C),captured,-85.373,2.0,-72.448,-3.1416,-0.8727,-3.1416
+04e26746-c21e-4738-96cf-8bf2b1d7aa38,5-inch Arm #4,arm_5in,11,Insert Arm into X-Lock Assembly (D),captured,-90.667,7.0,65.907,-0.0,-0.9599,3.1416
+acb493f9-45c0-469c-a7ad-8a0bd429ab00,Split Front Plate,split_front_plate,12,Place Front Plate on X-Lock,captured,0.0,7.0,0.0,0.0,0.0,0.0
+52e5ae62-8d7f-4975-95fd-28611d677d39,Center X-Lock Screw,screw_m3x6_pan,13,Attach Front Plate on Rear Plate and Arm Assembly,captured,0.0,8.0,0.0,0.0,0.0,0.0
+06151b08-07be-444d-b6c1-e960a3a90528,Standoff Screw #1,screw_m3x16_pan,14,Feed Standoff Screw through Frame Bottom (A),captured,14.821,3.057,-26.463,0.0,0.0,0.0
+7ba6ea05-098b-4c62-9ae8-a203e41652fd,Standoff #1,knurled_standoff,15,Attach Knurled Standoff to Frame Bottom (A),captured,14.821,-10.0,-26.463,1.5708,0.0,0.0
+7f4f1096-48e3-4d5e-a753-2c777f78dd29,Standoff Screw #2,screw_m3x16_pan,16,Feed Standoff Screw through Frame Bottom (B),captured,14.821,3.057,26.463,0.0,0.0,0.0
+b9d5fd44-1a47-4c0a-bdfb-c3a0b2925ca2,Standoff #2,knurled_standoff,17,Attach Knurled Standoff to Frame Bottom (B),captured,14.821,-10.0,26.463,1.5708,0.0,0.0
+1901797f-ee02-43de-990e-817dfeef6ea8,Standoff Screw #3,screw_m3x16_pan,18,Feed Standoff Screw through Frame Bottom (C),captured,-14.821,3.057,26.463,0.0,0.0,0.0
+56281c28-09d7-4519-aed3-6aeab2a1ac49,Standoff #3,knurled_standoff,19,Attach Knurled Standoff to Frame Bottom (C),captured,-14.821,-10.0,26.463,1.5708,0.0,0.0
+f2460165-80e4-4c0e-ab99-5b877b8178fb,Standoff Screw #4,screw_m3x16_pan,20,Feed Standoff Screw through Frame Bottom (D),captured,-14.821,3.057,-26.463,0.0,0.0,0.0
+9ef7451a-519d-44b6-b309-791f2deb2927,Standoff #4,knurled_standoff,21,Attach Knurled Standoff to Frame Bottom (D),captured,-14.821,-10.0,-26.463,1.5708,0.0,0.0
+c83c45d7-c6e4-4b7c-8184-135c528f9536,M3x8mm Motor Screw #1-1,screw_m3x8_socket_cap,22,Position Motor on Arm (A),captured,92.494,5.0,74.058,0.0,0.0,0.0
+5ebe5814-3691-4844-ab81-e8462819fdbe,M3x8mm Motor Screw #1-2,screw_m3x8_socket_cap,22,Position Motor on Arm (A),captured,90.15,5.0,57.255,0.0,0.0,0.0
+6d987065-3475-403c-8080-a4abc763f65b,M3x8mm Motor Screw #1-3,screw_m3x8_socket_cap,22,Position Motor on Arm (A),captured,99.541,5.0,63.818,0.0,0.0,0.0
+26b9c19c-be5f-4543-8879-964cf24a865f,M3x8mm Motor Screw #1-4,screw_m3x8_socket_cap,22,Position Motor on Arm (A),captured,82.921,5.0,66.956,0.0,0.0,0.0
+b4d32b6d-3c56-45c4-9c94-673a5c12273f,Motor #1,motor_2207,22,Position Motor on Arm (A),captured,91.0,2.5,65.75,1.5708,-0.0,-0.9599
+b4e6ca7b-0f42-48aa-96db-bdc272b153a5,Propeller Nut #1,motor_nut_m5,22,Position Motor on Arm (A),captured,91.0,-17.6,65.75,-3.1416,0.0,0.0
+39f5bc62-8bac-49f0-a886-e35c252f2f09,M3x8mm Motor Screw #2-1,screw_m3x8_socket_cap,23,Position Motor on Arm (B),captured,89.887,4.384,-57.717,0.0,0.0,0.0
+da36cc28-f889-4fbe-81f7-d68e1af38b91,M3x8mm Motor Screw #2-2,screw_m3x8_socket_cap,23,Position Motor on Arm (B),captured,92.653,4.384,-74.603,0.0,0.0,0.0
+3ff3d68e-54fd-454a-8a4f-802c7392d1cf,M3x8mm Motor Screw #2-3,screw_m3x8_socket_cap,23,Position Motor on Arm (B),captured,99.61,4.384,-64.833,0.0,0.0,0.0
+d62e2658-6a51-49cf-9d14-9506a004d84f,M3x8mm Motor Screw #2-4,screw_m3x8_socket_cap,23,Position Motor on Arm (B),captured,82.696,4.384,-67.814,0.0,0.0,0.0
+381fadc6-61ca-423b-8a1b-26d8359abd99,Motor #2,motor_2207,23,Position Motor on Arm (B),captured,91.0,2.5,-66.116,1.5708,-0.0,-0.6109
+b0e480aa-818a-4eea-84d0-3000f13a6a23,Propeller Nut #2,motor_nut_m5,23,Position Motor on Arm (B),captured,91.0,-17.6,-66.116,-3.1416,0.0,0.0
+8a59e5bb-6e58-451c-a3c0-504fcfd7d032,M3x8mm Motor Screw #3-1,screw_m3x8_socket_cap,24,Position Motor on Arm (C),captured,-99.101,5.0,64.387,0.0,0.0,0.0
+250b1751-d5db-4cd6-86b8-9dfc5add0a30,M3x8mm Motor Screw #3-2,screw_m3x8_socket_cap,24,Position Motor on Arm (C),captured,-82.187,5.0,67.368,0.0,0.0,0.0
+f977e47d-b592-440f-b573-3484c52b1972,M3x8mm Motor Screw #3-3,screw_m3x8_socket_cap,24,Position Motor on Arm (C),captured,-89.144,5.0,57.598,0.0,0.0,0.0
+031286ef-09e1-4d25-9aa7-26fe1d1b5b34,M3x8mm Motor Screw #3-4,screw_m3x8_socket_cap,24,Position Motor on Arm (C),captured,-91.91,5.0,74.484,0.0,0.0,0.0
+a3a24789-a2c6-4ab2-a264-381eae786870,Motor #3,motor_2207,24,Position Motor on Arm (C),captured,-90.628,2.5,65.85,1.5708,-0.0,-0.6109
+484cb3e1-4d98-4509-8c7d-35a83ae123ed,Propeller Nut #3,motor_nut_m5,24,Position Motor on Arm (C),captured,-90.628,-17.6,65.85,-3.1416,0.0,0.0
+2e66311a-1399-4f92-87f4-a9368df68a36,M3x8mm Motor Screw #4-1,screw_m3x8_socket_cap,25,Position Motor on Arm (D),captured,-93.479,5.0,-71.129,0.0,0.0,0.0
+63dcf032-2444-4962-b873-996f7ffa6b49,M3x8mm Motor Screw #4-2,screw_m3x8_socket_cap,25,Position Motor on Arm (D),captured,-76.859,5.0,-74.267,0.0,0.0,0.0
+576d9adf-2736-4af3-8ddc-59e5de127737,M3x8mm Motor Screw #4-3,screw_m3x8_socket_cap,25,Position Motor on Arm (D),captured,-86.25,5.0,-80.83,0.0,0.0,0.0
+d765d31b-ce11-4402-9c5f-b3763788820f,M3x8mm Motor Screw #4-4,screw_m3x8_socket_cap,25,Position Motor on Arm (D),captured,-83.906,5.0,-64.027,0.0,0.0,0.0
+a653295b-2223-4121-8360-a1756a2a9c1e,Motor #4,motor_2207,25,Position Motor on Arm (D),captured,-85.302,2.5,-72.422,1.5708,-0.0,-0.8727
+61970440-40d5-44f7-a718-a79591c70524,Propeller Nut #4,motor_nut_m5,25,Position Motor on Arm (D),captured,-85.302,-17.6,-72.422,-3.1416,0.0,0.0
+a0178832-67d9-4c41-96e0-021829fb2593,4-in-1 ESC,esc_4in1,26,Orient and Place ESC onto Stack Screws,captured,0.0,-4.0,0.0,0.0,0.0,0.0
+1f067ba6-468c-48d4-94dd-e9b65f5fe57d,ESC Spacer Grommet #1,damper_m2,26,Orient and Place ESC onto Stack Screws,captured,15.465,-1.5,15.425,0.0,0.0,0.0
+b2e830f3-9c86-4d90-8fc5-5e0115ed5d7d,ESC Spacer Grommet #2,damper_m2,26,Orient and Place ESC onto Stack Screws,captured,-15.465,-1.5,15.425,0.0,0.0,0.0
+4f1d3bb7-362e-44aa-95ac-4b5da5d2fe13,ESC Spacer Grommet #3,damper_m2,26,Orient and Place ESC onto Stack Screws,captured,-15.465,-1.5,-15.425,0.0,0.0,0.0
+a83feb95-a3f7-48c9-b766-34828a66e009,ESC Spacer Grommet #4,damper_m2,26,Orient and Place ESC onto Stack Screws,captured,15.465,-1.5,-15.425,0.0,0.0,0.0
+f9087d30-9661-4d5c-9340-4a41dc56e3d8,Standoff #5,knurled_standoff,27,Attach Knurled Standoff to Frame Bottom (E),derived,9.5891,-10.0,73.8324,1.5708,0.0,-0.0
+7187e0ea-ce6b-4c05-bdc0-fefdc6e6552f,Standoff Screw #5,screw_m3x6_pan,27,Attach Knurled Standoff to Frame Bottom (E),derived,9.5931,0.4988,73.8279,0.0,0.0,-0.0
+b3c3315f-fdc0-4e0d-a830-fa4fddfb5031,Standoff #6,knurled_standoff,28,Attach Knurled Standoff to Frame Bottom (F),derived,-9.5972,-10.0,73.8324,1.5708,0.0,-0.0
+fa8c1d23-ff6c-4a5e-9a41-2c1e6fb69f31,Standoff Screw #6,screw_m3x6_pan,28,Attach Knurled Standoff to Frame Bottom (F),derived,-9.5931,0.4988,73.8279,0.0,0.0,-0.0
+f7189e78-1a5c-4792-ba0b-d405ef39c67a,Top Plate,top_plate,29,Place Top Plate on Top of Frame,derived,0.0027,-22.5021,3.3226,-0.0,0.0,-0.0
+1effca0f-c1ed-431f-ad7b-89d602dbf232,Standoff Screw #7,screw_m3x6_pan,30,Feed Screw through Top Plate and into Standoff (A),derived,14.8123,-20.9984,-27.915,-3.1416,0.0,-0.0
+11081818-30b5-4ff1-811d-5f177cdf8105,Standoff Screw #10,screw_m3x6_pan,31,Feed Screw through Top Plate and into Standoff (D),derived,-14.8069,-20.9984,-27.915,-3.1416,0.0,-0.0
+b5fbf145-41aa-47d5-83f3-4401800e6c7d,Standoff Screw #8,screw_m3x6_pan,32,Feed Screw through Top Plate and into Standoff (B),derived,15.0545,-20.9984,26.1069,-3.1416,0.0,-0.0
+cf62e96d-6f1a-4967-88c8-58613e54d454,Standoff Screw #9,screw_m3x6_pan,33,Feed Screw through Top Plate and into Standoff (C),derived,-15.0491,-20.9984,26.1069,-3.1416,0.0,-0.0
+3e4ec983-4f8a-48ad-ad23-29bd05f804f4,Standoff Screw #12,screw_m3x6_pan,34,Feed Screw through Top Plate and into Standoff (F),derived,-10.2041,-20.9984,75.6269,-3.1416,0.0,-0.0
+87d629a5-abc6-4cc9-ab49-e1470a524b19,Standoff Screw #11,screw_m3x6_pan,35,Feed Screw through Top Plate and into Standoff (E),derived,10.2095,-20.9984,75.6269,-3.1416,0.0,-0.0
+1671c5e9-f430-4a9d-9114-021b8ebb1c27,Right Camera Plate,camera_plate_right,36,Place Right Camera Plate,derived,16.4232,-4.7166,-68.7456,-1.5708,0.0,1.5708
+46a749fe-12cc-4f1f-981d-1429d75a6bd2,M3x6 Right Camera Plate Lower Screw,screw_m3x6_pan,37,Attach Right Camera Plate to Split Front Plate,derived,12.8514,7.9995,-71.7423,-0.0,0.0,-0.0
+6fb6ccee-28d2-4c5b-8adc-0b1ced4d6a14,M3x6 Right Camera Plate Upper Screw,screw_m3x6_pan,38,Feed Screw through Top Plate and into Right Camera Plate,derived,12.3696,-20.9984,-72.6102,3.1416,0.0,-0.0
+04006a67-9212-492f-9290-fcc618dc1b51,Left Camera Plate,camera_plate_left,39,Place Left Camera Plate,derived,-16.6964,-4.7166,-68.8223,-1.5708,0.0,-1.5708
+06547ac5-ebea-465e-a83c-24f7fd0d2d30,M3x6 Left Camera Plate Lower Screw,screw_m3x6_pan,40,Attach Left Camera Plate to Split Front Plate,derived,-12.8514,7.9995,-71.7423,-0.0,0.0,-0.0
+ecce827e-a997-4655-a55a-15efcafa3062,M3x6 Left Camera Plate Upper Screw,screw_m3x6_pan,41,Feed Screw through Top Plate and into Left Camera Plate,derived,-12.3642,-20.9984,-72.6102,3.1416,0.0,-0.0
+e90a620f-36e0-48a6-aef1-60430437390f,Propeller #1,propeller_cw,42,Place Propeller on Motor Shaft (A),derived,91.0005,-30.0995,65.7511,1.5708,0.0,-0.0
+3e60a8b6-000c-4d4c-8d1e-0f0070c3b7d7,Propeller #2,propeller_ccw,43,Place Propeller on Motor Shaft (B),derived,91.0017,-35.002,-66.1138,1.5708,0.0,-0.0
+a88f96eb-782a-4f40-93cb-248879d58667,Propeller #3,propeller_ccw,44,Place Propeller on Motor Shaft (C),derived,-90.6263,-35.002,65.8522,1.5708,0.0,-0.0
+f502ea84-b1af-475c-8d95-351dfaef24ee,Propeller #4,propeller_cw,45,Place Propeller on Motor Shaft (D),derived,-85.3018,-30.0995,-72.4208,1.5708,0.0,-0.0

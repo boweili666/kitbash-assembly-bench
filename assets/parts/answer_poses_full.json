@@ -249,133 +249,133 @@
   },
   {
    "i": 27,
-   "id": "c1ef7e34-436c-4361-a763-88e6c9ac8b3a",
+   "id": "472c000e-2966-4d4a-8a0f-0e98184ffa1c",
    "name": "Attach Knurled Standoff to Frame Bottom (E)",
    "requires": [],
    "derived": true
   },
   {
    "i": 28,
-   "id": "c6ae1a51-16a9-4b2a-92e4-dece9b3483b9",
+   "id": "7e3bca0f-819a-4b49-84d9-8982c2b56096",
    "name": "Attach Knurled Standoff to Frame Bottom (F)",
    "requires": [],
    "derived": true
   },
   {
    "i": 29,
-   "id": "3977f96f-da55-4532-8521-d68881b05664",
+   "id": "6d6b1851-5899-4a4f-9c7e-ab38b4c7bb01",
    "name": "Place Top Plate on Top of Frame",
    "requires": [],
    "derived": true
   },
   {
    "i": 30,
-   "id": "d90b4905-9208-4074-b44e-37f60ffee72d",
+   "id": "811b65de-f68e-4f3d-9b76-f825c989510a",
    "name": "Feed Screw through Top Plate and into Standoff (A)",
    "requires": [],
    "derived": true
   },
   {
    "i": 31,
-   "id": "2c337308-245f-4204-bc7f-851b1612bade",
+   "id": "34ad121e-f1a4-4e70-afb8-4e9eb60a3a62",
    "name": "Feed Screw through Top Plate and into Standoff (D)",
    "requires": [],
    "derived": true
   },
   {
    "i": 32,
-   "id": "79cced4c-4348-4524-a8b0-6da8529e43ad",
+   "id": "c6a10268-d579-4c6d-87e9-f88bfb9e2544",
    "name": "Feed Screw through Top Plate and into Standoff (B)",
    "requires": [],
    "derived": true
   },
   {
    "i": 33,
-   "id": "52a51e6e-a124-44c2-8dea-3d117a56786f",
+   "id": "56e59c87-2c8b-40c0-ad10-ddd52ff01f72",
    "name": "Feed Screw through Top Plate and into Standoff (C)",
    "requires": [],
    "derived": true
   },
   {
    "i": 34,
-   "id": "db7b4d44-8fa4-4aa0-8198-f23e5e38fd13",
+   "id": "200bb52c-930b-4eac-bd55-d64bd76f2f10",
    "name": "Feed Screw through Top Plate and into Standoff (F)",
    "requires": [],
    "derived": true
   },
   {
    "i": 35,
-   "id": "163c4966-c54e-43f7-9257-b728ae98857c",
+   "id": "8d0706d2-6f6b-4e2d-88e8-118b672133f0",
    "name": "Feed Screw through Top Plate and into Standoff (E)",
    "requires": [],
    "derived": true
   },
   {
    "i": 36,
-   "id": "8db2a566-4a67-43f4-9be4-643407cf927b",
+   "id": "c1b7be3b-59b7-4076-96ee-3785fb706625",
    "name": "Place Right Camera Plate",
    "requires": [],
    "derived": true
   },
   {
    "i": 37,
-   "id": "5c4f5ad3-3bfd-4126-ab01-aa258b756f47",
+   "id": "e786730d-def8-4661-8089-1844f9812d65",
    "name": "Attach Right Camera Plate to Split Front Plate",
    "requires": [],
    "derived": true
   },
   {
    "i": 38,
-   "id": "174a614a-1ab6-4128-b63d-e70e06b1b830",
+   "id": "f71f7fe1-d589-48b7-a2ce-9714fd0df767",
    "name": "Feed Screw through Top Plate and into Right Camera Plate",
    "requires": [],
    "derived": true
   },
   {
    "i": 39,
-   "id": "117defe6-4523-4509-b6ea-8e21e70a2989",
+   "id": "90b770e9-94c0-421e-88aa-2fc192cce454",
    "name": "Place Left Camera Plate",
    "requires": [],
    "derived": true
   },
   {
    "i": 40,
-   "id": "97095cf9-06b0-4257-a9bd-8dd8714ab483",
+   "id": "17d69c2d-28b8-4e69-953e-46a7bce2826a",
    "name": "Attach Left Camera Plate to Split Front Plate",
    "requires": [],
    "derived": true
   },
   {
    "i": 41,
-   "id": "4104f574-e925-4ec1-8194-2fadf2358774",
+   "id": "62cffe9c-afa7-4e0b-99a2-f2c6fc60a91a",
    "name": "Feed Screw through Top Plate and into Left Camera Plate",
    "requires": [],
    "derived": true
   },
   {
    "i": 42,
-   "id": "b23ec68a-1dbc-4cbc-8d5a-4b3c3b949096",
+   "id": "5a2d433f-9095-411d-b5ef-f400c35d563a",
    "name": "Place Propeller on Motor Shaft (A)",
    "requires": [],
    "derived": true
   },
   {
    "i": 43,
-   "id": "d8c7c580-88ba-4741-989d-ccd4ff0d6faf",
+   "id": "49862771-a4f1-44bc-9ae7-5d2692949f9d",
    "name": "Place Propeller on Motor Shaft (B)",
    "requires": [],
    "derived": true
   },
   {
    "i": 44,
-   "id": "cf9b1ff0-573c-4282-b4d7-b34c11e13c22",
+   "id": "4935500b-c40f-4608-9e74-ace3bae4eb73",
    "name": "Place Propeller on Motor Shaft (C)",
    "requires": [],
    "derived": true
   },
   {
    "i": 45,
-   "id": "7f409e54-5c73-4a31-bffc-98f1592bc6bb",
+   "id": "c6c81c1e-a220-417a-97f4-1a061c7bd3c6",
    "name": "Place Propeller on Motor Shaft (D)",
    "requires": [],
    "derived": true
@@ -1640,7 +1640,7 @@
      }
     },
     {
-     "id": "cdc22cf8-c771-4301-a80c-6bb3b1f37092",
+     "id": "f9087d30-9661-4d5c-9340-4a41dc56e3d8",
      "kind": "feature",
      "features": [
       [
@@ -1658,7 +1658,7 @@
      }
     },
     {
-     "id": "7dd0fdaf-535a-4313-b97d-e842fd85cd39",
+     "id": "7187e0ea-ce6b-4c05-bdc0-fefdc6e6552f",
      "kind": "feature",
      "features": [
       [
@@ -1676,7 +1676,7 @@
      }
     },
     {
-     "id": "c3d2e58f-15a0-4529-9924-07afe0327ecf",
+     "id": "b3c3315f-fdc0-4e0d-a830-fa4fddfb5031",
      "kind": "feature",
      "features": [
       [
@@ -1694,7 +1694,7 @@
      }
     },
     {
-     "id": "f06ab5d1-bc58-407b-9487-df3f386a0d92",
+     "id": "fa8c1d23-ff6c-4a5e-9a41-2c1e6fb69f31",
      "kind": "feature",
      "features": [
       [
@@ -3558,7 +3558,7 @@
      }
     },
     {
-     "id": "beda2c86-5484-4dd5-a4c0-2dce961bd47a",
+     "id": "1671c5e9-f430-4a9d-9114-021b8ebb1c27",
      "kind": "contact",
      "features": [],
      "rel": {
@@ -3571,7 +3571,7 @@
      }
     },
     {
-     "id": "e4a6b6ff-a4fe-4052-9944-f83a621363fb",
+     "id": "46a749fe-12cc-4f1f-981d-1429d75a6bd2",
      "kind": "feature",
      "features": [
       [
@@ -3589,7 +3589,7 @@
      }
     },
     {
-     "id": "4c39d097-85d0-4e8f-889d-98f0a4834e58",
+     "id": "04006a67-9212-492f-9290-fcc618dc1b51",
      "kind": "contact",
      "features": [],
      "rel": {
@@ -3602,7 +3602,7 @@
      }
     },
     {
-     "id": "1bca1897-16ae-489a-807c-2ae83b72689a",
+     "id": "06547ac5-ebea-465e-a83c-24f7fd0d2d30",
      "kind": "feature",
      "features": [
       [
@@ -3915,7 +3915,7 @@
      }
     },
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -3933,7 +3933,7 @@
      }
     },
     {
-     "id": "c1c922c1-1a54-4929-903d-600493132c12",
+     "id": "1effca0f-c1ed-431f-ad7b-89d602dbf232",
      "kind": "feature",
      "features": [
       [
@@ -4119,7 +4119,7 @@
      }
     },
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -4137,7 +4137,7 @@
      }
     },
     {
-     "id": "b1b45d57-fd50-482c-a28e-7545a2aa2fe6",
+     "id": "b5fbf145-41aa-47d5-83f3-4401800e6c7d",
      "kind": "feature",
      "features": [
       [
@@ -4328,7 +4328,7 @@
      }
     },
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -4346,7 +4346,7 @@
      }
     },
     {
-     "id": "a9784e9a-c684-4ac1-a4c5-3185bb3cdb04",
+     "id": "cf62e96d-6f1a-4967-88c8-58613e54d454",
      "kind": "feature",
      "features": [
       [
@@ -4537,7 +4537,7 @@
      }
     },
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -4555,7 +4555,7 @@
      }
     },
     {
-     "id": "72fab37c-cff2-4559-b54d-43467e8a2992",
+     "id": "11081818-30b5-4ff1-811d-5f177cdf8105",
      "kind": "feature",
      "features": [
       [
@@ -4898,7 +4898,7 @@
      }
     },
     {
-     "id": "5b08f50a-f12d-4ce8-b44f-2c6a7cca1941",
+     "id": "e90a620f-36e0-48a6-aef1-60430437390f",
      "kind": "feature",
      "features": [
       [
@@ -5285,7 +5285,7 @@
      }
     },
     {
-     "id": "673bcef1-7a36-456b-ba8b-2f0eeb422690",
+     "id": "3e60a8b6-000c-4d4c-8d1e-0f0070c3b7d7",
      "kind": "feature",
      "features": [
       [
@@ -5672,7 +5672,7 @@
      }
     },
     {
-     "id": "c1af3b8a-1b0c-4deb-a6d5-65f8f3b2a170",
+     "id": "a88f96eb-782a-4f40-93cb-248879d58667",
      "kind": "feature",
      "features": [
       [
@@ -6059,7 +6059,7 @@
      }
     },
     {
-     "id": "1eee799c-34d0-47b2-bda4-c77ddbd36b4a",
+     "id": "f502ea84-b1af-475c-8d95-351dfaef24ee",
      "kind": "feature",
      "features": [
       [
@@ -6665,7 +6665,7 @@
    ]
   },
   {
-   "id": "cdc22cf8-c771-4301-a80c-6bb3b1f37092",
+   "id": "f9087d30-9661-4d5c-9340-4a41dc56e3d8",
    "key": "knurled_standoff",
    "name": "Standoff #5",
    "step": 27,
@@ -6690,7 +6690,7 @@
      }
     },
     {
-     "id": "7dd0fdaf-535a-4313-b97d-e842fd85cd39",
+     "id": "7187e0ea-ce6b-4c05-bdc0-fefdc6e6552f",
      "kind": "feature",
      "features": [
       [
@@ -6708,7 +6708,7 @@
      }
     },
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -6726,7 +6726,7 @@
      }
     },
     {
-     "id": "39b793ab-d455-4a0b-958b-4486830cbe06",
+     "id": "87d629a5-abc6-4cc9-ab49-e1470a524b19",
      "kind": "feature",
      "features": [
       [
@@ -6764,7 +6764,7 @@
    ]
   },
   {
-   "id": "7dd0fdaf-535a-4313-b97d-e842fd85cd39",
+   "id": "7187e0ea-ce6b-4c05-bdc0-fefdc6e6552f",
    "key": "screw_m3x6_pan",
    "name": "Standoff Screw #5",
    "step": 27,
@@ -6789,7 +6789,7 @@
      }
     },
     {
-     "id": "cdc22cf8-c771-4301-a80c-6bb3b1f37092",
+     "id": "f9087d30-9661-4d5c-9340-4a41dc56e3d8",
      "kind": "feature",
      "features": [
       [
@@ -6827,7 +6827,7 @@
    ]
   },
   {
-   "id": "c3d2e58f-15a0-4529-9924-07afe0327ecf",
+   "id": "b3c3315f-fdc0-4e0d-a830-fa4fddfb5031",
    "key": "knurled_standoff",
    "name": "Standoff #6",
    "step": 28,
@@ -6852,7 +6852,7 @@
      }
     },
     {
-     "id": "f06ab5d1-bc58-407b-9487-df3f386a0d92",
+     "id": "fa8c1d23-ff6c-4a5e-9a41-2c1e6fb69f31",
      "kind": "feature",
      "features": [
       [
@@ -6870,7 +6870,7 @@
      }
     },
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -6888,7 +6888,7 @@
      }
     },
     {
-     "id": "32d6d7e5-b1ce-4b02-93b9-78d0747d567e",
+     "id": "3e4ec983-4f8a-48ad-ad23-29bd05f804f4",
      "kind": "feature",
      "features": [
       [
@@ -6926,7 +6926,7 @@
    ]
   },
   {
-   "id": "f06ab5d1-bc58-407b-9487-df3f386a0d92",
+   "id": "fa8c1d23-ff6c-4a5e-9a41-2c1e6fb69f31",
    "key": "screw_m3x6_pan",
    "name": "Standoff Screw #6",
    "step": 28,
@@ -6951,7 +6951,7 @@
      }
     },
     {
-     "id": "c3d2e58f-15a0-4529-9924-07afe0327ecf",
+     "id": "b3c3315f-fdc0-4e0d-a830-fa4fddfb5031",
      "kind": "feature",
      "features": [
       [
@@ -6989,7 +6989,7 @@
    ]
   },
   {
-   "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+   "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
    "key": "top_plate",
    "name": "Top Plate",
    "step": 29,
@@ -7068,7 +7068,7 @@
      }
     },
     {
-     "id": "c3d2e58f-15a0-4529-9924-07afe0327ecf",
+     "id": "b3c3315f-fdc0-4e0d-a830-fa4fddfb5031",
      "kind": "feature",
      "features": [
       [
@@ -7086,7 +7086,7 @@
      }
     },
     {
-     "id": "cdc22cf8-c771-4301-a80c-6bb3b1f37092",
+     "id": "f9087d30-9661-4d5c-9340-4a41dc56e3d8",
      "kind": "feature",
      "features": [
       [
@@ -7104,7 +7104,7 @@
      }
     },
     {
-     "id": "c1c922c1-1a54-4929-903d-600493132c12",
+     "id": "1effca0f-c1ed-431f-ad7b-89d602dbf232",
      "kind": "feature",
      "features": [
       [
@@ -7122,7 +7122,7 @@
      }
     },
     {
-     "id": "72fab37c-cff2-4559-b54d-43467e8a2992",
+     "id": "11081818-30b5-4ff1-811d-5f177cdf8105",
      "kind": "feature",
      "features": [
       [
@@ -7140,7 +7140,7 @@
      }
     },
     {
-     "id": "b1b45d57-fd50-482c-a28e-7545a2aa2fe6",
+     "id": "b5fbf145-41aa-47d5-83f3-4401800e6c7d",
      "kind": "feature",
      "features": [
       [
@@ -7158,7 +7158,7 @@
      }
     },
     {
-     "id": "a9784e9a-c684-4ac1-a4c5-3185bb3cdb04",
+     "id": "cf62e96d-6f1a-4967-88c8-58613e54d454",
      "kind": "feature",
      "features": [
       [
@@ -7176,7 +7176,7 @@
      }
     },
     {
-     "id": "32d6d7e5-b1ce-4b02-93b9-78d0747d567e",
+     "id": "3e4ec983-4f8a-48ad-ad23-29bd05f804f4",
      "kind": "feature",
      "features": [
       [
@@ -7194,7 +7194,7 @@
      }
     },
     {
-     "id": "39b793ab-d455-4a0b-958b-4486830cbe06",
+     "id": "87d629a5-abc6-4cc9-ab49-e1470a524b19",
      "kind": "feature",
      "features": [
       [
@@ -7212,7 +7212,7 @@
      }
     },
     {
-     "id": "beda2c86-5484-4dd5-a4c0-2dce961bd47a",
+     "id": "1671c5e9-f430-4a9d-9114-021b8ebb1c27",
      "kind": "feature",
      "features": [
       [
@@ -7230,7 +7230,7 @@
      }
     },
     {
-     "id": "31825140-7db0-47b9-9f0d-f849904193c2",
+     "id": "6fb6ccee-28d2-4c5b-8adc-0b1ced4d6a14",
      "kind": "feature",
      "features": [
       [
@@ -7248,7 +7248,7 @@
      }
     },
     {
-     "id": "4c39d097-85d0-4e8f-889d-98f0a4834e58",
+     "id": "04006a67-9212-492f-9290-fcc618dc1b51",
      "kind": "feature",
      "features": [
       [
@@ -7266,7 +7266,7 @@
      }
     },
     {
-     "id": "24a48aa3-0857-48fb-b012-80541315aba2",
+     "id": "ecce827e-a997-4655-a55a-15efcafa3062",
      "kind": "feature",
      "features": [
       [
@@ -7304,14 +7304,14 @@
    ]
   },
   {
-   "id": "c1c922c1-1a54-4929-903d-600493132c12",
+   "id": "1effca0f-c1ed-431f-ad7b-89d602dbf232",
    "key": "screw_m3x6_pan",
    "name": "Standoff Screw #7",
    "step": 30,
    "derived": true,
    "mates": [
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -7367,14 +7367,14 @@
    ]
   },
   {
-   "id": "72fab37c-cff2-4559-b54d-43467e8a2992",
+   "id": "11081818-30b5-4ff1-811d-5f177cdf8105",
    "key": "screw_m3x6_pan",
    "name": "Standoff Screw #10",
    "step": 31,
    "derived": true,
    "mates": [
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -7430,14 +7430,14 @@
    ]
   },
   {
-   "id": "b1b45d57-fd50-482c-a28e-7545a2aa2fe6",
+   "id": "b5fbf145-41aa-47d5-83f3-4401800e6c7d",
    "key": "screw_m3x6_pan",
    "name": "Standoff Screw #8",
    "step": 32,
    "derived": true,
    "mates": [
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -7493,14 +7493,14 @@
    ]
   },
   {
-   "id": "a9784e9a-c684-4ac1-a4c5-3185bb3cdb04",
+   "id": "cf62e96d-6f1a-4967-88c8-58613e54d454",
    "key": "screw_m3x6_pan",
    "name": "Standoff Screw #9",
    "step": 33,
    "derived": true,
    "mates": [
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -7556,14 +7556,14 @@
    ]
   },
   {
-   "id": "32d6d7e5-b1ce-4b02-93b9-78d0747d567e",
+   "id": "3e4ec983-4f8a-48ad-ad23-29bd05f804f4",
    "key": "screw_m3x6_pan",
    "name": "Standoff Screw #12",
    "step": 34,
    "derived": true,
    "mates": [
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -7581,7 +7581,7 @@
      }
     },
     {
-     "id": "c3d2e58f-15a0-4529-9924-07afe0327ecf",
+     "id": "b3c3315f-fdc0-4e0d-a830-fa4fddfb5031",
      "kind": "feature",
      "features": [
       [
@@ -7619,14 +7619,14 @@
    ]
   },
   {
-   "id": "39b793ab-d455-4a0b-958b-4486830cbe06",
+   "id": "87d629a5-abc6-4cc9-ab49-e1470a524b19",
    "key": "screw_m3x6_pan",
    "name": "Standoff Screw #11",
    "step": 35,
    "derived": true,
    "mates": [
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -7644,7 +7644,7 @@
      }
     },
     {
-     "id": "cdc22cf8-c771-4301-a80c-6bb3b1f37092",
+     "id": "f9087d30-9661-4d5c-9340-4a41dc56e3d8",
      "kind": "feature",
      "features": [
       [
@@ -7682,14 +7682,14 @@
    ]
   },
   {
-   "id": "beda2c86-5484-4dd5-a4c0-2dce961bd47a",
+   "id": "1671c5e9-f430-4a9d-9114-021b8ebb1c27",
    "key": "camera_plate_right",
    "name": "Right Camera Plate",
    "step": 36,
    "derived": true,
    "mates": [
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -7720,7 +7720,7 @@
      }
     },
     {
-     "id": "e4a6b6ff-a4fe-4052-9944-f83a621363fb",
+     "id": "46a749fe-12cc-4f1f-981d-1429d75a6bd2",
      "kind": "feature",
      "features": [
       [
@@ -7738,7 +7738,7 @@
      }
     },
     {
-     "id": "31825140-7db0-47b9-9f0d-f849904193c2",
+     "id": "6fb6ccee-28d2-4c5b-8adc-0b1ced4d6a14",
      "kind": "feature",
      "features": [
       [
@@ -7776,7 +7776,7 @@
    ]
   },
   {
-   "id": "e4a6b6ff-a4fe-4052-9944-f83a621363fb",
+   "id": "46a749fe-12cc-4f1f-981d-1429d75a6bd2",
    "key": "screw_m3x6_pan",
    "name": "M3x6 Right Camera Plate Lower Screw",
    "step": 37,
@@ -7801,7 +7801,7 @@
      }
     },
     {
-     "id": "beda2c86-5484-4dd5-a4c0-2dce961bd47a",
+     "id": "1671c5e9-f430-4a9d-9114-021b8ebb1c27",
      "kind": "feature",
      "features": [
       [
@@ -7839,14 +7839,14 @@
    ]
   },
   {
-   "id": "31825140-7db0-47b9-9f0d-f849904193c2",
+   "id": "6fb6ccee-28d2-4c5b-8adc-0b1ced4d6a14",
    "key": "screw_m3x6_pan",
    "name": "M3x6 Right Camera Plate Upper Screw",
    "step": 38,
    "derived": true,
    "mates": [
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -7864,7 +7864,7 @@
      }
     },
     {
-     "id": "beda2c86-5484-4dd5-a4c0-2dce961bd47a",
+     "id": "1671c5e9-f430-4a9d-9114-021b8ebb1c27",
      "kind": "feature",
      "features": [
       [
@@ -7902,14 +7902,14 @@
    ]
   },
   {
-   "id": "4c39d097-85d0-4e8f-889d-98f0a4834e58",
+   "id": "04006a67-9212-492f-9290-fcc618dc1b51",
    "key": "camera_plate_left",
    "name": "Left Camera Plate",
    "step": 39,
    "derived": true,
    "mates": [
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -7940,7 +7940,7 @@
      }
     },
     {
-     "id": "1bca1897-16ae-489a-807c-2ae83b72689a",
+     "id": "06547ac5-ebea-465e-a83c-24f7fd0d2d30",
      "kind": "feature",
      "features": [
       [
@@ -7958,7 +7958,7 @@
      }
     },
     {
-     "id": "24a48aa3-0857-48fb-b012-80541315aba2",
+     "id": "ecce827e-a997-4655-a55a-15efcafa3062",
      "kind": "feature",
      "features": [
       [
@@ -7996,7 +7996,7 @@
    ]
   },
   {
-   "id": "1bca1897-16ae-489a-807c-2ae83b72689a",
+   "id": "06547ac5-ebea-465e-a83c-24f7fd0d2d30",
    "key": "screw_m3x6_pan",
    "name": "M3x6 Left Camera Plate Lower Screw",
    "step": 40,
@@ -8021,7 +8021,7 @@
      }
     },
     {
-     "id": "4c39d097-85d0-4e8f-889d-98f0a4834e58",
+     "id": "04006a67-9212-492f-9290-fcc618dc1b51",
      "kind": "feature",
      "features": [
       [
@@ -8059,14 +8059,14 @@
    ]
   },
   {
-   "id": "24a48aa3-0857-48fb-b012-80541315aba2",
+   "id": "ecce827e-a997-4655-a55a-15efcafa3062",
    "key": "screw_m3x6_pan",
    "name": "M3x6 Left Camera Plate Upper Screw",
    "step": 41,
    "derived": true,
    "mates": [
     {
-     "id": "3b0ad555-ca0a-410a-92a8-65d682df4039",
+     "id": "f7189e78-1a5c-4792-ba0b-d405ef39c67a",
      "kind": "feature",
      "features": [
       [
@@ -8084,7 +8084,7 @@
      }
     },
     {
-     "id": "4c39d097-85d0-4e8f-889d-98f0a4834e58",
+     "id": "04006a67-9212-492f-9290-fcc618dc1b51",
      "kind": "feature",
      "features": [
       [
@@ -8122,7 +8122,7 @@
    ]
   },
   {
-   "id": "5b08f50a-f12d-4ce8-b44f-2c6a7cca1941",
+   "id": "e90a620f-36e0-48a6-aef1-60430437390f",
    "key": "propeller_cw",
    "name": "Propeller #1",
    "step": 42,
@@ -8167,7 +8167,7 @@
    ]
   },
   {
-   "id": "673bcef1-7a36-456b-ba8b-2f0eeb422690",
+   "id": "3e60a8b6-000c-4d4c-8d1e-0f0070c3b7d7",
    "key": "propeller_ccw",
    "name": "Propeller #2",
    "step": 43,
@@ -8212,7 +8212,7 @@
    ]
   },
   {
-   "id": "c1af3b8a-1b0c-4deb-a6d5-65f8f3b2a170",
+   "id": "a88f96eb-782a-4f40-93cb-248879d58667",
    "key": "propeller_ccw",
    "name": "Propeller #3",
    "step": 44,
@@ -8257,7 +8257,7 @@
    ]
   },
   {
-   "id": "1eee799c-34d0-47b2-bda4-c77ddbd36b4a",
+   "id": "f502ea84-b1af-475c-8d95-351dfaef24ee",
    "key": "propeller_cw",
    "name": "Propeller #4",
    "step": 45,

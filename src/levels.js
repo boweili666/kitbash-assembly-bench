@@ -239,7 +239,7 @@
     }
     KBCheck.noteHole(null);                 // 这一下点对了:之前点错留下的那条先清掉,不然配合完会被它误判
     var top = src.node; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
-    pendingCheck = { node: src.node, top: top, p: top.position.clone(), q: top.quaternion.clone(), at: performance.now() };
+    pendingCheck = { node: src.node, src: src, dst: dst, top: top, p: top.position.clone(), q: top.quaternion.clone(), at: performance.now() };
     return null;                                                // 放行:照常配合
   }
   KB.on('snapAttempt', function (a) {
@@ -256,6 +256,8 @@
       var bad = res.issues.filter(function (i) { return i.severity === 'error' && i.key !== 'hole' && i.node && mine[i.node.uuid]; })[0];
       if (!bad) { KBCheck.noteHole(null); return; }
       if (window.KBMate && KBMate.release) KBMate.release(pc.node);
+      // 配合当时报了成功,检查判错后撤销:再补一条失败的 handleMatch
+      KB.emit('handleMatch', { a: pc.src, b: pc.dst, success: false, error: bad.msg + ' (undone)' });
       KB.tween(pc.top, pc.p, pc.q, { duration: 0.45, onDone: function () { KB.pushSnapshot(); KBCheck.noteHole(pc.node, bad.msg + ' \u2014 undone, try again'); } });
       KB.toast('Not like that \u2014 ' + bad.msg);
     })(0);

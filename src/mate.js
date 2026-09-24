@@ -354,7 +354,9 @@
     node.updateMatrixWorld(true);
   }
 
+  var lastReport = null;          // 最近一次配合的结论(handleMatch 要带上失败原因)
   function report(a, b, ok, reason) {
+    lastReport = { ok: ok, reason: reason || null };
     KB.emit('snapAttempt', { object1: a.owner, object2: b.owner, snapPoint1: a.id, snapPoint2: b.id,
       success: ok, reason: reason || null });
   }
@@ -582,6 +584,8 @@
     if (!m) { if (!moved && !KB.gizmo.dragging && !KB.gizmo.axis) disarm(); return; }
     e.stopImmediatePropagation();
     if (moved) return;
+    // 宿主要的"点了哪个孔 / 销"(选源、点目标都算)
+    if (!(window.KBTutorial && KBTutorial.active())) KB.emit('handleClick', info(m));
     var verdict;
     if (!armed || topOf(m.node) === topOf(armed.node)) {
       if (armed === m) { disarm(); return; }
@@ -592,12 +596,19 @@
       if (guard && guard.mate && (verdict = guard.mate(info(armed), info(m))) !== true) { reject(m, verdict); return; }
       var src = armed;
       armed = null;
+      // 宿主要的"这两个孔 / 销配上了没有":点完目标就给结论(成功,或失败原因)
+      var matched = function (ok, why) {
+        if (!(window.KBTutorial && KBTutorial.active())) KB.emit('handleMatch', { a: info(src), b: info(m), success: ok, error: ok ? null : (why || 'These two do not fit') });
+      };
       if (resolver && !(window.KBTutorial && KBTutorial.active())) {
         var r = resolver(info(src), info(m));
-        if (r === 'handled') { rebuildMarkers(); return; }
-        if (typeof r === 'string') { armed = src; reject(m, r); return; }
+        if (r === 'handled') { matched(true); rebuildMarkers(); return; }
+        if (typeof r === 'string') { matched(false, r); armed = src; reject(m, r); return; }
       }
-      if (!mate(src, m)) armed = src; // 失败:保留源,红色提示留在目标上
+      lastReport = null;
+      var ok = mate(src, m);
+      matched(ok, lastReport && lastReport.reason);
+      if (!ok) armed = src; // 失败:保留源,红色提示留在目标上
       else rebuildMarkers();
     }
   }, true);

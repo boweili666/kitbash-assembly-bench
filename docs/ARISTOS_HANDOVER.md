@@ -130,13 +130,29 @@ only if you embed without React.
 | message | when |
 | --- | --- |
 | `kb:ready {protocol, keys}` | part library loaded — wait for it before `kb:init` (the component does) |
-| `kb:grab / kb:move / kb:place {id, name, key, pose}` | trainee picked up / is dragging (≤ `moveHz`) / put down |
+| `kb:grab / kb:move / kb:place {id, name, key, pose}` | trainee picked up / is dragging, or the part is flying into place on Levels 1–2 (≤ `moveHz`) / put down |
+| `kb:handleClick {objectId, handleId, end}` → `onHandleClick(partId, handleId)` | a handle (hole / peg click point, `H3`, `P1`) on a part was clicked — the first click (part to move) and the second (where it goes) alike. `end` is the hole mouth (±1; 0 for a peg). Level 1 has no handles |
+| `kb:handleMatch {object1, handle1, object2, handle2, success, error}` → `onHandleMatch(part1Id, handle1Id, part2Id, handle2Id, success, errorMessage)` | after the second click: does handle1 on part1 (the moving part) fit handle2 on part2? `success:false` carries the reason and nothing moves. On Level 3 a match the checks then reject (e.g. backwards) is undone and reported again with `success:false` |
 | `kb:frame {image, t}` | JPEG data URL, default 10 Hz |
 | `kb:scene {parts}` | answer to `kb:getScene` |
 | `kb:state {state, lastPlace?}` | after every place — the simulator's own judgement of the build |
 | `kb:snapAttempt {object1, object2, snapPoint1, snapPoint2, success, reason}` | two features were lined up; `success:false` = geometrically impossible and refused |
 | `kb:collision {object1, object2, kind, depthMm, snapPoint1, snapPoint2}` | parts interpenetrating > 1 mm, or a peg lined up with a hole it cannot enter |
 | `kb:warn {message}` | a scene part had no known model, etc. |
+
+Clicking a screw's shaft, then a hole on the X-Lock, gives three callbacks:
+`onHandleClick(screw, P1)`, `onHandleClick(xlock, H5)`,
+`onHandleMatch(screw, P1, xlock, H5, true, null)`, alongside the usual grab /
+move / place of the screw.
+
+### Final poses of the assembled drone
+
+`docs/final_poses.json` / `docs/final_poses.csv`: one row per part (74) with
+`part_id` (`Parts.uuid`), name, type, step and `x, y, z, roll, pitch, yaw` in the
+convention below, all in one reference-assembly frame. `source` says whether the
+pose was captured in ARISTOS (53) or derived (21, see below). Regenerate with
+`python3 tools/export_final_poses.py`. The same data is available at runtime
+through `kb:getAnswer`.
 
 ### Pose convention — identical to `Step3DPaths`
 

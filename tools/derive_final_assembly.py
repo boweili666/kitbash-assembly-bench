@@ -66,6 +66,7 @@ class Kit:
         self.K = self.S / 1000.0                   # 单位 / 毫米
         self.spec = {p['key']: p for p in manifest['parts']}
         self.answer = manifest['answer']
+        self.manifest = manifest
 
     def frame(self, key, pose):
         """GLB 原点位姿(mm, rpy) -> 节点位置(单位)+ 朝向"""
@@ -305,9 +306,13 @@ def build(kit):
                       'requires': [], 'derived': True})
         return steps[-1]['i']
 
+    # 零件实例 id 用任务图里的 Parts.uuid(料盘里同名的那件),不要自己编:
+    # 宿主(ARISTOS)收到的装配状态、最终位姿都按这个 id 对零件
+    kit_ids = {o['name']: o['id'] for o in kit.manifest['kit']}
+
     def add_part(key, name, step, p, R, axis):
         pose = kit.pose(key, p, R)
-        d = {'id': str(uuid.uuid4()), 'key': key, 'name': name, 'step': step,
+        d = {'id': kit_ids.get(name) or str(uuid.uuid4()), 'key': key, 'name': name, 'step': step,
              'derived': True, 'mates': [], 'path': [approach(pose, axis, kit), pose]}
         parts.append(d)
         frames[name] = (d['id'], key, p, R)

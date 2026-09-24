@@ -30,6 +30,12 @@
  *     {type:'kb:guide', guide|null}                Next 引导卡片的内容:{step,name,state,status,
  *                                                  message,ok,total,settled,steps,parts[{name,key,ok,state}]}
  *     {type:'kb:pickWarn', pick}                  拿了这一步用不到的零件:{objectId,name,key,step,stepName,belongsToStep,message}
+ *     {type:'kb:handleClick', objectId, handleId, end}
+ *                                                  点了某个零件上的孔 / 销(handle):选源、点目标都算。
+ *                                                  handleId 是 H1 / P1 这类特征号;end:孔的哪个孔口(1 / -1),销是 0
+ *     {type:'kb:handleMatch', object1, handle1, object2, handle2, success, error}
+ *                                                  点完目标后的结论:object1/handle1 是先点的(要动的),object2/handle2 是后点的。
+ *                                                  success=false 时 error 是原因;三级配合后被判错撤销的,会再补一条 success=false
  *     {type:'kb:warn',  message}
  *     {type:'kb:tutorialEnd', reason:'completed'|'skipped', experience:'first'|'again'|null, level:1|2|3|null}
  *                                                  experience 是最后一屏问出来的:第一次装 / 装过
@@ -61,7 +67,7 @@
 
   function post(msg) {
     // Practice must never become training frames, actions, or scored progress.
-    if (tutorialSession && /^kb:(frame|grab|move|place|state|snapAttempt|collision)$/.test(msg.type)) return;
+    if (tutorialSession && /^kb:(frame|grab|move|place|state|snapAttempt|collision|handleClick|handleMatch)$/.test(msg.type)) return;
     try { host.postMessage(msg, origin); } catch (e) { /* 宿主已关闭 */ } }
   function warn(message) { post({ type: 'kb:warn', message: message }); }
 
@@ -117,6 +123,23 @@
     if (now - lastMove < minGap) return;
     lastMove = now;
     partsOf(node).forEach(function (n) { var d = describe(n); d.type = 'kb:move'; post(d); });
+  });
+  // 零件自己飞(一二级自动到位、配合吸附)时也按 move 报,和拖动一样节流
+  KB.on('tweenMove', function (node) {
+    if (!node || !(KB.isPart(node) || node.parent === KB.objectsRoot)) return;
+    var now = performance.now(), minGap = 1000 / (options.moveHz || 30);
+    if (now - lastMove < minGap) return;
+    lastMove = now;
+    partsOf(node).forEach(function (n) { var d = describe(n); d.type = 'kb:move'; post(d); });
+  });
+  KB.on('handleClick', function (h) {
+    if (!h || !h.node) return;
+    post({ type: 'kb:handleClick', objectId: h.node.userData.kbId || null, handleId: h.id, end: h.end || 0 });
+  });
+  KB.on('handleMatch', function (m) {
+    if (!m || !m.a || !m.b) return;
+    post({ type: 'kb:handleMatch', object1: m.a.node.userData.kbId || null, handle1: m.a.id,
+      object2: m.b.node.userData.kbId || null, handle2: m.b.id, success: !!m.success, error: m.success ? null : (m.error || null) });
   });
   KB.on('snapAttempt', function (a) {
     post({ type: 'kb:snapAttempt', object1: a.object1.userData.kbId, object2: a.object2.userData.kbId,

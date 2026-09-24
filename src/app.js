@@ -1359,6 +1359,7 @@
       tw.node.position.y += tw.arc * Math.sin(Math.PI * k);
       tw.node.quaternion.slerpQuaternions(tw.q0, tw.q1, k);
       tw.node.updateMatrixWorld(true);
+      emit('tweenMove', tw.node);   // 零件自己飞(一二级到位、配合吸附)时也告诉宿主在动;不走 'move',免得半路做碰撞检测
       if (tw.t >= 1) {
         tweens.splice(i, 1);
         tw.node.position.copy(tw.p1);
