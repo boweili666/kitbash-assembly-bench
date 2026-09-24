@@ -87,6 +87,40 @@
       KB.tween(mv.node, end.p, end.q, first);
     }
   }
+  /* ---------- 装好了就松手(所有级别) ----------
+     一次装配(配合成功 / 一二级自动飞到位)落定后,零件判定到位就取消选中 ——
+     还选着的话,下一下点网格会把刚装好的零件挪走。三级还差一点没对齐的照旧选着,方便方向键微调;
+     平时拖着整组挪位置不算,放下不会自己松手 */
+  var justAssembled = null, curSel = [];
+  KB.onSelection(function (sel) {
+    curSel = sel.slice();
+    // 选了别的零件:之前那件不再等着"到位就松手"
+    if (justAssembled && sel.length) {
+      var t = justAssembled; while (t.parent && t.parent !== KB.objectsRoot) t = t.parent;
+      if (!sel.some(function (s) { var r = s; while (r.parent && r.parent !== KB.objectsRoot) r = r.parent; return r === t; })) justAssembled = null;
+    }
+  });
+  KB.on('snapAttempt', function (a) { if (a && a.success && a.object1) justAssembled = a.object1; });
+  KB.on('levelFlight', function (f) { if (f && f.node) justAssembled = f.node; });
+  KB.on('place', function (node) {
+    var n = justAssembled;
+    if (!n || tutorialOn() || !window.KBCheck) return;
+    var top = n; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
+    var ntop = node; while (ntop && ntop.parent && ntop.parent !== KB.objectsRoot) ntop = ntop.parent;
+    if (ntop !== top && node !== n) return;
+    setTimeout(function () {
+      if (KB.interacting() || (KB.tweening && KB.tweening())) return;
+      var res = KBCheck.evaluate(), t = res && res.ready ? KBCheck.slotOf(n) : null;
+      if (!t || !t.ok) return;                                      // 还没到位:留着给人继续调(方向键微调到位后再松手)
+      justAssembled = null;
+      top = n; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;   // 装好后可能刚被并进新组
+      var sel = curSel;
+      var mine = sel.some(function (s) { var r = s; while (r.parent && r.parent !== KB.objectsRoot) r = r.parent; return r === top || s === n; });
+      if (window.KBMate && KBMate.armed() && KBMate.cancel) KBMate.cancel();
+      if (mine || !sel.length) KB.setSelection([]);
+    }, 500);
+  });
+
   /* ---------- Level 1:点零件就到位 ---------- */
   var canvas = document.getElementById('viewport');
   var down = null, clickAt = 0;
