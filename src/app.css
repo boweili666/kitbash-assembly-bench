@@ -1002,6 +1002,9 @@ body.help-open #viewTip { visibility: hidden; }
 .tt-choice[hidden] { display: none; }
 
 /* 最后一屏:不用左下角的小卡片,铺满整个仿真窗口收尾 */
+/* 收尾这屏铺满画面 —— 但只在教程还开着时;收起后 display:flex 会压过 display:none,
+   变成一层透明的全屏遮罩,把整个装配台的点击都吃掉 */
+#tutorial.finale:not(.show) { display: none; }
 #tutorial.finale {
   left: 0; right: 0; top: 0; bottom: 0; width: auto; max-height: none;
   border: 0; border-radius: 0; padding: 0; overflow-y: auto;

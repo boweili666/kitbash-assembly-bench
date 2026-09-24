@@ -678,7 +678,7 @@
     var ng0 = document.getElementById('nextGuide'); if (ng0) ng0.classList.remove('ng-teach');
     var hb = document.getElementById('btnHelp'); if (hb) hb.classList.remove('nudge');
     statusEl.classList.remove('err');
-    el.classList.remove('show');
+    el.classList.remove('show', 'finale', 'done');
     if (wasActive && reason !== 'restart') KB.emit('tutorialEnd', { reason: reason === 'completed' ? 'completed' : 'skipped', experience: experience, level: level });
   }
 
