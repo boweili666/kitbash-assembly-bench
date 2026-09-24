@@ -733,7 +733,7 @@ input[type="range"]::-moz-range-thumb {
 .trainee #inspMaterial, .trainee #btnResetXform { display: none !important; }
 /* Next 不再是按钮:逐步指引常驻(help.js 自动打开),卡住时用顶部的 Help */
 #btnNext, .embed #btnNext { display: none !important; }
-.embed #btnHelp, .embed #btnHelp .lbl { display: inline-flex; }
+.embed #btnHelp, .embed #btnHelp .lbl, .embed #btnView, .embed #btnView .lbl { display: inline-flex; }
 #btnHelp.on { background: #2a4a5e; color: #bfe9ff; }
 #btnHelp.nudge { animation: helpNudge 1.6s ease-in-out infinite; color: #ffd98a; }
 #nextGuide.ng-teach { animation: helpNudge 1.6s ease-in-out infinite; border-color: #ffc81e; }

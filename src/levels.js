@@ -229,6 +229,7 @@
     var p = c.clone().addScaledVector(dir, dist);
     if (p.y < 0.08) p.y = 0.08;
     KB.flyCamera(p.toArray(), c.toArray());
+    KB.emit('suggestView', { p: p.toArray(), t: c.toArray() });    // 记下来:点错了 / 按 V 能回到这里
   }
 
   /* ---------- 只显示用得上的孔(二、三级都生效) ----------
@@ -321,7 +322,12 @@
       var back = KBCheck.levelMateTarget(dst.node, dst.id, src.node, src.id);
       if (!back.reason) { r = back; mover = dst.node; }
     }
-    if (r.reason) { KBCheck.noteHole(src.node, r.reason); return r.reason; }
+    if (r.reason) {
+      KBCheck.noteHole(src.node, r.reason);
+      // 点错了孔:源孔还选着,镜头飞回目标孔的特写,直接再点一次就行
+      if (guide && guideFor === src.node) setTimeout(function () { if (guide && guideFor === src.node) closeUp(guide); }, 700);
+      return r.reason;
+    }
     KBCheck.noteHole(null);
     clearGuide();
     fly(mover, r, function () {

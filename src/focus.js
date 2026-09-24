@@ -384,7 +384,7 @@
     // 采用过一次 -> 之后点零件镜头都跟着飞。"Not now" 只是这张卡片不要,不关跟随:
     // 每装一个零件都会弹新卡片,顺手关掉一张就再也不跟,人会以为镜头坏了
     if (use) follow = true;
-    if (use) KB.flyCamera(shown.view.p, shown.view.t);
+    if (use) { KB.flyCamera(shown.view.p, shown.view.t); KB.emit('suggestView', shown.view); }
     KB.emit('viewTip', { key: shown.key, used: !!use });
     hideCard();
   }
@@ -455,6 +455,7 @@
         asked[key] = 'auto';
         pendingKey = null;
         KB.flyCamera(s.view.p, s.view.t);
+        KB.emit('suggestView', s.view);
         KB.emit('viewTip', { key: key, auto: true, view: s.view });
       }, 700);
       return;
@@ -494,6 +495,23 @@
     if (wide) box.expandByScalar(0.9);
     return { dir: dir.toArray(), view: framing(box, dir.clone()), seen: lastBest ? lastBest.seen : null, wide: wide };
   }
+
+  /* ---------- 回到推荐视角:工具栏 View 按钮 / V 键 ----------
+     最近一次推荐的视角(自动转过去的、二级目标孔特写、三级点了 Use this view 的)都记着 */
+  var lastView = null;
+  KB.on('suggestView', function (v) { if (v && v.p && v.t) lastView = { p: v.p.slice(), t: v.t.slice() }; });
+  function backToView() {
+    if (tutorialOn()) return;
+    if (lastView) KB.flyCamera(lastView.p, lastView.t);
+    else if (shown && shown.view) KB.flyCamera(shown.view.p, shown.view.t);
+    else KB.toast('No suggested view yet');
+  }
+  var viewBtn = document.getElementById('btnView');
+  if (viewBtn) viewBtn.addEventListener('click', backToView);
+  window.addEventListener('keydown', function (e) {
+    if (e.code !== 'KeyV' || (KB.expert && KB.expert()) || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+    backToView();
+  });
 
   window.KBFocus = { refresh: refresh, following: function () { return follow; }, viewForSlot: viewForSlot,
                      snapshot: snapshot, lit: function () { return lit.slice(); },
