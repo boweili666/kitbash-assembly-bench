@@ -422,6 +422,7 @@
   window.addEventListener('blur', finishInteraction);
   document.addEventListener('visibilitychange', function () { if (document.hidden) finishInteraction(); });
   window.addEventListener('pointercancel', function () { if (interaction && interaction.kind === 'pointer') finishInteraction(); });
+  var pickProxies = [];
   function emit(type, node) {
     if (interaction && (type === 'grab' || type === 'move' || type === 'place')) {
       var known = interaction.nodes.indexOf(node) >= 0;
@@ -483,6 +484,16 @@
     bakePivot(); // 保证物体都在 objectsRoot 树内
     var hits = raycaster.intersectObjects(objectsRoot.children, true);
     if (!hits.length) {
+      // 点在"代表某个零件"的装饰上(比如该拿的零件头顶那个黄箭头):当作点了那个零件
+      for (var pi = 0; pi < pickProxies.length; pi++) {
+        var proxied = pickProxies[pi](raycaster);
+        if (proxied) {
+          var top0 = proxied; while (top0.parent && top0.parent !== objectsRoot) top0 = top0.parent;
+          if (window.KBMate) KBMate.release(top0);
+          setSelection([top0]);
+          return;
+        }
+      }
       // 点空白网格:有选中就把它平移到那个点(高度不变);没选中 / Shift 才是取消选择
       var g = selection.length && !e.shiftKey ? raycaster.ray.intersectPlane(groundPlane, new THREE.Vector3()) : null;
       if (g) moveSelectionTo(g); else setSelection([]);
@@ -1454,6 +1465,8 @@
     onChange: function (fn) { changeHooks.push(fn); },
     /* 交互事件:'grab' | 'move' | 'place',回调收到被操作的节点(零件或多选 pivot) */
     on: function (type, fn) { (eventHooks[type] || (eventHooks[type] = [])).push(fn); },
+    /* fn(raycaster) -> 零件节点或 null:点空白时先问一遍(装饰物代表零件) */
+    addPickProxy: function (fn) { pickProxies.push(fn); },
     emit: emit,
     loadSceneData: loadSceneData,
     serializeScene: serializeScene,

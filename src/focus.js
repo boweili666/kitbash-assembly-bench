@@ -94,6 +94,24 @@
     lit = nodes.slice();
     lit.forEach(function (n) { if (!arrows.has(n)) arrows.set(n, makeArrow()); });
   }
+  // 箭头太显眼,人会直接点它:点到箭头(或它附近)就算点了它指着的零件
+  if (KB.addPickProxy) KB.addPickProxy(function (ray) {
+    var best = null, bestD = Infinity, sph = new THREE.Sphere();
+    arrows.forEach(function (a, node) {
+      if (!a.visible || !node.parent) return;
+      a.updateMatrixWorld(true);
+      var hits = ray.intersectObjects(a.children, false);
+      if (hits.length && hits[0].distance < bestD) { bestD = hits[0].distance; best = node; return; }
+      // 箭头细:外面包一圈球,点在旁边也算
+      new THREE.Box3().setFromObject(a).getBoundingSphere(sph);
+      sph.radius *= 1.3;
+      if (ray.ray.intersectsSphere(sph)) {
+        var d = ray.ray.origin.distanceTo(sph.center);
+        if (d < bestD) { bestD = d; best = node; }
+      }
+    });
+    return best;
+  });
   var _hb = new THREE.Box3(), _hc = new THREE.Vector3();
   (function pulse() {
     requestAnimationFrame(pulse);
