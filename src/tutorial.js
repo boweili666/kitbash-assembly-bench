@@ -187,17 +187,20 @@
           lesson: { title: 'Suggested view: find the part in one click', hint: 'The part you need is often far away in the tray, out of sight \u2014 like the screw for this wedge. The card in the top-right corner previews a close-up of it. \u201cUse this view\u201d flies the camera there, and from then on the camera follows each part as it moves into place. \u201cNot now\u201d only hides the card.',
             demo: 'arm', label: 'Click \u201cUse this view\u201d', target: 'View', actions: ['Look at the preview in the top-right card', 'Click \u201cUse this view\u201d \u2014 the camera flies to the part'] } },
         { tag: 'glow', light: function () { return []; },
-          focus: function () { return { nodes: [parts.screw] }; },
+          // 一二级:镜头自己飞到要用的零件(正式装配里也是这样);三级在上一屏已经用推荐视角过去了
+          focus: function () { return { nodes: [parts.screw], fly: level <= 2 ? parts.screw : null }; },
           done: function () { return flags.selected === parts.screw; },
-          lesson: { title: 'Yellow means \u201cthis one next\u201d', hint: 'There it is. The part you need next turns yellow and a yellow arrow bobs above it \u2014 even in a tray full of look-alike screws. Click the yellow screw.',
+          // hint 按难度在 buildPlan 里填(GLOW_HINTS)
+          lesson: { title: 'Yellow means \u201cthis one next\u201d', hint: '',
             demo: 'arm', label: 'Click the yellow part', target: 'Screw', actions: ['Find the part with the yellow arrow above it', 'Click it to select it'] } }
       ]
     }
   ];
   // 每个难度上哪几课、跳过哪几步:一级只教看 + 点零件;二级教点孔(自己会落位,不教方向键);三级全套
   var PLAN = {
-    1: { courses: [0, 4, 3], skip: {} },
-    2: { courses: [0, 4, 1], skip: { slide: 1 } },
+    // 一二级没有推荐视角卡片(镜头自己转过去),那一屏不教
+    1: { courses: [0, 4, 3], skip: { suggest: 1 } },
+    2: { courses: [0, 4, 1], skip: { slide: 1, suggest: 1 } },
     3: { courses: [0, 4, 1, 2], skip: {} }
   };
   var FINALS = {
@@ -207,6 +210,10 @@
       actions: ['Click the glowing part', 'Click its glowing hole', 'Click the receiving hole'] },
     3: { hint: 'Select a part, click its hole, click the receiving hole. Arrow keys fine-tune on the hole. New puts the whole kit on the bench.',
       actions: ['Click a part to select', 'Click hole \u2192 hole to assemble', 'Use arrow keys to adjust the fit'] }
+  };
+  var GLOW_HINTS = {
+    auto: 'The part you need is often far away in the tray, so the camera flies there for you. The part turns yellow and a yellow arrow bobs above it \u2014 even in a tray full of look-alike screws. Click the yellow screw.',
+    card: 'There it is. The part you need next turns yellow and a yellow arrow bobs above it \u2014 even in a tray full of look-alike screws. Click the yellow screw.'
   };
   var FINAL = { light: function () { return []; }, done: function () { return false; },
     lesson: { title: 'You\u2019ve got the basics', hint: 'Select a part, click its hole, click the receiving hole. Arrow keys fine-tune on the hole. New puts the whole kit on the bench.',
@@ -223,6 +230,7 @@
         st.course = ci; steps.push(st); lessons.push(st.lesson);
       });
     });
+    courses[4].steps.forEach(function (st) { if (st.tag === 'glow') st.lesson.hint = level <= 2 ? GLOW_HINTS.auto : GLOW_HINTS.card; });
     FINAL.course = plan.courses[plan.courses.length - 1];
     FINAL.lesson.hint = FINALS[level].hint;
     FINAL.lesson.actions = FINALS[level].actions;

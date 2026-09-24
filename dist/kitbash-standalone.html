@@ -1450,7 +1450,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-23 22:14';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-23 22:26';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -14127,16 +14127,16 @@ KBWorkspace.overview();
                     lesson: { title: 'Suggested view: find the part in one click', hint: 'The part you need is often far away in the tray, out of sight \u2014 like the screw for this wedge. The card in the top-right corner previews a close-up of it. \u201cUse this view\u201d flies the camera there, and from then on the camera follows each part as it moves into place. \u201cNot now\u201d only hides the card.',
                         demo: 'arm', label: 'Click \u201cUse this view\u201d', target: 'View', actions: ['Look at the preview in the top-right card', 'Click \u201cUse this view\u201d \u2014 the camera flies to the part'] } },
                 { tag: 'glow', light: function () { return []; },
-                    focus: function () { return { nodes: [parts.screw] }; },
+                    focus: function () { return { nodes: [parts.screw], fly: level <= 2 ? parts.screw : null }; },
                     done: function () { return flags.selected === parts.screw; },
-                    lesson: { title: 'Yellow means \u201cthis one next\u201d', hint: 'There it is. The part you need next turns yellow and a yellow arrow bobs above it \u2014 even in a tray full of look-alike screws. Click the yellow screw.',
+                    lesson: { title: 'Yellow means \u201cthis one next\u201d', hint: '',
                         demo: 'arm', label: 'Click the yellow part', target: 'Screw', actions: ['Find the part with the yellow arrow above it', 'Click it to select it'] } }
             ]
         }
     ];
     var PLAN = {
-        1: { courses: [0, 4, 3], skip: {} },
-        2: { courses: [0, 4, 1], skip: { slide: 1 } },
+        1: { courses: [0, 4, 3], skip: { suggest: 1 } },
+        2: { courses: [0, 4, 1], skip: { slide: 1, suggest: 1 } },
         3: { courses: [0, 4, 1, 2], skip: {} }
     };
     var FINALS = {
@@ -14146,6 +14146,10 @@ KBWorkspace.overview();
             actions: ['Click the glowing part', 'Click its glowing hole', 'Click the receiving hole'] },
         3: { hint: 'Select a part, click its hole, click the receiving hole. Arrow keys fine-tune on the hole. New puts the whole kit on the bench.',
             actions: ['Click a part to select', 'Click hole \u2192 hole to assemble', 'Use arrow keys to adjust the fit'] }
+    };
+    var GLOW_HINTS = {
+        auto: 'The part you need is often far away in the tray, so the camera flies there for you. The part turns yellow and a yellow arrow bobs above it \u2014 even in a tray full of look-alike screws. Click the yellow screw.',
+        card: 'There it is. The part you need next turns yellow and a yellow arrow bobs above it \u2014 even in a tray full of look-alike screws. Click the yellow screw.'
     };
     var FINAL = { light: function () { return []; }, done: function () { return false; },
         lesson: { title: 'You\u2019ve got the basics', hint: 'Select a part, click its hole, click the receiving hole. Arrow keys fine-tune on the hole. New puts the whole kit on the bench.',
@@ -14165,6 +14169,8 @@ KBWorkspace.overview();
                 lessons.push(st.lesson);
             });
         });
+        courses[4].steps.forEach(function (st) { if (st.tag === 'glow')
+            st.lesson.hint = level <= 2 ? GLOW_HINTS.auto : GLOW_HINTS.card; });
         FINAL.course = plan.courses[plan.courses.length - 1];
         FINAL.lesson.hint = FINALS[level].hint;
         FINAL.lesson.actions = FINALS[level].actions;
@@ -19154,7 +19160,7 @@ KBWorkspace.overview();
     KB.on('levelFlight', function () { if (shown && !tutorialOn())
         hideCard(); soon(); });
     KB.on('levelFlight', function (f) {
-        if (!f || !f.node || tutorialOn() || !(follow || f.force))
+        if (!f || !f.node || tutorialOn() || !(follow || f.force || autoView()))
             return;
         followTo(keyOf(f.node), f.want, f.approach, f.node);
     });
@@ -19248,6 +19254,11 @@ KBWorkspace.overview();
         timer = 0;
         if (tutorialOn()) {
             setLit(demo && demo.nodes ? demo.nodes.filter(Boolean) : []);
+            if (demo && demo.fly && !demo.flown && demo.fly.parent) {
+                demo.flown = true;
+                var fb = boxOfNodes([demo.fly]).expandByScalar(0.25), fv = framing(fb, new THREE.Vector3(0.35, 1.0, 0.75));
+                KB.flyCamera(fv.p, fv.t);
+            }
             if (demo && demo.card && demo.card.node)
                 showDemoCard(demo.card);
             else
@@ -19291,6 +19302,26 @@ KBWorkspace.overview();
                 hideCard();
             return;
         }
+        if (autoView()) {
+            if (shown)
+                hideCard();
+            if (pendingKey === key)
+                return;
+            pendingKey = key;
+            clearTimeout(autoTimer);
+            autoTimer = setTimeout(function () {
+                if (pendingKey !== key || tutorialOn() || KB.interacting() || (KB.tweening && KB.tweening()) || (window.KBLevel && KBLevel.busy())) {
+                    pendingKey = null;
+                    soon();
+                    return;
+                }
+                asked[key] = 'auto';
+                pendingKey = null;
+                KB.flyCamera(s.view.p, s.view.t);
+                KB.emit('viewTip', { key: key, auto: true, view: s.view });
+            }, 700);
+            return;
+        }
         if (shown && shown.key === key)
             return;
         shown = { key: key, view: s.view };
@@ -19300,6 +19331,8 @@ KBWorkspace.overview();
         KB.emit('viewTip', { key: key, shown: true, view: s.view });
     }
     function soon() { clearTimeout(timer); timer = setTimeout(refresh, 450); }
+    var autoTimer = 0, pendingKey = null;
+    function autoView() { return window.KBLevel && KBLevel.get() <= 2; }
     KB.onChange(soon);
     KB.onSelection(soon);
     KB.on('levelChange', soon);

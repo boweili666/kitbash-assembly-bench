@@ -288,7 +288,8 @@
   // 零件一起飞就把卡片收起来:它说的是"去哪找这个零件",零件已经在路上了
   KB.on('levelFlight', function () { if (shown && !tutorialOn()) hideCard(); soon(); });
   KB.on('levelFlight', function (f) {
-    if (!f || !f.node || tutorialOn() || !(follow || f.force)) return;
+    // 一二级零件飞到哪镜头就跟到哪(没有卡片可以"采用",就不等人点了)
+    if (!f || !f.node || tutorialOn() || !(follow || f.force || autoView())) return;
     followTo(keyOf(f.node), f.want, f.approach, f.node);
   });
   // 三级(自己点孔配合):零件落位时镜头跟过去
@@ -380,6 +381,11 @@
     timer = 0;
     if (tutorialOn()) {
       setLit(demo && demo.nodes ? demo.nodes.filter(Boolean) : []);
+      if (demo && demo.fly && !demo.flown && demo.fly.parent) {
+        demo.flown = true;
+        var fb = boxOfNodes([demo.fly]).expandByScalar(0.25), fv = framing(fb, new THREE.Vector3(0.35, 1.0, 0.75));
+        KB.flyCamera(fv.p, fv.t);
+      }
       if (demo && demo.card && demo.card.node) showDemoCard(demo.card); else hideCard();
       return;
     }
@@ -405,6 +411,21 @@
     // 同一步里放好了一个、还剩别的,换成剩下那个的特写 —— 所以把零件也算进键里
     var key = st.i + '|' + s.phase + '|' + (s.node ? s.node.uuid : nodes.map(function (n) { return n.uuid; }).sort().join(','));
     if (asked[key]) { if (shown && shown.key !== key) hideCard(); return; }
+    // 一二级不问:直接把镜头转过去。先停一下,让人看清刚装上去的结果;这期间场面变了就作罢
+    if (autoView()) {
+      if (shown) hideCard();
+      if (pendingKey === key) return;
+      pendingKey = key;
+      clearTimeout(autoTimer);
+      autoTimer = setTimeout(function () {
+        if (pendingKey !== key || tutorialOn() || KB.interacting() || (KB.tweening && KB.tweening()) || (window.KBLevel && KBLevel.busy())) { pendingKey = null; soon(); return; }
+        asked[key] = 'auto';
+        pendingKey = null;
+        KB.flyCamera(s.view.p, s.view.t);
+        KB.emit('viewTip', { key: key, auto: true, view: s.view });
+      }, 700);
+      return;
+    }
     if (shown && shown.key === key) return;          // 已经挂着同一个建议
     shown = { key: key, view: s.view };
     card.querySelector('.vt-img').src = snapshot(s.view);
@@ -413,6 +434,8 @@
     KB.emit('viewTip', { key: key, shown: true, view: s.view });
   }
   function soon() { clearTimeout(timer); timer = setTimeout(refresh, 450); }
+  var autoTimer = 0, pendingKey = null;
+  function autoView() { return window.KBLevel && KBLevel.get() <= 2; }
   KB.onChange(soon);
   KB.onSelection(soon);
   KB.on('levelChange', soon);
