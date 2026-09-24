@@ -1463,7 +1463,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-24 17:14';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-24 17:26';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -10544,6 +10544,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
         finishInteraction(); });
     window.addEventListener('pointercancel', function () { if (interaction && interaction.kind === 'pointer')
         finishInteraction(); });
+    var pickProxies = [];
     function emit(type, node) {
         if (interaction && (type === 'grab' || type === 'move' || type === 'place')) {
             var known = interaction.nodes.indexOf(node) >= 0;
@@ -10616,6 +10617,18 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
         bakePivot();
         var hits = raycaster.intersectObjects(objectsRoot.children, true);
         if (!hits.length) {
+            for (var pi = 0; pi < pickProxies.length; pi++) {
+                var proxied = pickProxies[pi](raycaster);
+                if (proxied) {
+                    var top0 = proxied;
+                    while (top0.parent && top0.parent !== objectsRoot)
+                        top0 = top0.parent;
+                    if (window.KBMate)
+                        KBMate.release(top0);
+                    setSelection([top0]);
+                    return;
+                }
+            }
             var g = selection.length && !e.shiftKey ? raycaster.ray.intersectPlane(groundPlane, new THREE.Vector3()) : null;
             if (g)
                 moveSelectionTo(g);
@@ -11642,6 +11655,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
         onSelection: function (fn) { selectionHooks.push(fn); },
         onChange: function (fn) { changeHooks.push(fn); },
         on: function (type, fn) { (eventHooks[type] || (eventHooks[type] = [])).push(fn); },
+        addPickProxy: function (fn) { pickProxies.push(fn); },
         emit: emit,
         loadSceneData: loadSceneData,
         serializeScene: serializeScene,
@@ -19112,6 +19126,21 @@ KBWorkspace.overview();
     }
     function srcSpot() { return [{ node: guideFor, id: guide.srcId, end: guide.srcEnd }]; }
     KB.onSelection(function (sel) {
+        if (level !== 3 || tutorialOn() || sel.length !== 1 || !window.KBCheck)
+            return;
+        if (performance.now() - clickAt > 450)
+            return;
+        var node = sel[0];
+        if (!KB.isPart(node) || (window.KBWorkspace && KBWorkspace.contains(node)))
+            return;
+        var lit = window.KBFocus ? KBFocus.lit() : [];
+        if (lit.indexOf(node) < 0)
+            return;
+        var b = KBCheck.level2Base(node);
+        if (b && b.isBase)
+            placeByClick(node, true);
+    });
+    KB.onSelection(function (sel) {
         if (level !== 2 || tutorialOn() || !window.KBCheck)
             return;
         if (sel.length !== 1) {
@@ -19456,6 +19485,31 @@ KBWorkspace.overview();
         lit.forEach(function (n) { if (!arrows.has(n))
             arrows.set(n, makeArrow()); });
     }
+    if (KB.addPickProxy)
+        KB.addPickProxy(function (ray) {
+            var best = null, bestD = Infinity, sph = new THREE.Sphere();
+            arrows.forEach(function (a, node) {
+                if (!a.visible || !node.parent)
+                    return;
+                a.updateMatrixWorld(true);
+                var hits = ray.intersectObjects(a.children, false);
+                if (hits.length && hits[0].distance < bestD) {
+                    bestD = hits[0].distance;
+                    best = node;
+                    return;
+                }
+                new THREE.Box3().setFromObject(a).getBoundingSphere(sph);
+                sph.radius *= 1.3;
+                if (ray.ray.intersectsSphere(sph)) {
+                    var d = ray.ray.origin.distanceTo(sph.center);
+                    if (d < bestD) {
+                        bestD = d;
+                        best = node;
+                    }
+                }
+            });
+            return best;
+        });
     var _hb = new THREE.Box3(), _hc = new THREE.Vector3();
     (function pulse() {
         requestAnimationFrame(pulse);
