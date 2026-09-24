@@ -415,7 +415,12 @@
         M.decompose(pp, qq, new THREE.Vector3());
         pts.push(pp); quats.push(qq);
       });
-      if (pts.length === 1) { pts.unshift(pts[0].clone().add(new THREE.Vector3(0, 0.8, 0))); quats.unshift(quats[0].clone()); }
+      if (pts.length === 1) {
+        // 答案里只有终点:按零件几何补一个插入前的点(螺丝从头那一侧进,垫圈从上方套下),别直直落下
+        var ap = window.KBCheck && KBCheck.approachFor ? KBCheck.approachFor(d.key, new THREE.Matrix4().compose(pts[0], quats[0], new THREE.Vector3(1, 1, 1)), tt.ref) : null;
+        pts.unshift(ap ? new THREE.Vector3().setFromMatrixPosition(ap) : pts[0].clone().add(new THREE.Vector3(0, 0.8, 0)));
+        quats.unshift(quats[0].clone());
+      }
       var lens = [0];
       for (var k = 1; k < pts.length; k++) lens.push(lens[k - 1] + pts[k].distanceTo(pts[k - 1]));
       var it = { g: g, mat: mat, name: d.name, batch: sideIndex, step: 0, start: 0, pts: pts, quats: quats, lens: lens, total: lens[lens.length - 1] || 1 };
@@ -517,7 +522,8 @@
     refreshTimer = setTimeout(function () {
       if (!focus || KB.interacting()) return;
       var cur = focus.step.i, res = KBCheck.evaluate();
-      var st = res && res.steps[cur];
+      if (!res || !res.ready) { destroy(); return; }        // 教程里不判(没有结果):收起来
+      var st = res.steps[cur];
       if (st && st.state === 'complete') {
         setPlaying(false); if (root) root.visible = false;
         cancelAnimationFrame(rafId); bar.style.display = 'none';

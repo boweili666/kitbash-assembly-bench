@@ -217,7 +217,52 @@
   }
 
   /* ---------- Level 2:点对了孔,位姿交给答案 ---------- */
+  /* ---------- 三级:会报错的装配不执行 ----------
+     配合前先问答案:零件不属于这一步、或这两个孔根本对不上 -> 直接拒绝,零件不动;
+     放行的,配合完再看一眼:这个零件报了错(比如装反了)-> 退回原位,错误挂在指引卡片上(红) */
+  var pendingCheck = null;
+  function guard3(src, dst) {
+    var r = KBCheck.levelMateTarget(src.node, src.id, dst.node, dst.id);
+    if (r.reason) {
+      var back = KBCheck.levelMateTarget(dst.node, dst.id, src.node, src.id);
+      if (back.reason) { KBCheck.noteHole(src.node, r.reason); return r.reason; }
+      r = back;
+    }
+    var nx = KBCheck.next();
+    if (nx && r.slot) {
+      var inStep = nx.slots.some(function (t) { return t.ref === r.slot; }) || (nx.base && nx.base.ref === r.slot) || r.slot.step === nx.i;
+      if (!inStep) {
+        var msg = 'Not yet \u2014 this step is \u201c' + nx.name + '\u201d. ' + (r.slot.name || 'That part') + ' comes later.';
+        KBCheck.noteHole(src.node, msg);
+        return msg;
+      }
+    }
+    KBCheck.noteHole(null);                 // 这一下点对了:之前点错留下的那条先清掉,不然配合完会被它误判
+    var top = src.node; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
+    pendingCheck = { node: src.node, top: top, p: top.position.clone(), q: top.quaternion.clone(), at: performance.now() };
+    return null;                                                // 放行:照常配合
+  }
+  KB.on('snapAttempt', function (a) {
+    var pc = pendingCheck;
+    if (level !== 3 || !pc || !a || a.object1 !== pc.node) return;
+    pendingCheck = null;
+    if (!a.success) return;
+    // 等配合的补间落定、检查跑完,再看这个零件有没有被判错
+    (function wait(n) {
+      if (((KB.tweening && KB.tweening()) || KB.interacting()) && n < 40) { setTimeout(function () { wait(n + 1); }, 100); return; }
+      var res = KBCheck.evaluate();
+      if (!res || !res.ready) return;
+      var mine = {}; pc.top.traverse(function (x) { if (KB.isPart(x)) mine[x.uuid] = true; });
+      var bad = res.issues.filter(function (i) { return i.severity === 'error' && i.key !== 'hole' && i.node && mine[i.node.uuid]; })[0];
+      if (!bad) { KBCheck.noteHole(null); return; }
+      if (window.KBMate && KBMate.release) KBMate.release(pc.node);
+      KB.tween(pc.top, pc.p, pc.q, { duration: 0.45, onDone: function () { KB.pushSnapshot(); KBCheck.noteHole(pc.node, bad.msg + ' \u2014 undone, try again'); } });
+      KB.toast('Not like that \u2014 ' + bad.msg);
+    })(0);
+  });
+
   function resolve(src, dst) {
+    if (level === 3 && window.KBCheck) return guard3(src, dst);
     if (level !== 2 || !window.KBCheck) return null;
     // 上一个零件还在飞:别放行成"点哪个孔就装哪个孔"(那是三级的装法,误点一下就装进错孔)
     if (busy) return 'Wait for the part to land, then click again';

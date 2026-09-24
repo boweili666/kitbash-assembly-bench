@@ -162,6 +162,7 @@
     }
     function frame(now) {
       raf = requestAnimationFrame(frame);
+      if (R.getContext().isContextLost()) return;       // 上下文丢了(画布太多时浏览器会收回):别再往上画
       var t = ((now - t0) % DUR) / DUR, u = 0, clickAt = null, text = '', showKeys = false;
       var aPos = dA ? dA.getWorldPosition(new THREE.Vector3()) : null;
       if (clickPart) {
@@ -216,7 +217,7 @@
       : lv === 2 ? 'Click its cyan disc, then the disc where it goes'
       : 'Click a disc, then the disc where it goes \u2014 then \u2191 / \u2193 to fine-tune';
     return {
-      title: st ? 'Step ' + (st.i + 1) + ' \u00b7 ' + esc(st.name) : 'Nothing left to do',
+      title: tutorialOn() ? 'Practice \u00b7 Level ' + lv : st ? 'Step ' + (st.i + 1) + ' \u00b7 ' + esc(st.name) : 'Nothing left to do',
       body: '<div class="hp-anim">' + anim(base ? 1 : lv) + '<span class="hp-cap">' + esc(cap) + '</span></div>'
     };
   }

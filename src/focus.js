@@ -32,26 +32,36 @@
     var all = [];
     KB.objectsRoot.traverse(function (o) { if (KB.isPart(o)) all.push(o); });
     // 按级别自动摆好的零件位置就是答案,只是单独一个判不了"到位" —— 不算还要动
+    // 暂放在一边的组件:只在"把它装到基座上"那一步算待放,别的步骤里它已经放好了
     var placed = {};
-    all.forEach(function (n) { var r = KBCheck.levelPlacedSlot(n); if (r) placed[r.id] = n; });
+    all.forEach(function (n) {
+      var r = step.assembly ? KBCheck.levelPlacedSlot(n) : KBCheck.placedSlotAny(n);
+      if (r) placed[r.id] = n;
+    });
     // "把预装好的组件装到基座上"这种步骤(比如 X-Lock),要动的是基座本身,
     // 可它不在这一步的零件列表里 —— 漏了它,这一步就既不亮也没有推荐视角
     var slots = step.slots.slice();
     if (step.base && !step.base.ok && slots.indexOf(step.base) < 0) slots.unshift(step.base);
+    // 同一步里先放的排前面(比如 ESC 那一步先放垫圈)
+    slots.sort(function (a, b) { return Number(KBCheck.comesFirst(b.ref)) - Number(KBCheck.comesFirst(a.ref)); });
+    var kinds = [];                                    // 和 out 一一对应:这件是哪种零件
     slots.forEach(function (t) {
       if (t.ok || placed[t.ref.id]) return;
-      if (t.part) { out.push(t.part.node); used[t.part.node.uuid] = true; return; }
+      if (t.part) { out.push(t.part.node); kinds.push(t.ref.ckey); used[t.part.node.uuid] = true; return; }
       var want = t.ref.ckey, best = null;
       all.forEach(function (n) {
-        if (used[n.uuid] || KBCheck.canon(keyOf(n)) !== want || KBCheck.levelPlacedSlot(n)) return;
+        if (used[n.uuid] || KBCheck.canon(keyOf(n)) !== want || KBCheck.placedSlotAny(n)) return;
         var s = KBCheck.slotOf(n);
         if (s && s.ok) return;                        // 已经装在别处了
         var score = (n.name === t.ref.name ? 0 : 1) + (s ? 2 : 0);
         if (!best || score < best.score) best = { node: n, score: score };
       });
-      if (best) { out.push(best.node); used[best.node.uuid] = true; }
+      if (best) { out.push(best.node); kinds.push(t.ref.ckey); used[best.node.uuid] = true; }
     });
-    return out;
+    // 按顺序亮:只亮排在最前面、同一种的那一串(比如 4 颗电机螺丝),都到位了再亮后面的(电机、螺母)
+    var run = 0;
+    while (run < out.length && kinds[run] === kinds[0]) run++;
+    return out.slice(0, run);
   }
 
   /* ---------- 高亮:整件染成黄色呼吸 + 头顶一个跳动的箭头 ----------
@@ -405,8 +415,13 @@
     setLit(nodes);
     if (!nodes.length) { hideCard(); return; }
     var s = suggest(st, nodes);
-    // 一级零件自己飞过去、镜头也跟着,只需要告诉人"下一个零件在料盘哪儿",不给装配位置的特写
-    if (s && s.phase !== 'find' && window.KBLevel && KBLevel.get() === 1) s = null;
+    // 一级零件自己飞过去、镜头也跟着,不给装配位置的特写 —— 但要点的零件已经在装配区里时
+    // (比如暂放在 X-Lock 两边的楔块组件),还是给它本身一个特写(连同它所在的整组),不然镜头不动
+    if (s && s.phase !== 'find' && window.KBLevel && KBLevel.get() === 1) {
+      var top = nodes[0]; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
+      s = { phase: 'find', caption: 'Close-up: ' + nodes[0].name, node: nodes[0],
+            view: framing(boxOfNodes([top]).expandByScalar(0.2), new THREE.Vector3(0.35, 1.0, 0.75)) };
+    }
     if (!s) { hideCard(); return; }
     // 同一步里放好了一个、还剩别的,换成剩下那个的特写 —— 所以把零件也算进键里
     var key = st.i + '|' + s.phase + '|' + (s.node ? s.node.uuid : nodes.map(function (n) { return n.uuid; }).sort().join(','));
@@ -466,5 +481,7 @@
                      snapshot: snapshot, lit: function () { return lit.slice(); },
                      suggestion: function () { return shown ? { key: shown.key, view: shown.view } : null; },
                      use: function () { answer(true); }, dismiss: function () { answer(false); },
+                     // 某几个零件的特写视角(和推荐视角同一套取景),教程里镜头跟着零件走用
+                     viewOf: function (nodes) { var b = boxOfNodes(nodes.filter(Boolean)).expandByScalar(0.25); return framing(b, new THREE.Vector3(0.35, 1.0, 0.75)); },
                      demo: function (d) { demo = d || null; if (!demo && shown && /^tutorial\|/.test(shown.key)) hideCard(); refresh(); } };
 })();

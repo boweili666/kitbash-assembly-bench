@@ -99,16 +99,22 @@
         return [o('aluminum_arm_wedge_5mm', 'Wedge', [0, 0, 11]), o('screw_m3x16_socket_cap', 'Screw', [1.4, 0, 11.9])]; // 楔块平放,孔是横着的:螺丝横着插进去
       },
       steps: [
+        // 装配永远是三下:① 点要动的零件 ② 点它身上的孔 / 销 ③ 点它要去的那个孔
+        { tag: 'pickScrew', previewTag: 'armScrew', light: function () { return []; },
+          focus: function () { return { nodes: [parts.screw] }; },
+          done: function () { return flags.selected === parts.screw; },
+          lesson: { title: '1 \u00b7 First click the part you want to move', hint: 'Every connection is three clicks, always in this order: the part, its hole, then the hole it goes into. Start with the part: click the screw. Its connection discs appear on it.',
+            demo: 'arm', label: 'Click the screw', target: 'Screw', actions: ['Click the yellow screw', 'Its discs appear \u2014 holes pink, pegs purple'] } },
         { tag: 'armScrew', light: function () { return [parts.screw]; },
           expect: function () { return { source: [{ node: parts.screw, id: 'P1', end: 0 }], target: [] }; },
           done: function () { var a = KBMate.armed(); return !!a && a.node === parts.screw && a.id === 'P1'; },
-          lesson: { title: 'New parts: a screw and a wedge', hint: 'Holes show as pink discs and pegs as purple ones; the one to click next is lit bright cyan with rings around it. Click the screw to select it, then click the cyan disc on its shaft. Green means ready to connect.',
-            demo: 'arm', label: 'Click the shaft disc', target: 'Screw', actions: ['Click the glowing screw', 'Click the glowing disc on its shaft'] } },
+          lesson: { title: '2 \u00b7 Then click its hole or peg', hint: 'Now click the disc on the part that makes the connection \u2014 here the cyan one on the screw\u2019s shaft. It turns green: that end is the one that goes in.',
+            demo: 'arm', label: 'Click the shaft disc', target: 'Screw', actions: ['Click the cyan disc on the shaft', 'It turns green \u2014 ready to connect'] } },
         { tag: 'mateScrew', light: function () { return [parts.wedge]; },
           expect: function () { return { source: [{ node: parts.screw, id: 'P1', end: 0 }], target: [{ node: parts.wedge, id: 'H1' }] }; },
           done: function () { return flags.mate && flags.mate[0] === parts.screw && flags.mate[1] === parts.wedge; },
-          lesson: { title: 'Feed it through the wedge', hint: 'Click the glowing disc on the wedge\u2019s hole. The screw flies over, lines up with the hole and slides in sideways.',
-            demo: 'insert', label: 'Click the wedge hole', target: 'Wedge hole', actions: ['Keep the shaft disc armed (green)', 'Click the glowing disc on the wedge'] } },
+          lesson: { title: '3 \u00b7 Last, click the hole it goes into', hint: 'Only now click the hole where it belongs \u2014 the cyan disc on the wedge. The screw flies over and seats itself in that hole.',
+            demo: 'insert', label: 'Click the wedge hole', target: 'Wedge hole', actions: ['Keep the shaft disc green', 'Click the cyan disc on the wedge'] } },
         { tag: 'slide', light: function () { return [parts.screw]; },
           done: function () { return slidMm() >= SLIDE_GOAL_MM; },
           status: function () {
@@ -164,10 +170,12 @@
         return [o('aluminum_arm_wedge_5mm', 'Wedge', [0, 0, 11]), o('screw_m3x16_socket_cap', 'Screw', [1.4, 0, 1.5])];
       },
       steps: [
-        { tag: 'clickScrew', light: function () { return [parts.screw]; },
+        { tag: 'clickScrew', light: function () { return []; },
+          // 和正式装配一样:整件发黄 + 头顶箭头,镜头自己飞到这个零件
+          focus: function () { return { nodes: [parts.screw], fly: parts.screw }; },
           done: function () { return flags.mate && flags.mate[0] === parts.screw && flags.mate[1] === parts.wedge; },
-          lesson: { title: 'Click a part \u2014 it goes in by itself', hint: 'On Level 1 you never line anything up. The part you need glows; click it and it flies straight to where it belongs \u2014 here, into the wedge.',
-            demo: 'arm', label: 'Click the glowing screw', target: 'Screw', actions: ['Click the glowing screw', 'Watch it fly into the wedge hole'] } }
+          lesson: { title: 'Click a part \u2014 it goes in by itself', hint: 'On Level 1 you never line anything up. The part you need turns yellow with a yellow arrow above it; click it and it flies straight to where it belongs \u2014 here, into the wedge.',
+            demo: 'arm', label: 'Click the glowing screw', target: 'Screw', actions: ['Click the yellow screw (the arrow points at it)', 'Watch it fly into the wedge hole'] } }
       ]
     }
     ,
@@ -194,13 +202,59 @@
           lesson: { title: 'Yellow means \u201cthis one next\u201d', hint: '',
             demo: 'arm', label: 'Click the yellow part', target: 'Screw', actions: ['Find the part with the yellow arrow above it', 'Click it to select it'] } }
       ]
+    },
+    {
+      // 第二遍:换一对零件自己再做一次,提示少一点
+      name: 'Once more: arm onto plate', names: { arm: 'Arm', plate: 'Front Plate' },
+      // 教程卡片占着画面左边(下半截也是):零件整体往右摆,镜头也对着右边,要点的孔别藏在卡片后面
+      // 零件和"Turn on a hole"那课摆得一样(装好后整组还在装配区里);镜头的注视点放到左边,
+      // 零件落在画面右半边,要点的孔别藏在左下角的教程卡片后面
+      view: { p: [0.6, 5.4, 17.8], t: [-0.6, 0, 11.6] },
+      scene: function () {
+        return [o('split_front_plate', 'Front Plate', [1.8, 0, 10.4]), o('arm_5in', 'Arm', [0.8, 0, 13.2], [0, Math.PI / 2, 0])];
+      },
+      steps: [
+        // 一级:点机臂,它自己装到前板上
+        { tag: 'clickArm', light: function () { return []; },
+          focus: function () { return { nodes: [parts.arm], fly: parts.arm }; },
+          done: function () { return flags.mate && flags.mate[0] === parts.arm && flags.mate[1] === parts.plate; },
+          lesson: { title: 'Your turn again: the arm', hint: 'Same idea with a different part. Click the yellow arm \u2014 it goes onto the plate by itself.',
+            demo: 'arm', label: 'Click the arm', target: 'Arm', actions: ['Click the yellow arm', 'Watch it land on the plate'] } },
+        // 二三级:三下点击自己做一遍
+        { tag: 'pickArm', light: function () { return []; },
+          focus: function () { return { nodes: [parts.arm] }; },
+          done: function () { return flags.selected === parts.arm; },
+          lesson: { title: 'Your turn again: 1 \u00b7 the part', hint: 'Now without help: the same three clicks with a different part. First the part \u2014 click the arm.',
+            demo: 'arm', label: 'Click the arm', target: 'Arm', actions: ['Click the arm'] } },
+        { tag: 'armArm', light: function () { return [parts.arm]; },
+          expect: function () { return { source: [{ node: parts.arm, id: 'H1', end: -1 }], target: [] }; },
+          done: function () { var a = KBMate.armed(); return !!a && a.node === parts.arm && a.id === 'H1'; },
+          lesson: { title: '2 \u00b7 its hole', hint: 'Then its hole: click the cyan disc on the arm (the lower face of the hole \u2014 tilt the view if you need to).',
+            demo: 'arm', label: 'Click the arm\u2019s hole', target: 'Arm hole', actions: ['Click the cyan disc on the arm'] } },
+        { tag: 'mateArm2', light: function () { return [parts.plate]; },
+          expect: function () { return { source: [{ node: parts.arm, id: 'H1', end: -1 }], target: [{ node: parts.plate, id: 'H6', end: 1 }] }; },
+          done: function () { return flags.mate && flags.mate[0] === parts.arm && flags.mate[1] === parts.plate; },
+          lesson: { title: '3 \u00b7 the hole it goes into', hint: 'Last, the hole where it goes: the cyan disc on top of the plate. The arm seats itself.',
+            demo: 'insert', label: 'Click the plate hole', target: 'Plate hole', actions: ['Click the cyan disc on the plate'] } }
+      ]
     }
   ];
+  // 卡住时:顶部的 Help 按钮(每个难度最后都教一下)
+  var HELP = { tag: 'help', light: function () { return []; },
+    done: function () { return !!flags.help; },
+    lesson: { title: 'Stuck? Press Help', hint: 'The Help button at the top (it glows now) opens a small card with a short animation of exactly where to click for the step you are on. It also starts to glow by itself if you have been stuck for a while. Press it now.',
+      demo: 'arm', label: 'Press Help at the top', target: 'Help', actions: ['Press the glowing Help button at the top', 'Watch where the cursor clicks'] } };
+  // 左上角的逐步指引:收起时是个小胶囊(第几步 + 进度),点开是这一步的零件清单
+  var GUIDE = { tag: 'guide', light: function () { return []; },
+    done: function () { return !!flags.guideFolded && !!flags.guideOpened; },
+    lesson: { title: 'That card top-left checked your move', hint: 'The card in the top-left corner is your step guide. It checked every click you just made: each one turned green as soon as it was right, the card turns red and says what is wrong when it is not, and it says \u201cStep complete\u201d at the end. In the real build it lists the parts of each step the same way, and it stays there the whole time. Fold it into a small pill with \u2013, then click the pill to open it again.',
+      demo: 'arm', label: 'Fold it, then open it', target: 'Guide', actions: ['Click \u2013 on the card to fold it into a pill', 'Click the pill to open it again'] } };
   // 每个难度上哪几课、跳过哪几步:一级只教看 + 点零件;二级教点孔(自己会落位,不教方向键);三级全套
   var PLAN = {
     // 一二级没有推荐视角卡片(镜头自己转过去),那一屏不教
-    1: { courses: [0, 4, 3], skip: { suggest: 1 } },
-    2: { courses: [0, 4, 1], skip: { slide: 1, suggest: 1 } },
+    // 核心操作都练两遍:一遍螺丝进楔块,一遍机臂装到前板上
+    1: { courses: [0, 4, 3, 5], skip: { suggest: 1, pickArm: 1, armArm: 1, mateArm2: 1 } },
+    2: { courses: [0, 4, 1, 5], skip: { slide: 1, suggest: 1, clickArm: 1 } },
     3: { courses: [0, 4, 1, 2], skip: {} }
   };
   var FINALS = {
@@ -231,6 +285,9 @@
       });
     });
     courses[4].steps.forEach(function (st) { if (st.tag === 'glow') st.lesson.hint = level <= 2 ? GLOW_HINTS.auto : GLOW_HINTS.card; });
+    GUIDE.course = HELP.course = plan.courses[plan.courses.length - 1];
+    steps.push(GUIDE); lessons.push(GUIDE.lesson);
+    steps.push(HELP); lessons.push(HELP.lesson);
     FINAL.course = plan.courses[plan.courses.length - 1];
     FINAL.lesson.hint = FINALS[level].hint;
     FINAL.lesson.actions = FINALS[level].actions;
@@ -240,6 +297,12 @@
   var course = -1; // 当前已加载场景的课
   function at(tag) { return idx >= 0 && steps[idx].tag === tag; }
 
+  // 镜头跟着飞过去的零件走(和正式装配一二级一样),落点那一侧取特写
+  function followTo(nodes) {
+    if (!window.KBFocus || !KBFocus.viewOf) return;
+    var v = KBFocus.viewOf(nodes);
+    KB.flyCamera(v.p, v.t);
+  }
   function find(name) {
     var f = null;
     KB.objectsRoot.traverse(function (n) { if (!f && KB.isPart(n) && n.name === name) f = n; });
@@ -316,7 +379,7 @@
     if (course.preview) {
       if (demoBox) demoBox.hidden = false;
       KBTutorialPreview.show(stageEl, {
-        tag: steps[idx].tag || 'complete', course: steps[idx].course,
+        tag: steps[idx].previewTag || steps[idx].tag || 'complete', course: steps[idx].course,
         label: lesson.label, objects: course.scene(),
         source: course.preview.source, target: course.preview.target
       });
@@ -362,6 +425,18 @@
     if (at('armScrew')) checks = [selected === parts.screw || !!armed && armed.node === parts.screw, !!armed && armed.node === parts.screw];
     if (at('mateScrew')) checks = [!!armed && armed.node === parts.screw || mated(parts.screw, parts.wedge), mated(parts.screw, parts.wedge)];
     if (at('slide')) checks = [slidMm() > 0.01, slidMm() >= SLIDE_GOAL_MM];
+    // 后来加的几课:每一项做到了就当场打勾,不等整课结束
+    var picked = function (n) { return flags.selected === n || selected === n; };
+    if (at('glow')) checks = [true, picked(parts.screw)];
+    if (at('suggest')) checks = [true, flags.viewTip === 'used'];
+    if (at('pickScrew')) checks = [picked(parts.screw), picked(parts.screw)];
+    if (at('clickScrew')) checks = [!!flags.flying || mated(parts.screw, parts.wedge), mated(parts.screw, parts.wedge)];
+    if (at('clickArm')) checks = [!!flags.flying || mated(parts.arm, parts.plate), mated(parts.arm, parts.plate)];
+    if (at('pickArm')) checks = [picked(parts.arm)];
+    if (at('armArm')) checks = [!!armed && armed.node === parts.arm];
+    if (at('mateArm2')) checks = [mated(parts.arm, parts.plate)];
+    if (at('guide')) checks = [!!flags.guideFolded, !!flags.guideOpened];
+    if (at('help')) checks = [!!flags.help, !!flags.help];
     // 本步已完成:全部打勾
     if (idx >= 0 && idx < steps.length - 1 && steps[idx].done()) checks = checks.map(function () { return true; });
     var current = checks.indexOf(false);
@@ -444,6 +519,17 @@
     void bodyEl.offsetWidth;
     bodyEl.classList.add('in');
     light(s.light());
+    var hb = document.getElementById('btnHelp');
+    if (hb) hb.classList.toggle('nudge', s.tag === 'help');          // 教 Help 那一屏,按钮闪起来
+    if (s === FINAL && window.KBHelp && KBHelp.isOpen()) KBHelp.close();
+    // 练习课里左上角的指引卡片跟着判每一小步;教指引那一屏再讲它是什么
+    guideErr = null;
+    refreshGuide();
+    if (window.KBGuide && KBGuide.demo) {
+      if (s.tag === 'guide') { flags.guideOpened = false; flags.guideFolded = false; }
+      var ng = document.getElementById('nextGuide');
+      if (ng) ng.classList.toggle('ng-teach', s.tag === 'guide');   // 这一屏让卡片闪起来
+    }
     // 刚换课时零件还在从空中落下:等落定了再亮 / 出推荐视角,不然卡片会对着半空取景
     clearTimeout(demoTimer);
     if (window.KBFocus && KBFocus.demo) {
@@ -487,12 +573,42 @@
   }
   KB.on('mateRejected', function (r) {
     if (idx < 0) return;
+    guideError(r.reason);
     statusEl.textContent = r.reason;
     statusEl.classList.add('err');
     clearTimeout(errTimer);
     errTimer = setTimeout(function () { if (idx >= 0 && !advancing) { statusEl.classList.remove('err'); statusEl.textContent = 'Your turn \u00b7 try it in the scene'; } }, 4000);
   });
-  var errTimer = 0, demoTimer = 0;
+  var errTimer = 0, demoTimer = 0, guideShown = false, guideErr = null, guideErrTimer = 0;
+  /* 练习课(插螺丝 / 机臂装前板)里,左上角的指引卡片逐条判每一小步:
+     还没做 "To do",正在做 "Now",做对了当场变绿 "✓ Done";点错变红说原因;全做完 "Step complete"。
+     和正式装配里同一张卡片,教人认得它是干什么的 */
+  var PRACTICE = { 1: 1, 2: 1, 3: 1, 5: 1 };
+  function refreshGuide() {
+    if (!window.KBGuide || !KBGuide.demo || idx < 0) return;
+    var s = steps[idx], ci = s.course;
+    if (!PRACTICE[ci] || s === FINAL) { if (guideShown) { KBGuide.demo(null); guideShown = false; } return; }
+    var rows = [];
+    steps.forEach(function (st, i) { if (st.course === ci && st !== FINAL && st !== GUIDE && st !== HELP) rows.push({ st: st, i: i }); });
+    var all = rows.every(function (r) { return completed[r.i]; });
+    KBGuide.demo({
+      name: courses[ci].name,
+      parts: rows.map(function (r, n) {
+        return { name: (n + 1) + ' \u00b7 ' + r.st.lesson.label, ok: !!completed[r.i], now: !completed[r.i] && r.i === idx,
+                 status: completed[r.i] ? '\u2713 Done' : r.i === idx ? 'Now' : 'To do' };
+      }),
+      state: guideErr ? 'error' : all ? 'success' : 'progress',
+      message: guideErr || (all ? 'Correct \u2014 every click checked. Step complete.' : 'Your move \u2014 this card checks each click.')
+    });
+    if (!guideShown) { KBGuide.setOpen(true); guideShown = true; }
+  }
+  // 点错了:卡片变红说原因,几秒后恢复
+  function guideError(msg) {
+    if (!guideShown) return;
+    guideErr = msg; refreshGuide();
+    clearTimeout(guideErrTimer);
+    guideErrTimer = setTimeout(function () { guideErr = null; refreshGuide(); }, 3500);
+  }
 
   var advancing = false;
   var experience = null;   // 'first' / 'again':最后一屏问出来的
@@ -509,18 +625,20 @@
     updateActions();
     textEl.classList.add('ok');
     completed[idx] = true;
+    guideErr = null; refreshGuide();                  // 这一小步当场在卡片上打勾
     statusEl.textContent = 'Nice work! Moving to the next step…';
     var at = idx;
     advanceTimer = setTimeout(function () {
       advancing = false;
       textEl.classList.remove('ok');
       if (idx === at && idx < steps.length - 1) show(idx + 1);
-    }, 700);
+    }, /^(clickScrew|clickArm|mateScrew|mateArm2|mateArm)$/.test(steps[at].tag) ? 1800 : 700);   // 零件刚飞进去:多停一下看清
   }
 
   function start(opts) {
     if (!window.KBParts || !KBParts.ready()) { KB.toast('Parts library still loading…'); return; }
     stop('restart');
+    if (window.KBAnswer) KBAnswer.hide();          // 常驻的逐步指引 / 虚影属于正式装配,教程期间收起来
     onboarding = !!(opts && opts.onboarding);
     buildPlan((opts && opts.level) || (window.KBLevel ? KBLevel.get() : 3));
     completed = {};
@@ -555,6 +673,10 @@
     unlight();
     applyExpect(null);
     if (window.KBFocus && KBFocus.demo) KBFocus.demo(null);
+    if (wasActive && window.KBGuide && KBGuide.demo) KBGuide.demo(null);
+    guideShown = false; guideErr = null;
+    var ng0 = document.getElementById('nextGuide'); if (ng0) ng0.classList.remove('ng-teach');
+    var hb = document.getElementById('btnHelp'); if (hb) hb.classList.remove('nudge');
     statusEl.classList.remove('err');
     el.classList.remove('show');
     if (wasActive && reason !== 'restart') KB.emit('tutorialEnd', { reason: reason === 'completed' ? 'completed' : 'skipped', experience: experience, level: level });
@@ -565,13 +687,25 @@
     currentSelection = sel.slice();
     if (idx >= 0 && sel.length === 1) flags.selected = sel[0];
     // 一级那一课:点到螺丝就让它自己飞进楔块(和正式装配里一级的"点零件就到位"一样)
+    if (at('clickArm') && sel.length === 1 && sel[0] === parts.arm && !flags.flying && window.KBMate) {
+      flags.flying = true;
+      KBMate.mate(parts.arm, 'H1', parts.plate, 'H6', -1, 1);
+      KB.setSelection([]);
+      followTo([parts.plate, parts.arm]);
+    }
     if (at('clickScrew') && sel.length === 1 && sel[0] === parts.screw && !flags.flying && window.KBMate) {
       flags.flying = true;
       KBMate.mate(parts.screw, 'P1', parts.wedge, 'H1', 0, 1);
       KB.setSelection([]);
+      followTo([parts.wedge]);
       // 装配的提示会说"方向键微调",一级用不到 —— 换成一级的说法
-      setTimeout(function () { KB.toast('In it goes \u2014 on Level 1 every part lines itself up'); }, 0);
     }
+  });
+  KB.on('help', function (h) { if (idx >= 0 && h && h.open) flags.help = true; });
+  KB.on('guideOpen', function (v) {
+    if (idx < 0 || !at('guide')) return;
+    if (!v) flags.guideFolded = true;
+    else if (flags.guideFolded) flags.guideOpened = true;          // 先收起,再打开
   });
   KB.on('viewTip', function (v) { if (idx >= 0 && v && v.used !== undefined) flags.viewTip = v.used ? 'used' : 'dismissed'; });
   KB.on('areaChange', function () { if (idx >= 0) { flags.area = true; flags.areaCount = (flags.areaCount || 0) + 1; } });
@@ -641,7 +775,13 @@
     }
     if (at('slide') && node === parts.screw && activeArrow && /Up|Down/.test(activeArrow)) flags.slide = true;
   });
-  KB.on('snapAttempt', function (a) { if (idx >= 0 && a.success) flags.mate = [a.object1, a.object2, a.snapPoint1, a.snapPoint2]; });
+  KB.on('snapAttempt', function (a) {
+    if (idx >= 0 && a.success) flags.mate = [a.object1, a.object2, a.snapPoint1, a.snapPoint2];
+    // 装配完的提示会说"方向键微调",一级用不到:装上之后换成一级的说法(要在它之后,不然被盖掉)
+    if (idx >= 0 && a.success && level <= 2) setTimeout(function () {
+      KB.toast(level === 1 ? 'In it goes \u2014 on Level 1 every part lines itself up' : 'Seated \u2014 on Level 2 the part lines itself up, no keyboard needed');
+    }, 0);
+  });
   KB.onChange(function () {
     // 零件被删掉 / 撤销到教程之前:结束
     if (idx >= 0 && parts && Object.keys(parts).some(function (k) { return !parts[k] || !find(parts[k].name); })) stop();
@@ -701,6 +841,7 @@
 
   window.KBTutorial = { start: start, stop: stop, active: function () { return idx >= 0; },
     level: function () { return level; },
+    _tag: function () { return idx >= 0 ? steps[idx].tag || (steps[idx] === FINAL ? 'final' : '') : null; },
     discs: function () { return level !== 1; },   // 一级教程不放圆片:只教点零件
     _debug: function () { return { flags: flags, idx: idx, advancing: advancing, parts: Object.keys(parts || {}).map(function (k) { return k + ':' + (parts[k] && parts[k].name); }), timer: timer }; } };
 

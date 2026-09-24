@@ -272,22 +272,20 @@ are pan and which are countersunk. The derivation follows it:
 | Standoff #5/#6 | the free M3 pair at the rear of the Split Rear Plate; attitude copied from the four captured standoffs |
 | Standoff Screw #5/#6 | M3×6 pan, through the rear plate into each new standoff |
 | Standoff Screw #7/#8 | M3×6 pan, through the top plate into standoffs A/B |
-| Standoff Screw #9–#12 | M3×6 **countersunk**, through the top plate into standoffs C–F, head flush with the plate |
+| Standoff Screw #9–#12 | M3×6, through the top plate into standoffs C–F (the task graph says countersunk; see below) |
 | Left/Right Camera Plate | standing between top plate and front plate, `H3` over the top plate's front hole pair, M2 camera holes facing the centreline |
 | 4 × M3×6 pan | camera plates: one up through the top plate, one down through the front plate, into the same through-hole |
 | 4 × Propeller | hub bore on the motor shaft axis, seated on the motor's outermost face |
 
-That accounts for all nine M3×6 pan screws in the task graph exactly.
+That accounts for all thirteen M3×6 screws in the task graph (nine pan, four countersunk shown as pan).
 
-**The countersunk screw is modelled by us.** `PartTypes.model` for
+**No separate countersunk screw.** The task graph asks for M3×6 countersunk
+screws in the four C–F steps, but `PartTypes.model` for
 `Screw - M3x6mm Countersunk` is the literal string `TODO_MODEL` — ARISTOS has no
-mesh for it, so those four steps had no part at all. `tools/make_countersunk_screw.py`
-turns one to ISO 10642 / DIN 7991 dimensions (Ø3 × 4.5 mm shank, 90° head Ø6 ×
-1.5 mm, 6 mm overall, length measured over the head) and registers it in the
-manifest as `screw_m3x6_countersunk` plus four kit instances. It is re-runnable.
-If ARISTOS later ships the real mesh, drop it in and delete the generated one.
-`aristos_frontend/src/components/Simulator/kit_scene.ts` carries the matching
-four kit entries at the end of the array.
+mesh for it. We use the M3×6 pan screw (the same model as #5–#8) for those four
+kit instances and poses, and the bench does not tell the two apart.
+`aristos_frontend/src/components/Simulator/kit_scene.ts` points the four kit
+entries at the pan-screw model.
 
 Two honest caveats:
 

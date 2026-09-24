@@ -520,10 +520,20 @@ input[type="range"]::-moz-range-thumb {
 #checkNotice.warn button { border-color:#d9a44a66; background:#2e2716ee; color:#f6dfaa; }
 #checkNotice.warn button:hover { background:#3d331c; }
 #checkNotice.warn .ck-notice-icon { color:#f0b44c; }
-#nextGuide[data-state="warn"] { border-color:#c99a45; }
-#nextGuide[data-state="warn"] .ng-status { color:#f3c97a; }
-#nextGuide[data-state="warn"] .ng-feedback { background:#6b52203d; color:#f6e2b8; }
-#nextGuide[data-state="warn"] .ng-pdot { background:#f0b44c; }
+/* 检查结果搬进指引卡片:红 = 错误,蓝 = 提示 / 还没对齐,绿 = 装对了 */
+#nextGuide[data-state="warn"] .ng-status { color:#8fd3f5; }
+.ng-issues { list-style:none; padding:0; margin:8px 0 0; display:flex; flex-direction:column; gap:6px; }
+.ng-issues:empty { display:none; }
+.ng-issues li { padding:7px 10px; border-radius:8px; font-size:12px; line-height:1.45; border-left:3px solid; }
+.ng-issues li.red { background:#713c293d; color:#ffd2bf; border-color:#ff6b5a; }
+.ng-issues li.blue { background:#25405466; color:#c9e3f1; border-color:#6aa6e8; }
+.ng-issues li.green { background:#265b483d; color:#b7f0d6; border-color:#58bc96; }
+#nextGuide[data-tone="red"] { border-color:#ff6b5a; }
+#nextGuide[data-tone="green"] { border-color:#58bc96; }
+#nextGuide[data-tone="red"] .ng-pdot { background:#ff6b5a; box-shadow:0 0 0 3px #ff6b5a44; }
+#nextGuide[data-tone="green"] .ng-pdot { background:#67d8b0; }
+#nextGuide[data-tone="blue"] .ng-pdot { background:#6aa6e8; }
+#checkNotice { display:none !important; }   /* 右上角的通知条不要了:检查结果都在左上角卡片里 */
 .ck-row.hint { color: var(--text-faint); }
 /* 有错时工具栏上的 Checks 也要看得见 */
 .tool.has-errors { color: var(--danger); background: rgba(224, 96, 79, 0.16); }
@@ -726,6 +736,7 @@ input[type="range"]::-moz-range-thumb {
 .embed #btnHelp, .embed #btnHelp .lbl { display: inline-flex; }
 #btnHelp.on { background: #2a4a5e; color: #bfe9ff; }
 #btnHelp.nudge { animation: helpNudge 1.6s ease-in-out infinite; color: #ffd98a; }
+#nextGuide.ng-teach { animation: helpNudge 1.6s ease-in-out infinite; border-color: #ffc81e; }
 @keyframes helpNudge { 0%, 100% { box-shadow: 0 0 0 0 #ffc81e00; } 50% { box-shadow: 0 0 0 5px #ffc81e55; background: #3a3218; } }
 #nextGuide .ng-close, #ansClose { display: none; }   /* 常驻:可以收起,不能关 */
 /* 右上角,和推荐视角卡片同一个位置、同样宽;打开时盖住那张卡片 */
@@ -960,6 +971,8 @@ body.help-open #viewTip { visibility: hidden; }
 .ng-parts li { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-top:1px solid #ffffff0c; font-size:12px; }
 .ng-parts li span:last-child { flex-shrink:0; color:#d5b175; }
 .ng-parts li[data-ready="true"] span:last-child { color:#67d8b0; }
+.ng-parts li[data-now="true"] { color:#f2f6f9; }
+.ng-parts li[data-now="true"] span:last-child { color:#8fd3f5; font-weight:600; }
 .ng-feedback { margin-top:12px; padding:12px; border-radius:9px; background:#25405466; color:#c4ddea; }
 #nextGuide[data-state="error"] { border-color:#af7055; }
 #nextGuide[data-state="error"] .ng-status { color:#ffb58f; }

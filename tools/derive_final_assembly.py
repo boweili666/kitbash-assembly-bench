@@ -359,25 +359,17 @@ def build(kit):
     for n, idx in enumerate(order):
         mate('Top Plate', allstands[idx]['name'], [[plate['ids'][n], 'H1']])
 
-    # 3) 顶板拧进立柱:A/B 是盘头,C-F 的沉头没有模型
-    missing = []
+    # 3) 顶板拧进立柱:任务图里 A/B 是盘头(#7/#8)、C-F 是沉头(#9-#12)。
+    #    沉头上游没有模型,我们不再单独做:六颗一律用 M3×6 盘头,头压在顶板面上
     for n, idx in enumerate(order):
         s = allstands[idx]
         hid = plate['ids'][n]
         letter = letter_of[s['name']]
         si = add_step(f'Feed Screw through Top Plate and into Standoff ({letter})')
         half = kit.feature('top_plate', hid)['depth'] / 2
-        # 任务图指定:A/B 盘头(#7/#8),C-F 沉头(#9-#12,头沉进板面,电池绑带不刮手)。
-        # 沉头上游 model=TODO_MODEL,模型是 tools/make_countersunk_screw.py 按标准尺寸补的
-        flat = letter not in 'AB'
-        skey = 'screw_m3x6_countersunk' if flat else 'screw_m3x6_pan'
-        if flat and skey not in kit.spec:
-            missing.append(f'Feed Screw through Top Plate and into Standoff ({letter}) · 缺沉头模型')
-            steps.pop()
-            continue
-        sname = ('Standoff Screw #' + str(9 + 'CDEF'.index(letter))) if flat else \
-                ('Standoff Screw #' + str(7 + 'AB'.index(letter)))
-        sp, sR = screw_into(kit, skey, plate['holes_world'][hid], -s['dir'], half, flush=flat)
+        skey = 'screw_m3x6_pan'
+        sname = 'Standoff Screw #' + str(7 + 'ABCDEF'.index(letter))
+        sp, sR = screw_into(kit, skey, plate['holes_world'][hid], -s['dir'], half)
         add_part(skey, sname, si, sp, sR, -s['dir'])
         mate(sname, 'Top Plate', [['P1', hid]])
         mate(sname, s['name'], [['P1', 'H1']])
@@ -420,7 +412,7 @@ def build(kit):
         add_part(pr['key'], pr['name'], si, pr['p'], pr['R'], np.array([0.0, 1.0, 0.0]))
         mate(pr['name'], pr['motor'], [['H1', 'P2']])
 
-    return steps, parts, {'plate_residual_mm': plate['res'] / kit.K, 'missing': missing}
+    return steps, parts, {'plate_residual_mm': plate['res'] / kit.K}
 
 
 def rel_pose(kit, key, p, R, p_other, R_other):

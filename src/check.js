@@ -57,11 +57,11 @@
   var NEAR = 0.5, NEAR_ANG = 45;         // 在配合件旁边但没到位:20 mm / 45°
   var PAIR_TOL = POS_TOL * 2;            // 两个都未配对的零件互相配上的门槛(没有锚,严一点)
   var REVOLVE = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1,
-    screw_m3x8_socket_cap: 1, screw_m3x6_countersunk: 1, knurled_standoff: 1, motor_nut_m5: 1, damper_m2: 1,
+    screw_m3x8_socket_cap: 1, knurled_standoff: 1, motor_nut_m5: 1, damper_m2: 1,
     // 桨装上去绕轴转到哪个角度都一样(三叶,自己也是 120° 周期)
     propeller_cw: 1, propeller_ccw: 1 };
   var SCREW = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1,
-    screw_m3x8_socket_cap: 1, screw_m3x6_countersunk: 1 };
+    screw_m3x8_socket_cap: 1 };
   function family(key) { return key.indexOf('screw_') === 0 ? 'screw' : key.indexOf('split_') === 0 ? 'plate' : key; }
   // 暂不区分头型:M3×16 盘头 与 M3×16 杯头 视为同一种零件。
   // 正反桨同理:任务图只说"把桨装到电机轴上",没说哪条对角线装正桨,
@@ -833,7 +833,7 @@
     var count = {};
     results.slots.forEach(function (s) { count[s.ref.ckey] = (count[s.ref.ckey] || 0) + 1; });
     results.slots.forEach(function (t) {
-      if (!t.part || !t.ok) return;
+      if (!t.part || !t.ok || staged[t.part.node.uuid]) return;   // 暂放在一边的组件不当基准
       var score = partRadius(t.ref.key) + (count[t.ref.ckey] === 1 ? 100 : 0);
       if (score > bestScore) { bestScore = score; best = t; }
     });
@@ -1247,6 +1247,29 @@
       if (!ok) { restore(); return; }
       if (KB.groupNodes(roots, step.name)) count++; else restore();
     });
+    // 小步也合组:一个零件已经装对了、它挨着的配合件也在正确位置,就当场把两边并成一组,
+    // 不用等这一步所有零件都到齐(比如电机的四颗螺丝,装好一颗就和机臂连在一起)。
+    // 暂放在一边的组件不和别的并;装配区外的不并
+    evaluate();
+    var merged = true, guard = 0;
+    while (merged && guard++ < 80) {
+      merged = false;
+      results.slots.some(function (t) {
+        if (!t.part || !t.ok || staged[t.part.node.uuid]) return false;
+        var ra = top(t.part.node);
+        if (window.KBWorkspace && !KBWorkspace.contains(ra)) return false;
+        return t.near.some(function (link) {
+          var ms = link.ms;
+          if (!ms.part || !ms.ok || staged[ms.part.node.uuid] || !close(link.e)) return false;
+          var rb = top(ms.part.node);
+          if (ra === rb || (window.KBWorkspace && !KBWorkspace.contains(rb))) return false;
+          var st = ref.steps[Math.max(t.ref.step, ms.ref.step)];
+          if (!KB.groupNodes([ra, rb], st ? st.name : 'Assembly')) return false;
+          count++; merged = true; evaluate();
+          return true;
+        });
+      });
+    }
     evaluate();
     return count;
   }
@@ -1276,13 +1299,59 @@
     if (a) return new THREE.Matrix4().multiplyMatrices(a.part.M, a.ref.Minv);
     var hit = null;
     collectParts().forEach(function (n) {
-      if (hit || !levelPlaced[n.uuid]) return;
+      if (hit || !levelPlaced[n.uuid] || staged[n.uuid]) return;
       n.updateMatrixWorld(true);
       hit = new THREE.Matrix4().multiplyMatrices(n.matrixWorld, levelPlaced[n.uuid].Minv);
     });
     if (hit) return hit;
     var c = window.KBWorkspace ? KBWorkspace.center : new THREE.Vector3();
     return new THREE.Matrix4().makeTranslation(c.x, refLift(), c.z);
+  }
+  /* 答案里没有接近路点的零件(电机螺丝、ESC 垫圈):按零件自己的几何补一个"插入前的那个点" ——
+     有杆有头的(螺丝)从杆指向头的方向就是它进来的方向;只有一根轴的(垫圈)沿轴从上方套下来。
+     离最终位置 = 零件长度 + 10 mm。给的是世界位姿(和 want 同一个坐标系) */
+  // 同一步里零件的先后(答案里没有,按实物装法补):ESC 那一步先放四个垫圈,再把 ESC 压上去
+  var FIRST = { esc_4in1: { damper_m2: true } };
+  function comesFirst(slotRef) {
+    if (!ref || !slotRef) return false;
+    var st = ref.steps[slotRef.step], k = canon(slotRef.key);
+    return !!(st && st.slots.some(function (o) { var f = FIRST[canon(o.key)]; return f && f[k]; }));
+  }
+  function fallbackApproach(key, want, slotRef) {
+    var sp = KBParts.spec(key);
+    if (!sp) return null;
+    var mm = KBParts.unitScale() / 1000, out = null;
+    var pegs = (sp.pegs || []).slice().sort(function (a, b) { return a.r - b.r; });
+    if (pegs.length >= 2) {
+      out = new THREE.Vector3().fromArray(pegs[pegs.length - 1].c).sub(new THREE.Vector3().fromArray(pegs[0].c));
+    } else {
+      var f = pegs[0] || (sp.holes || [])[0];
+      if (f) out = new THREE.Vector3().fromArray(f.d);
+    }
+    if (!out || out.lengthSq() < 1e-10) out = null;
+    if (out) out.transformDirection(want);
+    if (out && pegs.length < 2) {
+      // 只有一根轴(垫圈):朝哪头进不确定 —— 跟同一步里有接近路点的零件走同一个方向(ESC 从下往上,垫圈也是)
+      var hint = stepApproachDir(slotRef);
+      if (hint ? out.dot(hint) < 0 : out.y < 0) out.negate();
+    }
+    if (!out) out = new THREE.Vector3(0, 1, 0);
+    var len = sp.bbox ? new THREE.Vector3().fromArray(sp.bbox.max).sub(new THREE.Vector3().fromArray(sp.bbox.min)).length() : 10 * mm;
+    var d = out.normalize().multiplyScalar(len + 10 * mm);
+    return want.clone().premultiply(new THREE.Matrix4().makeTranslation(d.x, d.y, d.z));
+  }
+  // 同一步里有接近路点的零件,它是从哪边进来的(参考坐标系,单位向量);没有就 null
+  function stepApproachDir(slotRef) {
+    if (!ref || !slotRef || !ref.steps[slotRef.step]) return null;
+    var dir = null;
+    ref.steps[slotRef.step].slots.forEach(function (o) {
+      if (dir || o === slotRef) return;
+      var A = approachOf(o);
+      if (!A) return;
+      var d = new THREE.Vector3().setFromMatrixPosition(A).sub(new THREE.Vector3().setFromMatrixPosition(o.M));
+      if (d.lengthSq() > 1e-10) dir = d.normalize();
+    });
+    return dir;
   }
   function approachOf(sl) {
     var a = KBParts.answer();
@@ -1302,6 +1371,7 @@
     evaluate();
     if (!results || !results.ready || !node || !node.userData.kbType) return { reason: 'Parts are still loading' };
     var mine = slotForNode(node);
+    if (mine && mine.ok && staged[node.uuid]) return stagedTarget(node, mine);
     if (mine && mine.ok) return { already: true };
     var key = canon(node.userData.kbType.slice(5));
     // 一级严格按引导的顺序:只认当前这一步。推导补的步骤在任务图里没有前置关系,
@@ -1315,8 +1385,13 @@
     pool.sort(function (a, b) { return a.ref.i - b.ref.i; });
     var t = pool[0], W = refToWorld();
     var A0 = approachOf(t.ref);
-    return { slot: t.ref, want: new THREE.Matrix4().multiplyMatrices(W, t.ref.M),
-             approach: A0 ? new THREE.Matrix4().multiplyMatrices(W, A0) : null };
+    var want = new THREE.Matrix4().multiplyMatrices(W, t.ref.M), approach = A0 ? new THREE.Matrix4().multiplyMatrices(W, A0) : fallbackApproach(t.ref.key, want, t.ref);
+    var off = stageFor(t.ref);
+    if (off) {      // 之后要整组装到基座上的零件:先摆在旁边,给基座腾出地方
+      var T = new THREE.Matrix4().makeTranslation(off.x, off.y, off.z);
+      want.premultiply(T); if (approach) approach.premultiply(T);
+    }
+    return { slot: t.ref, want: want, approach: approach };
   }
   /* 二级:源零件上点的孔/销 -> 目标零件上点的孔。点对了孔,就给出答案位姿;
      点错了孔说"不是这个孔",两个零件根本不配就说"这两个不装在一起" */
@@ -1338,11 +1413,12 @@
     var sMine = slotForNode(srcNode), dMine = slotForNode(dstNode);
     // 同型号还没装好的位置都算候选(包括检查暂时把这个零件归过去的那个)。只看"归过去的那个"的话,
     // 对称的板子会把别的孔位映射到点的孔上:零件装对了孔,却被记成另一颗螺丝,随后报"插错孔"
-    var srcSlots = sMine && sMine.ok ? [] : results.slots.filter(function (t) {
+    var srcSlots = sMine && sMine.ok && staged[srcNode.uuid] ? [sMine] : sMine && sMine.ok ? [] : results.slots.filter(function (t) {
       return t.ref.ckey === canon(sKey) && !t.ok && (!t.part || t.part.node === srcNode);
     });
     var dstSlots = dMine ? [dMine] : results.slots.filter(function (t) { return t.ref.ckey === canon(dKey); });
-    var paired = false, best = null, open = openSteps();
+    var paired = false, best = null, open = openSteps(), nxt = next(), curStep = nxt ? nxt.i : -1;
+    var hitTol = 3 * KBParts.unitScale() / 1000;                // 孔位偏 3 mm 以内算点对了孔
     srcSlots.forEach(function (s) {
       dstSlots.forEach(function (d) {
         if (!s.ref.mates.some(function (m) { return m.slot === d.ref; })) return;
@@ -1355,21 +1431,75 @@
           if (Math.abs(aS.dot(aD)) < Math.cos(THREE.MathUtils.degToRad(20))) return;
           var off = cS.clone().sub(cD);
           var radial = off.clone().sub(aD.clone().multiplyScalar(off.dot(aD))).length();
-          // 同样贴合时,优先现在能做的那一步,再优先不经过对称映射的
-          var score = radial + (open[s.ref.step] ? 0 : 0.5) + (si ? 0.01 : 0);
+          // 先看是不是现在这一步的位置(绝对优先),再看能不能做、贴合多少、要不要经过对称映射。
+          // 只按贴合比:采来的位姿有一两毫米误差,对称那一侧的别的零件位置可能"更贴",
+          // 零件装对了孔却被记成另一个编号,后面的步骤全乱
+          var score = (s.ref.step === curStep ? 0 : open[s.ref.step] ? 1 : 2) + radial + (si ? 0.01 : 0);
+          if (radial > hitTol) return;                     // 孔位偏 3 mm 以上:不是这个孔,不参与挑选
           if (!best || score < best.score) best = { s: s, want: want, radial: radial, score: score };
         });
       });
     });
     if (!paired) return { reason: 'These two parts do not go together' };
-    var tol = 3 * KBParts.unitScale() / 1000;                   // 孔位偏 3 mm 以内算点对了孔
-    if (!best || best.radial > tol) return { reason: 'Not this hole — look at where the ghost goes' };
+    if (!best) return { reason: 'Not this hole — look at where the ghost goes' };
     var A0 = approachOf(best.s.ref);
     var W = new THREE.Matrix4().multiplyMatrices(best.want, best.s.ref.Minv);
     return { slot: best.s.ref, want: best.want,
-             approach: A0 ? new THREE.Matrix4().multiplyMatrices(W, A0) : null };
+             approach: A0 ? new THREE.Matrix4().multiplyMatrices(W, A0) : fallbackApproach(best.s.ref.key, best.want, best.s.ref) };
   }
-  function markLevelPlaced(node, slotRef) { if (node && slotRef) levelPlaced[node.uuid] = slotRef; }
+  function markLevelPlaced(node, slotRef) {
+    if (!node || !slotRef) return;
+    levelPlaced[node.uuid] = slotRef;
+    if (stageFor(slotRef)) { staged[node.uuid] = true; return; }
+    // 装到基座上了:整组都不再是"暂放"
+    var top = node; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
+    top.traverse(function (n) { delete staged[n.uuid]; });
+  }
+  /* ---------- 一二级:之后要整组装到基座上的组件(比如两个楔块组件之于 X-Lock),先摆在旁边 ----------
+     基座还没放时,这些零件的目标位置往外挪一段(沿"基座中心 -> 这一组"的方向),标成暂放;
+     暂放的不当基准。基座放好后,点这一组就整组飞进去(一级),或点它的孔再点基座的孔(二级) */
+  var staged = Object.create(null);
+  var STAGE_MM = 65;
+  function stageFor(slotRef) {
+    if (!ref || (window.KBLevel && KBLevel.get() > 2)) return null;
+    var st = null;
+    ref.steps.forEach(function (s) {
+      if (st || !s.assembly || s.i <= slotRef.step) return;
+      if ([].concat.apply([], s.assembly.groups).indexOf(slotRef.id) >= 0) st = s;
+    });
+    if (!st) return null;
+    var base = ref.byId[st.assembly.base];
+    if (!base) return null;
+    var baseSlot = results && results.slots[base.i];
+    var basePlaced = (baseSlot && baseSlot.part && (!window.KBWorkspace || KBWorkspace.contains(baseSlot.part.node))) ||
+      collectParts().some(function (n) { return levelPlaced[n.uuid] === base; });
+    if (basePlaced) return null;
+    var group = st.assembly.groups.filter(function (g) { return g.indexOf(slotRef.id) >= 0; })[0];
+    var gc = new THREE.Vector3(), n = 0;
+    group.forEach(function (id) { var r = ref.byId[id]; if (r) { gc.add(new THREE.Vector3().setFromMatrixPosition(r.M)); n++; } });
+    if (!n) return null;
+    gc.divideScalar(n);
+    var dir = gc.sub(new THREE.Vector3().setFromMatrixPosition(base.M)); dir.y = 0;
+    if (dir.lengthSq() < 1e-8) return null;
+    var W = refToWorld();
+    return dir.transformDirection(W).setY(0).normalize().multiplyScalar(STAGE_MM * KBParts.unitScale() / 1000);
+  }
+  // 暂放的组件:基座放好之后,点它就整组装进基座
+  function stagedTarget(node, mine) {
+    var nx = next();
+    if (!nx || !nx.assembly || [].concat.apply([], nx.assembly.groups).indexOf(mine.ref.id) < 0) return { already: true };
+    var base = nx.base;
+    var basePlaced = base && ((base.part && base.part.node && (!window.KBWorkspace || KBWorkspace.contains(base.part.node))) ||
+      collectParts().some(function (n) { return levelPlaced[n.uuid] === base.ref; }));
+    if (!basePlaced) return { reason: 'Place ' + (base ? base.ref.name : 'the base') + ' first \u2014 this goes into it' };
+    var W = refToWorld(), want = new THREE.Matrix4().multiplyMatrices(W, mine.ref.M);
+    // 从外侧(暂放的那一边)推进去
+    node.updateMatrixWorld(true);
+    var now = new THREE.Vector3().setFromMatrixPosition(node.matrixWorld), at = new THREE.Vector3().setFromMatrixPosition(want);
+    var away = now.sub(at).setY(0);
+    var approach = away.lengthSq() > 1e-8 ? want.clone().premultiply(new THREE.Matrix4().makeTranslation(away.x * .45, 0, away.z * .45)) : null;
+    return { slot: mine.ref, want: want, approach: approach };
+  }
 
   /* 二级引导:这个零件该点它自己的哪个孔/销,再点装配区里哪个零件的哪个孔。
      不查答案里的特征表(有的配合只记了"接触"),直接算几何:把零件放到最终位置,
@@ -1449,7 +1579,9 @@
       if (!pn && ms && ms.part && window.KBWorkspace && KBWorkspace.contains(ms.part.node)) pn = ms.part.node;
       if (pn && pn !== node) partners.push({ node: pn, step: m.slot.step });
     });
-    var tol = 1.5 * KBParts.unitScale() / 1000, cosTol = Math.cos(THREE.MathUtils.degToRad(15));
+    // 2.5 mm:采来的参考位姿有一两毫米误差(机臂 #1/#2 对后板的孔偏了 1.7 / 1.5 mm),
+    // 1.5 mm 会把它们当成"没孔可点"。点的时候判对错的门槛是 3 mm,这里不能比它还严太多
+    var tol = 2.5 * KBParts.unitScale() / 1000, cosTol = Math.cos(THREE.MathUtils.degToRad(15));
     var best = null;
     partners.forEach(function (pt) {
       pt.node.updateMatrixWorld(true);
@@ -1582,6 +1714,7 @@
       if (!results || !results.ready) return null;
       var nx = next(), tg = levelTarget(node);
       if (!nx || !tg || !tg.slot) return null;
+      if (comesFirst(tg.slot)) return { isBase: true, baseName: tg.slot.name };   // 先放的(垫圈):点一下自己到位
       var open = nx.slots.map(function (t) { return t; }).filter(function (t) {
         if (t.ok) return false;
         var placed = false;
@@ -1595,7 +1728,12 @@
     },
     baseSeated: baseSeated,
     /* 按级别自动摆过、占着哪个参考槽位(没有则 null) */
-    levelPlacedSlot: function (node) { return (node && levelPlaced[node.uuid]) || null; },
+    levelPlacedSlot: function (node) { return (node && !staged[node.uuid] && levelPlaced[node.uuid]) || null; },
+    isStaged: function (node) { return !!(node && staged[node.uuid]); },
+    /* 按级别摆过的槽位,暂放的也算(找"还没用过的同型号零件"时要排除它们) */
+    placedSlotAny: function (node) { return (node && levelPlaced[node.uuid]) || null; },
+    approachFor: function (key, want, slotRef) { return fallbackApproach(key, want, slotRef); },
+    comesFirst: comesFirst,
     snapAll: snapAll,
     results: function () { return results; },
     state: state,
