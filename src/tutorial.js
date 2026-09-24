@@ -831,7 +831,8 @@
     if (idx >= steps.length - 1) { if (onboarding) finish(true); else stop('completed'); }
     else show(Math.max(idx, 0) + 1);
   });
-  closeBtn.addEventListener('click', stop);
+  // 走"第一次"流程进来的(onboarding):关掉教程 = 跳过练习、直接开始装配(和 ARISTOS 里的 Skip tutorial 一样)
+  closeBtn.addEventListener('click', function () { if (onboarding && idx >= 0) finish(true); else stop(); });
   document.getElementById('btnTutorial').addEventListener('click', function () {
     if (el.classList.contains('show')) { stop(); return; }
     if (KB.objectsRoot.children.length &&
@@ -848,4 +849,18 @@
   if (new URLSearchParams(location.search).has('tutorial')) {
     (function wait() { if (window.KBParts && KBParts.ready()) start(); else setTimeout(wait, 100); })();
   }
+  // 独立网页的封面(site/index.html)带过来的入口:
+  //   ?start=tutorial&level=N  第一次:按所选难度练习,练完自动摆零件开始装配
+  //   ?start=assembly&level=N  装过的:直接摆好整套零件开始装配
+  (function () {
+    var q = new URLSearchParams(location.search), how = q.get('start');
+    if (!how || document.body.classList.contains('embed')) return;
+    var lv = +q.get('level') || 3;
+    (function wait() {
+      if (!(window.KBParts && KBParts.ready() && window.KBLevel)) { setTimeout(wait, 100); return; }
+      KBLevel.set(lv, true);
+      if (how === 'tutorial') start({ onboarding: true, level: lv });
+      else if (how === 'assembly' && KB.loadKit) KB.loadKit();
+    })();
+  })();
 })();

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kitbash Assembly Lab</title>
+<meta name="description" content="Assemble a 5-inch FPV drone frame in the browser, at three difficulty levels.">
+<style>
+  :root { --bg:#0b1522; --ink:#f2f6f9; --soft:#aebfce; --dim:#a8bcca; --gold:#e6bb7e; --btn:#e8ba78; --line:#7f97aa66; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--ink); font-family:system-ui, sans-serif; overflow:hidden; }
+  #intro { position:fixed; inset:0; width:100%; height:100%; border:0; pointer-events:none; }
+  .shade { position:fixed; inset:0; pointer-events:none;
+    background:linear-gradient(90deg, rgba(8,17,29,.93) 0%, rgba(8,17,29,.73) 28%, rgba(8,17,29,.12) 64%, transparent 100%); }
+  header { position:fixed; top:24px; left:40px; right:40px; display:flex; justify-content:space-between; align-items:center; z-index:2; }
+  .brand { font:600 10px/1.5 system-ui; letter-spacing:.25em; color:var(--dim); }
+  .brand span { color:#657e90; margin:0 8px; }
+  .ghost { color:#c3d1da; background:none; border:1px solid #7f9aa040; border-radius:20px; font:11px system-ui; padding:6px 14px; cursor:pointer; }
+  /* 封面 */
+  #cover { position:relative; z-index:1; height:100%; display:flex; flex-direction:column; justify-content:center; gap:20px; padding:80px 40px; width:min(48%, 540px); }
+  .kicker { color:var(--gold); font:600 10px/1.5 system-ui; letter-spacing:.25em; margin:0; }
+  h1 { margin:0; font-weight:500; font-size:clamp(28px,3.6vw,48px); line-height:1.1; letter-spacing:-.045em; }
+  .lede { margin:0; font:14px/1.7 system-ui; color:var(--soft); max-width:370px; }
+  .ask { margin:12px 0 0; font:500 13px/1.5 system-ui; color:#dfe8ef; }
+  .primary { display:flex; justify-content:space-between; width:100%; border:0; border-radius:8px; padding:13px 18px; background:var(--btn); color:#15212d; font:600 14px system-ui; cursor:pointer; box-shadow:0 6px 28px #e4ad5720; }
+  .primary:hover { background:#f3ce98; }
+  .secondary { width:100%; border:1px solid var(--line); border-radius:8px; padding:12px 18px; background:#17243566; color:#e0e9ef; font:14px system-ui; cursor:pointer; text-align:left; }
+  .secondary:hover { border-color:#b2c6d3; background:#26374aaa; }
+  .note { margin:0; font:11px/1.6 system-ui; color:#889eaf; }
+  /* 难度选择 */
+  #levels { position:fixed; inset:0; z-index:3; display:none; flex-direction:column; gap:16px; padding:24px 32px;
+    background:radial-gradient(120% 90% at 50% 0%, #15263a 0%, #0b1522 60%); }
+  #levels.show { display:flex; }
+  #levels h2 { margin:0; font-weight:500; font-size:clamp(20px,2.6vw,32px); letter-spacing:-.03em; }
+  .grid { flex:0 1 auto; min-height:0; display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; align-content:start; max-width:1200px; width:100%; }
+  #levels > * { max-width:1200px; width:100%; margin-left:auto; margin-right:auto; }
+  #levels { justify-content:center; }
+  @media (max-width:720px) { .grid { grid-template-columns:1fr; overflow:auto; } #cover { width:100%; justify-content:flex-end; } .shade { background:linear-gradient(0deg,#0b1522 0%,rgba(11,21,34,.94) 30%,rgba(11,21,34,.1) 76%); } }
+  .card { display:flex; flex-direction:column; gap:8px; padding:14px; border-radius:12px; min-height:0;
+    border:1px solid #7f97aa40; background:#13213299; transition:border-color .15s, background-color .15s; }
+  .card:hover { border-color:#e8ba78; background:#1a2b40cc; }
+  .card.rec { border-color:#e8ba7899; }
+  .anim { flex:0 0 auto; height:clamp(80px, 24vh, 200px); display:flex; }
+  .anim svg { width:100%; height:100%; display:block; }
+  .lv { font:600 11px/1.5 system-ui; letter-spacing:.18em; color:var(--gold); }
+  .lv em { font-style:normal; letter-spacing:0; color:#9fd8b8; font-weight:400; margin-left:6px; }
+  .card h3 { margin:0; font:600 17px/1.3 system-ui; }
+  .card p { margin:0; font:12.5px/1.55 system-ui; color:var(--soft); }
+  .card ol { margin:0; padding-left:18px; color:#cbd8e1; font:12px/1.7 system-ui; }
+  @media (max-height:620px) { .card ol { display:none; } }
+  .card .go { margin-top:8px; white-space:nowrap; }
+</style>
+</head>
+<body>
+<iframe id="intro" src="intro.html" title="Drone exploded assembly background" aria-hidden="true" tabindex="-1"></iframe>
+<div class="shade"></div>
+<header>
+  <div class="brand">KITBASH <span>/</span> ASSEMBLY LAB</div>
+  <button class="ghost" id="motion" aria-label="Pause background animation">&#8545; Pause motion</button>
+</header>
+
+<main id="cover">
+  <p class="kicker">FROM PARTS TO POSSIBILITY</p>
+  <h1>Every part.<br>A new perspective.</h1>
+  <p class="lede">Explore the drone from the inside out.<br>Then bring it together, piece by piece.</p>
+  <p class="ask">First time using the simulator?</p>
+  <button class="primary" id="first">First time &mdash; show me how <span>&#8599;</span></button>
+  <button class="secondary" id="again">I know how &mdash; start assembly</button>
+  <p class="note">Practice first, or start building. You can skip practice at any time.</p>
+</main>
+
+<section id="levels" aria-label="Choose a difficulty">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div class="brand">KITBASH <span>/</span> ASSEMBLY LAB</div>
+    <button class="ghost" id="back">&larr; Back</button>
+  </div>
+  <div>
+    <p class="kicker" style="margin-bottom:4px">CHOOSE YOUR DIFFICULTY</p>
+    <h2>How do you want to build?</h2>
+    <p class="lede" style="max-width:620px;margin-top:4px;font-size:13px">A short practice for the level you pick comes first. You can change the level any time from the toolbar.</p>
+  </div>
+  <div class="grid" id="grid"></div>
+</section>
+
+<script>
+(function () {
+  'use strict';
+  // 和仿真台 Help 里同一套小动画(src/help.js 抽过来的,deploy 时原样嵌入)
+__ANIM__
+  var LEVELS = [
+    { level: 1, name: 'Click to place', tag: 'Recommended for a first build',
+      body: 'The part you need glows yellow. Click it and it moves into place by itself.',
+      steps: ['Find the yellow part', 'Click it', 'Watch it fly into place'] },
+    { level: 2, name: 'Click the holes',
+      body: 'Pick the right hole on the part, then the hole it goes into. The part seats itself.',
+      steps: ['Click the glowing part', 'Click its hole', 'Click the receiving hole'] },
+    { level: 3, name: 'Full control',
+      body: 'Mate hole to hole yourself and fine-tune the fit with the arrow keys.',
+      steps: ['Click a hole, then a hole', 'Slide and turn with the arrow keys', 'Line it up exactly'] }
+  ];
+  var grid = document.getElementById('grid');
+  LEVELS.forEach(function (l) {
+    var c = document.createElement('article');
+    c.className = 'card' + (l.level === 1 ? ' rec' : '');
+    c.innerHTML = '<div class="anim">' + anim(l.level) + '</div>' +
+      '<div class="lv">LEVEL ' + l.level + (l.tag ? '<em>&middot; ' + l.tag + '</em>' : '') + '</div>' +
+      '<h3>' + l.name + '</h3><p>' + l.body + '</p>' +
+      '<ol>' + l.steps.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol>' +
+      '<button class="go ' + (l.level === 1 ? 'primary' : 'secondary') + '" style="justify-content:center;text-align:center">Start &rarr;</button>';
+    c.querySelector('.go').setAttribute('aria-label', 'Start Level ' + l.level + ' practice');
+    c.querySelector('.go').onclick = function () { location.href = 'sim.html?start=tutorial&level=' + l.level; };
+    grid.appendChild(c);
+  });
+  var levels = document.getElementById('levels');
+  document.getElementById('first').onclick = function () { levels.classList.add('show'); };
+  document.getElementById('back').onclick = function () { levels.classList.remove('show'); };
+  document.getElementById('again').onclick = function () { location.href = 'sim.html?start=assembly&level=3'; };
+  // 背景动画的播放 / 暂停(和 ARISTOS 欢迎页同一个消息)
+  var intro = document.getElementById('intro'), btn = document.getElementById('motion');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches, playing = !reduce;
+  function sync() {
+    if (intro.contentWindow) intro.contentWindow.postMessage({ type: 'aristos:intro-motion', playing: playing, visible: !levels.classList.contains('show') }, '*');
+    btn.textContent = reduce ? 'Motion off' : playing ? 'Ⅱ Pause motion' : '▷ Play motion';
+    btn.disabled = reduce;
+  }
+  intro.addEventListener('load', sync);
+  btn.onclick = function () { playing = !playing; sync(); };
+  new MutationObserver(sync).observe(levels, { attributes: true, attributeFilter: ['class'] });
+  sync();
+})();
+</script>
+</body>
+</html>

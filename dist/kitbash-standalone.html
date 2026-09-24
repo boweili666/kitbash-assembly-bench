@@ -1463,7 +1463,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-24 16:36';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-24 17:14';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -14878,7 +14878,10 @@ KBWorkspace.overview();
         else
             show(Math.max(idx, 0) + 1);
     });
-    closeBtn.addEventListener('click', stop);
+    closeBtn.addEventListener('click', function () { if (onboarding && idx >= 0)
+        finish(true);
+    else
+        stop(); });
     document.getElementById('btnTutorial').addEventListener('click', function () {
         if (el.classList.contains('show')) {
             stop();
@@ -14900,6 +14903,23 @@ KBWorkspace.overview();
         else
             setTimeout(wait, 100); })();
     }
+    (function () {
+        var q = new URLSearchParams(location.search), how = q.get('start');
+        if (!how || document.body.classList.contains('embed'))
+            return;
+        var lv = +q.get('level') || 3;
+        (function wait() {
+            if (!(window.KBParts && KBParts.ready() && window.KBLevel)) {
+                setTimeout(wait, 100);
+                return;
+            }
+            KBLevel.set(lv, true);
+            if (how === 'tutorial')
+                start({ onboarding: true, level: lv });
+            else if (how === 'assembly' && KB.loadKit)
+                KB.loadKit();
+        })();
+    })();
 })();
 
 </script>
