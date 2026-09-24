@@ -498,13 +498,33 @@
 
   /* ---------- 回到推荐视角:工具栏 View 按钮 / V 键 ----------
      最近一次推荐的视角(自动转过去的、二级目标孔特写、三级点了 Use this view 的)都记着 */
+  // 记的只是"正在装的这一件"的特写(二级点了源孔后的目标孔特写);一装好就作废,
+  // 不然按 View 会回到刚装完的那一件
   var lastView = null;
   KB.on('suggestView', function (v) { if (v && v.p && v.t) lastView = { p: v.p.slice(), t: v.t.slice() }; });
+  KB.on('levelFlight', function () { lastView = null; });
+  KB.on('snapAttempt', function (a) { if (a && a.success) lastView = null; });
+  // 现在该看哪儿:按当前状态重新算(还没装的、正在发黄的那一件)
+  function viewNow() {
+    if (!window.KBCheck) return null;
+    KBCheck.evaluate();
+    var st = KBCheck.next();
+    if (!st) return null;
+    var nodes = partsToMove(st);
+    if (!nodes.length) return null;
+    var s = suggest(st, nodes);
+    if (s && s.phase !== 'find' && window.KBLevel && KBLevel.get() === 1) {
+      var top = nodes[0]; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
+      return framing(boxOfNodes([top]).expandByScalar(0.2), new THREE.Vector3(0.35, 1.0, 0.75));
+    }
+    return s ? s.view : null;
+  }
   function backToView() {
     if (tutorialOn()) return;
-    if (lastView) KB.flyCamera(lastView.p, lastView.t);
-    else if (shown && shown.view) KB.flyCamera(shown.view.p, shown.view.t);
-    else KB.toast('No suggested view yet');
+    var armed = window.KBMate && KBMate.armed();
+    var v = armed && lastView ? lastView : viewNow() || lastView;   // 二级源孔选着:回目标孔特写;否则看下一件
+    if (v) KB.flyCamera(v.p, v.t);
+    else KB.toast('Nothing left to place');
   }
   var viewBtn = document.getElementById('btnView');
   if (viewBtn) viewBtn.addEventListener('click', backToView);

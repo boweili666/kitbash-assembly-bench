@@ -168,8 +168,8 @@
     spot([]);
   }
   function srcSpot() { return [{ node: guideFor, id: guide.srcId, end: guide.srcEnd }]; }
-  // 三级:这一步的底座(比如第一步的楔块)没有别的零件可配,点它就自己进装配区 ——
-  // 不然第一次用的人只会看到"选中了、不动",不知道还得点网格把它挪过去。其余零件照旧自己孔对孔装
+  // 三级:一切都自己动手 —— 这一步的底座(比如第一步的楔块)要自己挪进装配区。
+  // 只是告诉人怎么挪(不然只看到"选中了、不动"):选中还在料盘里的底座时提示点装配区的网格
   KB.onSelection(function (sel) {
     if (level !== 3 || tutorialOn() || sel.length !== 1 || !window.KBCheck) return;
     if (performance.now() - clickAt > 450) return;
@@ -178,7 +178,7 @@
     var lit = window.KBFocus ? KBFocus.lit() : [];
     if (lit.indexOf(node) < 0) return;                       // 只管亮着的那个(该拿的零件)
     var b = KBCheck.level2Base(node);
-    if (b && b.isBase) placeByClick(node, true);
+    if (b && b.isBase) KB.toast('Now click inside the green workspace to move ' + node.name + ' there');
   });
   KB.onSelection(function (sel) {
     if (level !== 2 || tutorialOn() || !window.KBCheck) return;
