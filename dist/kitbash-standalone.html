@@ -1469,7 +1469,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-24 19:20';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-24 19:32';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -19191,7 +19191,7 @@ KBWorkspace.overview();
             return;
         var b = KBCheck.level2Base(node);
         if (b && b.isBase)
-            placeByClick(node, true);
+            KB.toast('Now click inside the green workspace to move ' + node.name + ' there');
     });
     KB.onSelection(function (sel) {
         if (level !== 2 || tutorialOn() || !window.KBCheck)
@@ -19994,15 +19994,37 @@ KBWorkspace.overview();
     var lastView = null;
     KB.on('suggestView', function (v) { if (v && v.p && v.t)
         lastView = { p: v.p.slice(), t: v.t.slice() }; });
+    KB.on('levelFlight', function () { lastView = null; });
+    KB.on('snapAttempt', function (a) { if (a && a.success)
+        lastView = null; });
+    function viewNow() {
+        if (!window.KBCheck)
+            return null;
+        KBCheck.evaluate();
+        var st = KBCheck.next();
+        if (!st)
+            return null;
+        var nodes = partsToMove(st);
+        if (!nodes.length)
+            return null;
+        var s = suggest(st, nodes);
+        if (s && s.phase !== 'find' && window.KBLevel && KBLevel.get() === 1) {
+            var top = nodes[0];
+            while (top.parent && top.parent !== KB.objectsRoot)
+                top = top.parent;
+            return framing(boxOfNodes([top]).expandByScalar(0.2), new THREE.Vector3(0.35, 1.0, 0.75));
+        }
+        return s ? s.view : null;
+    }
     function backToView() {
         if (tutorialOn())
             return;
-        if (lastView)
-            KB.flyCamera(lastView.p, lastView.t);
-        else if (shown && shown.view)
-            KB.flyCamera(shown.view.p, shown.view.t);
+        var armed = window.KBMate && KBMate.armed();
+        var v = armed && lastView ? lastView : viewNow() || lastView;
+        if (v)
+            KB.flyCamera(v.p, v.t);
         else
-            KB.toast('No suggested view yet');
+            KB.toast('Nothing left to place');
     }
     var viewBtn = document.getElementById('btnView');
     if (viewBtn)
