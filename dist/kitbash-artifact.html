@@ -1459,7 +1459,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-24 17:29';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-24 19:15';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -19061,6 +19061,53 @@ KBWorkspace.overview();
             KB.tween(mv.node, end.p, end.q, first);
         }
     }
+    var justAssembled = null, curSel = [];
+    KB.onSelection(function (sel) {
+        curSel = sel.slice();
+        if (justAssembled && sel.length) {
+            var t = justAssembled;
+            while (t.parent && t.parent !== KB.objectsRoot)
+                t = t.parent;
+            if (!sel.some(function (s) { var r = s; while (r.parent && r.parent !== KB.objectsRoot)
+                r = r.parent; return r === t; }))
+                justAssembled = null;
+        }
+    });
+    KB.on('snapAttempt', function (a) { if (a && a.success && a.object1)
+        justAssembled = a.object1; });
+    KB.on('levelFlight', function (f) { if (f && f.node)
+        justAssembled = f.node; });
+    KB.on('place', function (node) {
+        var n = justAssembled;
+        if (!n || tutorialOn() || !window.KBCheck)
+            return;
+        var top = n;
+        while (top.parent && top.parent !== KB.objectsRoot)
+            top = top.parent;
+        var ntop = node;
+        while (ntop && ntop.parent && ntop.parent !== KB.objectsRoot)
+            ntop = ntop.parent;
+        if (ntop !== top && node !== n)
+            return;
+        setTimeout(function () {
+            if (KB.interacting() || (KB.tweening && KB.tweening()))
+                return;
+            var res = KBCheck.evaluate(), t = res && res.ready ? KBCheck.slotOf(n) : null;
+            if (!t || !t.ok)
+                return;
+            justAssembled = null;
+            top = n;
+            while (top.parent && top.parent !== KB.objectsRoot)
+                top = top.parent;
+            var sel = curSel;
+            var mine = sel.some(function (s) { var r = s; while (r.parent && r.parent !== KB.objectsRoot)
+                r = r.parent; return r === top || s === n; });
+            if (window.KBMate && KBMate.armed() && KBMate.cancel)
+                KBMate.cancel();
+            if (mine || !sel.length)
+                KB.setSelection([]);
+        }, 500);
+    });
     var canvas = document.getElementById('viewport');
     var down = null, clickAt = 0;
     if (canvas) {
