@@ -5,9 +5,11 @@
  * 收取用户动作(拿起 / 移动 / 放下)和渲染帧。协议 v1:
  *
  *   宿主 → 仿真台
- *     {type:'kb:init',     scene:[ScenePart], options:{frames, fps, width, quality, moveHz, guide}}
+ *     {type:'kb:init',     scene:[ScenePart], options:{frames, fps, width, quality, moveHz, guide, level}}
+ *                                                  level:1 点零件就到位 / 2 点对孔就摆正 / 3 手动(现在的做法)
  *                                                  guide:true 装完场景就打开逐步指引(第一次装的人)
  *     {type:'kb:setScene', scene:[ScenePart]}
+ *     {type:'kb:setLevel', level:1|2|3}            切换难度级别
  *     {type:'kb:getScene'}                         → 回 kb:scene
  *     {type:'kb:getAnswer'}                        → 回 kb:answer{steps,parts}(参考装配的最终位姿)
  *     {type:'kb:getState'}                         → 回 kb:state
@@ -29,7 +31,7 @@
  *                                                  message,ok,total,settled,steps,parts[{name,key,ok,state}]}
  *     {type:'kb:pickWarn', pick}                  拿了这一步用不到的零件:{objectId,name,key,step,stepName,belongsToStep,message}
  *     {type:'kb:warn',  message}
- *     {type:'kb:tutorialEnd', reason:'completed'|'skipped', experience:'first'|'again'|null}
+ *     {type:'kb:tutorialEnd', reason:'completed'|'skipped', experience:'first'|'again'|null, level:1|2|3|null}
  *                                                  experience 是最后一屏问出来的:第一次装 / 装过
  *
  *   ScenePart = {id, key | glb, name?, pose}
@@ -158,16 +160,17 @@
   KB.on('pickWarn', function (w) { post({ type: 'kb:pickWarn', pick: w }); });
 
   KB.on('tutorialEnd', function (result) {
-    if (tutorialSession) post({ type: 'kb:tutorialEnd', reason: result.reason, experience: result.experience || null });
+    if (tutorialSession) post({ type: 'kb:tutorialEnd', reason: result.reason, experience: result.experience || null, level: result.level || null });
     // Keep practice isolated until the host mounts the actual task scene.
   });
 
   function applyInit(msg) {
     if (msg.options) Object.keys(msg.options).forEach(function (k) { options[k] = msg.options[k]; });
     tutorialSession = !!options.tutorial;
+    if (options.level && window.KBLevel) KBLevel.set(options.level, true);   // 宿主给的难度级别
     if (tutorialSession) {
       stopFrames();
-      if (window.KBTutorial) KBTutorial.start({ onboarding: true });
+      if (window.KBTutorial) KBTutorial.start({ onboarding: true, level: options.level });
       else warn('This simulator build does not include the tutorial.');
       return;
     }
@@ -191,6 +194,7 @@
       case 'kb:setScene':
         if (KBParts.ready()) setScene(msg.scene); else pendingInit = { scene: msg.scene };
         break;
+      case 'kb:setLevel': if (window.KBLevel) KBLevel.set(msg.level); break;
       case 'kb:getAnswer': {
         // 参考装配(含推导补的那部分)原样给出去,调试页面拿它拼"装到第 N 步"的场景
         var a = window.KBParts && KBParts.answer && KBParts.answer();

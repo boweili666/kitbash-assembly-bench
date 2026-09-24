@@ -20,8 +20,12 @@
   var KB = window.KB;
   var canvas = document.getElementById('viewport');
 
-  var COLOR_HOLE = 0xe8a33d, COLOR_PEG = 0x6fa8dc, COLOR_ARMED = 0x5ad35a, COLOR_BAD = 0xd9534f;
-  var OPACITY_IDLE = 0.22, OPACITY_HOVER = 0.6, OPACITY_ARMED = 0.75;
+  // 圆片要和零件本身拉开色差:零件是白 / 灰 / 银,所以孔用亮品红、销用紫罗兰,
+  // 也避开了选中绿、报错红、当前零件的青色高亮和 Next 的琥珀
+  var COLOR_HOLE = 0xff2d95, COLOR_PEG = 0x8a4bff, COLOR_ARMED = 0x5ad35a, COLOR_BAD = 0xd9534f;
+  var OPACITY_IDLE = 0.55, OPACITY_HOVER = 1, OPACITY_ARMED = 1;
+  var OPACITY_DIMMED = 0.22;   // 有孔被点亮(教程 / 二级引导)时,其余圆片压暗,让该点的那个跳出来
+  var RIM_COLOR = 0x07080b;     // 每个圆片外面一圈深色描边:贴在白螺丝上也有清楚的边
   var STEP_DEG = 1, STEP_BIG_DEG = 90;                // ←→ 绕孔轴(Shift = 90°,一次到位)
   var STEP_SLIDE_MM = 0.25, STEP_SLIDE_FINE_MM = 0.05; // ↑↓ 沿孔轴
   // 编辑器单位 ↔ 毫米:1 单位 ≈ 40 mm(unitScale 是「1 mm 折多少单位」的倒数的一千倍)
@@ -57,6 +61,9 @@
 
   /* ---------- 可点的孔位圆片 ---------- */
   var discGeo = new THREE.CircleGeometry(1, 32);
+  var rimGeo = new THREE.RingGeometry(0.9, 1.2, 40);
+  var rimMat = new THREE.MeshBasicMaterial({ color: 0x07080b, transparent: true, opacity: 0.45,
+    depthTest: false, depthWrite: false, side: THREE.DoubleSide });
   var ringGeo = new THREE.RingGeometry(0.88, 1, 48);
 
   function clearMarkers() {
@@ -83,6 +90,7 @@
     group.matrixAutoUpdate = false;
     function add(list, kind, color) {
       list.forEach(function (f) {
+        if (filterCtx && !filter.keep(filterCtx, node, f, kind)) return;
         var c = new THREE.Vector3().fromArray(f.c);
         var d = new THREE.Vector3().fromArray(f.d).normalize();
         var material = new THREE.MeshBasicMaterial({
@@ -93,18 +101,28 @@
         // 稍微探出孔口一点,俯视时上面那个离相机近、先被拾取。销只在中段放一个(end = 0)
         var ends = kind === 'hole' ? [-1, 1] : [0];
         ends.forEach(function (end) {
+          if (filterCtx && filter.keepEnd && !filter.keepEnd(filterCtx, node, f, kind, end)) return;
           var mat = end === 1 ? material.clone() : material;
           var m = { meshes: [], material: mat, node: node, f: f, kind: kind, color: color, end: end,
-            op: OPACITY_IDLE, r: Math.max(f.r * 1.6, 0.1), scale: 1, born: performance.now() };
+            op: OPACITY_IDLE, r: Math.max(f.r * 1.25, 0.07), scale: 1, born: performance.now() };
           var mesh = new THREE.Mesh(discGeo, mat);
           mesh.scale.set(m.r, m.r, 1);
           mesh.position.copy(c).addScaledVector(d, end * (f.depth / 2 + 0.012));
           mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), d);
           mesh.renderOrder = 998;
           mesh.userData.marker = m;
+          var rim = new THREE.Mesh(rimGeo, rimMat);
+          rim.position.copy(mesh.position);
+          rim.quaternion.copy(mesh.quaternion);
+          rim.scale.copy(mesh.scale);
+          rim.renderOrder = 997;
+          rim.userData.marker = m;             // 边框是圆片看得见的一部分:点在边框上也算点中它
+          group.add(rim);
           group.add(mesh);
-          m.meshes.push(mesh);
+          m.meshes.push(mesh, rim);
+          if (spot.length && !spotted(m) && m !== armed) style(m, color, OPACITY_DIMMED);
           if (spotted(m)) {
+            style(m, COLOR_SPOT, OPACITY_HOVER);      // 一建出来就是亮色,不用等鼠标悬停
             // 聚光:圆片外再套两圈亮环,一圈向外扩散,让人一眼看到该点哪里
             m.rings = [0, 1].map(function (k) {
               var ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({
@@ -128,8 +146,17 @@
   }
 
   /* 未选源:选中零件的孔/销可点;已选源:其他所有零件的孔/销可点(源零件本身保持高亮) */
+  var filter = null;         // 只显示用得上的孔:{begin(armedInfo) -> ctx, keep(ctx, node, f, kind) -> bool}
+  var filterCtx = null;
+  var enabled = true;        // 难度一级时关掉:点零件直接到位,不需要点孔
+  var resolver = null;       // 难度二级:点对了孔,位姿交给答案去算 —— fn(src, dst) -> 'handled' | '原因' | null
+  function mateOn() {
+    if (window.KBTutorial && KBTutorial.active()) return !KBTutorial.discs || KBTutorial.discs();
+    return enabled;
+  }
   function rebuildMarkers() {
     clearMarkers();
+    if (!mateOn()) return;
     var list = [];
     if (armed) {
       var top = topOf(armed.node);
@@ -138,7 +165,10 @@
     } else {
       selection.forEach(function (n) { partsUnder(n, list); });
     }
+    // 教程要的圆片一个都不能少,过滤只在教程外生效
+    filterCtx = filter && !(window.KBTutorial && KBTutorial.active()) ? filter.begin(armed ? info(armed) : null) : null;
     list.forEach(addMarkersFor);
+    filterCtx = null;
     if (armed) {
       // 源特征重新绑定到新建的 marker 上
       var m = findMarker(armed.node, armed.f.id, armed.end);
@@ -175,7 +205,7 @@
   function restyle(m) {
     if (m === armed) style(m, COLOR_ARMED, OPACITY_ARMED);
     else if (spotted(m)) style(m, COLOR_SPOT, OPACITY_HOVER);
-    else style(m, m.color, m === hover ? OPACITY_HOVER : OPACITY_IDLE);
+    else style(m, m.color, m === hover ? OPACITY_HOVER : (spot.length ? OPACITY_DIMMED : OPACITY_IDLE));
   }
 
   function syncGroups() {
@@ -242,7 +272,7 @@
   var ray = new THREE.Raycaster();
   var ndc = new THREE.Vector2();
   function pick(px, py) {
-    if (!markers.length) return null;
+    if (!markers.length || !mateOn()) return null;
     syncGroups();
     root.updateMatrixWorld(true);
     ndc.x = (px / window.innerWidth) * 2 - 1;
@@ -263,6 +293,13 @@
       });
       return best2;
     }
+    // 点在被点亮(引导 / 教程)的圆片上就是它:点亮的圆片画得大,点在它靠边的地方时,
+    // 下面同轴那个零件的小圆片圆心反而离鼠标更近,以前就会被误选成"下面那个"
+    var lit = hits.filter(function (h) { return spotted(h.object.userData.marker); });
+    if (lit.length) return lit[0].object.userData.marker;
+    // 只在离镜头最近的那一层里挑(薄板上下两个孔口还在这个范围内),更深处被挡住的圆片不算
+    var near = hits[0].distance;
+    hits = hits.filter(function (h) { return h.distance - near < 0.15; });
     // 射线穿过好几个圆片(薄板上下两个孔口、螺柱里孔与柱重叠)时:取圆心在屏幕上离鼠标最近的;
     // 同样近(同轴同心)则优先孔、再取小的
     var best = null, bestPx = Infinity, sp2 = new THREE.Vector3();
@@ -511,12 +548,14 @@
     armed = m;
     rebuildMarkers();
     KB.toast('Now click a hole or peg on another part');
+    KB.emit('mateArmed', info(m));        // 难度二级:选中了源孔,接着把目标孔点亮、镜头给特写
   }
 
   function disarm() {
     if (!armed) return;
     armed = null;
     rebuildMarkers();
+    KB.emit('mateArmed', null);
   }
 
   /* ---------- 输入 ---------- */
@@ -553,6 +592,11 @@
       if (guard && guard.mate && (verdict = guard.mate(info(armed), info(m))) !== true) { reject(m, verdict); return; }
       var src = armed;
       armed = null;
+      if (resolver && !(window.KBTutorial && KBTutorial.active())) {
+        var r = resolver(info(src), info(m));
+        if (r === 'handled') { rebuildMarkers(); return; }
+        if (typeof r === 'string') { armed = src; reject(m, r); return; }
+      }
       if (!mate(src, m)) armed = src; // 失败:保留源,红色提示留在目标上
       else rebuildMarkers();
     }
@@ -660,6 +704,11 @@
     /* 教程:聚光要点的孔口 [{node, id, end?}];点击守卫 {arm, mate},返回 true 放行、字符串为拒绝原因 */
     spotlight: function (list) { spot = list || []; rebuildMarkers(); },
     setGuard: function (g) { guard = g || null; },
+    /* 难度分级用:关掉点孔配合(一级),以及把点孔结果交给答案位姿去决定(二级) */
+    setEnabled: function (on) { enabled = !!on; if (!on) armed = null; rebuildMarkers(); },
+    setResolver: function (fn) { resolver = typeof fn === 'function' ? fn : null; },
+    setFilter: function (f) { filter = f && f.begin && f.keep ? f : null; rebuildMarkers(); },
+    refreshMarkers: function () { rebuildMarkers(); },
     /* 最近装配的轴(仍选中该零件时):app.js 用它把变换枢轴放到孔上 */
     hingeFor: function (node) {
       if (!lastMate || lastMate.node !== node) return null;

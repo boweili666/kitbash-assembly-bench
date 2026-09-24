@@ -177,7 +177,8 @@ Replace the hand-curated linear sequence with these. Suggested reactions:
 | `lastPlace.ok && lastPlace.fitsStep` | confirm the step, then `ref.fuse(mateId, partId)` so the sub-assembly moves as one |
 | an `Out of order` issue | the trainee started a step whose prerequisites are unmet — intervene |
 | `state.next` changed | propose the next step; `ref.showNext()` draws the ghost |
-| `issues[].severity === 'error'` | reversed screw / wrong part — say it immediately |
+| `issues[].severity === 'error'` | reversed screw / wrong part / wrong hole — say it immediately |
+| `issues[].severity === 'warn'` | Level 3 only: right part in the right hole, just not aligned yet — nudge, don't alarm |
 
 *Done when:* a full drone-frame build can be completed with the tutor driven
 only by `onStateChange`, no VQA in the loop.
@@ -300,6 +301,60 @@ Two honest caveats:
 
 The 12 spare M2 dampers are still unplaced: they belong to the flight
 controller, which has no model in the kit.
+
+---
+
+### Difficulty levels
+
+The bench has three levels, chosen in its own toolbar (`Level 1 2 3`), by URL
+`?level=`, or by the host (`<Simulator level={1|2|3}>` → `kb:init options.level`,
+or `kb:setLevel {level}` at any time). The choice is remembered per browser;
+new trainees start on Level 1.
+
+| level | what the trainee does | what the bench does |
+| --- | --- | --- |
+| 1 | clicks a part | flies it to its answer pose, strictly in step order; a part from another step does not move and raises the "this step needs …" error |
+| 2 | clicks a hole/peg on the part, then the hole it goes into | right hole → the part is placed at its exact answer pose (no arrow-key fine-tuning); wrong hole → `Not this hole — look at where the ghost goes`; unrelated parts → `These two parts do not go together` |
+| 3 | mates hole to hole and fine-tunes with the arrow keys | unchanged |
+
+**Onboarding.** The ARISTOS welcome screen asks whether this is a first build.
+"I know how" goes straight to the task at Level 3. "First time" shows the three
+levels; the one picked is passed to the practice session (`kb:init
+options.level` with `tutorial: true`), which trims the tutorial to match:
+
+| level | practice lessons |
+| --- | --- |
+| 1 | camera (orbit, pan, zoom, tray/workspace), then "click a part — it goes in by itself" (no hole discs) |
+| 2 | camera, then select screw → click its hole → click the wedge hole (no arrow-key lessons) |
+| 3 | the full tutorial, including slide and turn with the arrow keys |
+
+The last practice screen has a single "Start assembly" button; `kb:tutorialEnd`
+carries `experience: 'first'` and `level`, and the host remounts the task scene
+with the same level and the step guide open.
+
+**Guidance during the build.** There is no Next button any more: the step
+guide (the collapsible card on the left plus the looping ghost) opens by itself
+as soon as the task scene is up and stays on for the whole build. When a
+trainee is stuck, the **Help** button at the top opens a small card in the
+top-right corner (over the suggested-view card): a short looping animation,
+built from the step's real parts, of where to click at the current level, with
+a one-line caption (the keyboard only appears on Level 3). After 45 s
+without progress the Help button pulses. `KB.emit('help', {open})` fires when
+it opens or closes.
+
+Which problems are reported also depends on the level:
+
+| level | errors | warnings |
+| --- | --- | --- |
+| 1 | wrong part picked for this step | — |
+| 2 | wrong part picked; wrong hole clicked (stays listed until the next step or a correct click) | — |
+| 3 | wrong part (incl. out of order); wrong hole / backwards | right part and hole but not aligned yet (`Not aligned yet: …`) |
+
+Workspace hints ("move it inside") are shown at every level.
+
+Poses come from the same reference the Checks use (`KBCheck.levelTarget`,
+`KBCheck.levelMateTarget`), so a part placed by a level is always judged
+correct. The practice tutorial ignores the level: it teaches Level 3 mating.
 
 ---
 

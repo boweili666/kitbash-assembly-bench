@@ -120,7 +120,7 @@
   function draw(now) {
     var t = motion.matches ? .81 : (elapsed % (isStory() ? 14000 : 5200)) / (isStory() ? 14000 : 5200);
     positionAt(t);
-    markerA.material.color.set(t > .2 ? 0x7de0aa : 0x75baff);
+    markerA.material.color.set(t > .2 ? 0x7de0aa : kindColor(configuration.source.id));
     markerA.material.opacity = .85;
     if (markerB) markerB.material.opacity = .65 + .35 * Math.sin(t * Math.PI * 4) ** 2;
     if (isStory()) {
@@ -134,7 +134,7 @@
       var a = markerA.getWorldPosition(new THREE.Vector3()), b = markerB.getWorldPosition(new THREE.Vector3());
       guide.geometry.setFromPoints([a, b]); guide.computeLineDistances();
       guide.visible = t > .24 && t < .78;
-      markerB.material.color.set(t >= .77 ? 0x7de0aa : 0xf0bb69);
+      markerB.material.color.set(t >= .77 ? 0x7de0aa : kindColor(configuration.target.id));
     }
     renderer.render(scene, camera);
     anchor(sourceLabel, markerA, 12, -25);
@@ -160,7 +160,7 @@
       host.dataset.chapter = String(chapter);
       canvas.style.opacity = motion.matches ? '1' : String(Math.min(1, t / .035, (1 - t) / .035));
       sourceLabel.hidden = targetLabel.hidden = chapter >= 2;
-      markerA.material.color.set(t > .16 ? 0x7de0aa : 0x75baff);
+      markerA.material.color.set(t > .16 ? 0x7de0aa : kindColor(configuration.source.id));
     }
 
   }
@@ -182,6 +182,9 @@
   var observer = new ResizeObserver(resize);
   document.addEventListener('visibilitychange', function () { tickTime = 0; if (document.hidden) { cancelAnimationFrame(frame); frame = 0; } else resume(); });
   motion.addEventListener('change', function () { if (active) { draw(performance.now()); resume(); } });
+
+  // 和 mate.js 里的圆片同一套配色:孔 = 亮品红,销 = 紫罗兰
+  function kindColor(id) { return String(id || '').charAt(0) === 'P' ? 0x8a4bff : 0xff2d95; }
 
   function show(container, config) {
     clear();
@@ -258,8 +261,8 @@
       if (config.tag === 'move') { startPosition.x = -size * .24; endPosition.x = size * .24; }
     }
     moveTarget = new THREE.Object3D(); moveTarget.position.copy(endPosition); root.add(moveTarget);
-    markerA = ring(source, config.source.id, config.source.end, 0x75baff);
-    markerB = alone ? null : ring(target, config.target.id, config.target.end, 0xf0bb69);
+    markerA = ring(source, config.source.id, config.source.end, kindColor(config.source.id));
+    markerB = alone ? null : ring(target, config.target.id, config.target.end, kindColor(config.target.id));
     sourceLabel.textContent = config.source.name + (alone ? '' : peg ? ' · shaft' : ' · lower face');
     targetLabel.textContent = config.target.name + (peg ? ' · hole' : config.target.end === 1 ? ' · top face' : ' · underside');
     targetLabel.hidden = alone;

@@ -1404,6 +1404,7 @@
     camera: camera,
     orbit: orbit,
     scene: scene,
+    renderer: renderer,     // focus.js 拿它渲一帧推荐视角的缩略图
     gizmo: gizmo,
     objectsRoot: objectsRoot,
     setSelection: setSelection,
@@ -1412,6 +1413,7 @@
     beginInteraction: beginInteraction,
     finishInteraction: finishInteraction,
     interacting: function () { return !!interaction; },
+    tweening: function () { return tweens.length > 0; },   // 有零件正在飞(装配 / 自动到位的补间)
     groupNodes: groupNodes,
     resetHistory: function () {
       undoStack = [JSON.stringify(serializeScene())];

@@ -98,7 +98,7 @@
       if (it.step !== lastStep && lastStep >= 0) cur += STEP_GAP;
       lastStep = it.step;
       it.start = cur;
-      cur += DUR + GAP;
+      cur += (it.dur || DUR) + GAP;
       stepEnd[it.step] = cur - GAP;
     });
     maxT = cur + 0.4;
@@ -172,6 +172,8 @@
     var f = (s - it.lens[i - 1]) / seg;
     tmpV.lerpVectors(it.pts[i - 1], it.pts[i], f);
     tmpQ.slerpQuaternions(it.quats[i - 1], it.quats[i], f);
+    // pts 是支点的轨迹;off(零件原点在自身坐标系里相对支点的偏移)跟着转 —— 组件里几个零件共用一个支点,飞的时候不散架
+    if (it.off) tmpV.add(it.off.clone().applyQuaternion(tmpQ));
     it.g.position.copy(tmpV);
     it.g.quaternion.copy(tmpQ);
   }
@@ -179,7 +181,7 @@
   function render() {
     var current = null;
     items.forEach(function (it) {
-      var u = (t - it.start) / DUR;
+      var u = (t - it.start) / (it.dur || DUR);
       if (u <= 0) { it.g.visible = false; return; }
       if (u > 1) u = 1;
       var e = 1 - Math.pow(1 - u, 3);
@@ -416,13 +418,48 @@
       if (pts.length === 1) { pts.unshift(pts[0].clone().add(new THREE.Vector3(0, 0.8, 0))); quats.unshift(quats[0].clone()); }
       var lens = [0];
       for (var k = 1; k < pts.length; k++) lens.push(lens[k - 1] + pts[k].distanceTo(pts[k - 1]));
-      items.push({ g: g, mat: mat, name: d.name, batch: sideIndex, step: 0, start: 0, pts: pts, quats: quats, lens: lens, total: lens[lens.length - 1] || 1 });
+      var it = { g: g, mat: mat, name: d.name, batch: sideIndex, step: 0, start: 0, pts: pts, quats: quats, lens: lens, total: lens[lens.length - 1] || 1 };
+      var from = cand[tt.ref.i];
+      if (from && tt.ref !== candAnchor) {
+        // 整套轨迹:从桌上那个真零件现在的位置出发 → 抬起 → 平移到接近点上方(途中转好朝向) → 落到接近点 → 原来那段插进去
+        var sp = new THREE.Vector3(), sq = new THREE.Quaternion();
+        from.M.decompose(sp, sq, new THREE.Vector3());
+        var pivot = sp;
+        if (step.assembly) {
+          // 组件整体搬:同一边的零件用同一个支点(那一组现在位置的中心)
+          var grp = step.assembly.groups[sideIndex] || [], cnt = 0, sum = new THREE.Vector3();
+          grp.forEach(function (id) { var ts = res.slots.filter(function (x) { return x.ref.id === id; })[0];
+            if (ts && cand[ts.ref.i]) { sum.add(new THREE.Vector3().setFromMatrixPosition(cand[ts.ref.i].M)); cnt++; } });
+          if (cnt) pivot = sum.divideScalar(cnt);
+        }
+        var off = pivot === sp ? null : sp.clone().sub(pivot).applyQuaternion(sq.clone().invert());
+        var toPivot = function (p, q) { return off ? p.clone().sub(off.clone().applyQuaternion(q)) : p.clone(); };
+        var P = pts.map(function (p, k) { return toPivot(p, quats[k]); });
+        var s0 = pivot.clone(), a0 = P[0];
+        var H = Math.max(s0.y, a0.y) + 0.8;
+        var lead = [s0, new THREE.Vector3(s0.x, H, s0.z), new THREE.Vector3(a0.x, H, a0.z)];
+        var leadQ = [sq.clone(), sq.clone(), quats[0].clone()];
+        var legs = [0];
+        for (var j = 1; j < lead.length; j++) legs.push(legs[j - 1] + lead[j].distanceTo(lead[j - 1]));
+        var travel = legs[legs.length - 1] + lead[lead.length - 1].distanceTo(a0);
+        if (travel > 0.05) {
+          var ins = it.total > 1e-3 ? it.total : 0.3;
+          var kk = 1.5 * ins / travel;             // 搬运占 60% 的时间,插入占 40%,插进去那一下看得清
+          var tl = legs.map(function (l) { return l * kk; }), last = travel * kk;
+          it.pts = lead.concat(P); it.quats = leadQ.concat(quats);
+          it.lens = tl.concat(lens.map(function (l) { return last + l * (it.total > 1e-3 ? 1 : ins / (it.total || 1)); }));
+          it.total = it.lens[it.lens.length - 1] || 1;
+          it.off = off; it.dur = DUR * 2.4;
+        }
+      }
+      items.push(it);
     });
     if (!items.length) { KB.toast('This step is already complete'); return false; }
     schedule();
     if (step.assembly) {
-      items.forEach(function (it) { it.start = .3 + it.batch * (DUR + GAP); });
-      maxT = .3 + step.assembly.groups.length * (DUR + GAP); stepEnd = [maxT];
+      var dmax = Math.max.apply(null, items.map(function (it) { return it.dur || DUR; }));
+      items.forEach(function (it) { it.start = .3 + it.batch * (dmax + GAP); });
+      maxT = .3 + step.assembly.groups.length * (dmax + GAP); stepEnd = [maxT];
     }
     maxT += 0.8;   // 结尾停一下再循环
     KB.scene.add(root);
@@ -559,10 +596,15 @@
     /* 任务图里步骤 i 的前置步骤(答案步骤下标),供 Checks 判装配顺序;无数据时 null */
     requires: function (i) { loadData(); return DATA.source && DATA.steps[i] ? DATA.steps[i].requires : null; },
     seekStep: function (i) { t = stepEnd[i]; setPlaying(false); render(); },
+    /* 调试:每个虚影现在在哪 */
+    ghosts: function () {
+      return items.map(function (it) { return { name: it.name, visible: it.g.visible, travel: !!it.dur,
+        p: it.g.getWorldPosition(new THREE.Vector3()).toArray().map(function (v) { return +v.toFixed(2); }) }; });
+    },
     info: function () {
       return { active: !!root, t: t, maxT: maxT, playing: playing,
         steps: stepEnd.length,
-        placed: items.filter(function (it) { return t >= it.start + DUR - 1e-6; }).length };
+        placed: items.filter(function (it) { return t >= it.start + (it.dur || DUR) - 1e-6; }).length };
     }
   };
 })();

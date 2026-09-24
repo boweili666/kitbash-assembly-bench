@@ -34,6 +34,9 @@
   noticeButton.addEventListener('click', function () { panel.style.display = 'flex'; elClose.focus(); });
   function renderNotice(issues) {
     var errors = issues.filter(function (issue) { return issue.severity === 'error'; });
+    var warn = !errors.length;
+    if (warn) errors = issues.filter(function (issue) { return issue.severity === 'warn'; });
+    notice.classList.toggle('warn', warn);
     var message = errors.length ? errors[0].msg : '';
     var label = errors.length ? 'Checks: ' + message : '';
     var count = errors.length > 1 ? '+' + (errors.length - 1) : '';
@@ -46,7 +49,7 @@
     noticeButton.tabIndex = errors.length ? 0 : -1;
     notice.setAttribute('aria-hidden', String(!errors.length));
     notice.classList.toggle('show', !!errors.length);
-    document.body.classList.toggle('has-check-error', !!errors.length);
+    document.body.classList.toggle('has-check-error', !!errors.length && !warn);
   }
 
 
@@ -283,13 +286,46 @@
     ghost = null;
   }
 
+  var settleTimer = 0, lastSig = '';
+  /* 影响判定的一切:每个零件的位姿和所在的组、按级别摆过的、配过的、拿错 / 点错的提示、难度 */
+  function signature() {
+    KB.scene.updateMatrixWorld();
+    var out = [], e;
+    collectParts().forEach(function (n) {
+      e = n.matrixWorld.elements;
+      out.push(n.uuid, n.parent ? n.parent.uuid : '');
+      for (var i = 0; i < 16; i++) out.push(Math.round(e[i] * 1e5));
+    });
+    out.push(Object.keys(levelPlaced).join(','), Object.keys(userMated).length,
+      lastPick ? lastPick.node.uuid + lastPick.step + lastPick.msg : '',
+      lastHole ? lastHole.node.uuid + lastHole.step + lastHole.msg : '',
+      window.KBLevel ? KBLevel.get() : 3);
+    return out.join('|');
+  }
   function evaluate() {
     if (KB.interacting && KB.interacting()) return;
+    // 教程场景里的楔块 / 螺丝和正式零件同型号,拿去对照答案只会报一堆假错误 —— 教程期间不判
+    if (window.KBTutorial && KBTutorial.active()) {
+      results = { ready: false, issues: [], correct: 0, total: 0, note: 'Checks are off during the tutorial' };
+      render();
+      return;
+    }
+    // 零件还在飞(自动到位 / 装配补间):半路上的位姿不作数,落定了再判,免得途中闪一下 error
+    if ((KB.tweening && KB.tweening()) || (window.KBLevel && KBLevel.busy && KBLevel.busy())) {
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(evaluate, 200);
+      return;
+    }
     if (!(window.KBParts && KBParts.ready() && buildRef())) {
       results = { ready: false, issues: [], correct: 0, total: 0, note: 'No reference assembly in the part library' };
       render();
       return;
     }
+    // 场面没变就不重算:一次点击里 levelTarget / Next 动画 / 推荐视角 / 指引卡片都会来要结果,
+    // 每次 ~20 ms,重复算几遍就是肉眼可见的卡顿
+    var sig = signature();
+    if (sig === lastSig && results && results.ready) return;
+    lastSig = sig;
     var users = collectParts().map(function (n) {
       n.updateMatrixWorld(true);
       return { node: n, id: n.userData.kbId || null, key: n.userData.kbType.slice(5),
@@ -438,10 +474,10 @@
     var pairSeen = {};
     // 同一个零件可能对着好几个候选位置都"不对",只留最贴近的那条,免得刷屏
     var misfits = {};
-    function keepClosest(node, d, msg, severity, host, reversed, ang) {
+    function keepClosest(node, d, msg, severity, host, reversed, ang, kind) {
       var id = node.uuid;
       if (!misfits[id] || d < misfits[id].d) {
-        misfits[id] = { node: node, d: d, msg: msg, severity: severity || 'error',
+        misfits[id] = { node: node, d: d, msg: msg, severity: severity || 'error', kind: kind || 'hole',
                         host: host || null, reversed: !!reversed, ang: ang || 0 };
       }
     }
@@ -465,7 +501,7 @@
         var assembled = t.ok || t.near.length;
         t.ok = false;
         // 还没搬进装配区不算装错,是"接下来该干什么"
-        if (assembled) issues.push({ severity: 'hint', node: t.part.node, slot: t.ref,
+        if (assembled) issues.push({ severity: 'hint', kind: 'hint', node: t.part.node, slot: t.ref,
           msg: KBWorkspace.message(t.part.node) });
         return;
       }
@@ -476,13 +512,13 @@
         if (pairSeen[pk]) return;
         pairSeen[pk] = 1;
         if (e.reversed) {
-          issues.push({ severity: 'error', node: t.part.node, slot: t.ref,
+          issues.push({ severity: 'error', kind: 'hole', node: t.part.node, slot: t.ref,
             msg: t.ref.name + ' is inserted backwards into ' + mate.name + ' — the head faces the wrong way' });
         } else if (e.d >= POS_TOL) {
-          issues.push({ severity: 'error', node: t.part.node, slot: t.ref, want: e.want,
+          issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref, want: e.want,
             msg: t.ref.name + ' is ' + mm(e.d) + ' mm off its place on ' + mate.name + which(t.part.node, e.want) });
         } else {
-          issues.push({ severity: 'error', node: t.part.node, slot: t.ref,
+          issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref,
             msg: t.ref.name + ' is tilted ' + e.ang.toFixed(0) + '° on ' + mate.name });
         }
         return;
@@ -521,7 +557,8 @@
       }
       if (wrong) {
         keepClosest(wrong.u.node, wrong.d,
-          'Wrong part on ' + wrong.m.slot.name + ': found ' + wrong.u.node.name + ', expected ' + t.ref.name);
+          'Wrong part on ' + wrong.m.slot.name + ': found ' + wrong.u.node.name + ', expected ' + t.ref.name,
+          'error', null, false, 0, 'pick');
         return;
       }
       // 插错孔:型号对得上的零件确实装在装配区里了,只是离它该在的位置太远,
@@ -559,11 +596,11 @@
           // 真的按答案配好了、只是整组还在装配区外 —— 让人搬进去
           keepClosest(misplaced.u.node, misplaced.d,
             misplaced.u.node.name + ' is assembled outside the workspace — move it inside to be checked',
-            'hint', misplaced.host.node);
+            'hint', misplaced.host.node, false, 0, 'hint');
         } else if (!me.reversed && misplaced.d < NEAR && me.nearAng >= ANG_TOL) {
           keepClosest(misplaced.u.node, misplaced.d,
             misplaced.u.node.name + ' is tilted ' + me.nearAng.toFixed(0) + '° in ' + misplaced.m.slot.name,
-            'error', misplaced.host.node, false, me.nearAng);
+            'error', misplaced.host.node, false, me.nearAng, 'align');
         } else if (me.reversed) {
           keepClosest(misplaced.u.node, misplaced.d,
             misplaced.u.node.name + ' is inserted backwards into ' + misplaced.m.slot.name +
@@ -571,7 +608,7 @@
         } else if (misplaced.d < NEAR) {
           keepClosest(misplaced.u.node, misplaced.d,
             misplaced.u.node.name + ' is ' + mm(misplaced.d) + ' mm off its place on ' +
-            misplaced.m.slot.name + ' (expected ' + t.ref.name + ')', 'error', misplaced.host.node);
+            misplaced.m.slot.name + ' (expected ' + t.ref.name + ')', 'error', misplaced.host.node, false, 0, 'align');
         } else {
           keepClosest(misplaced.u.node, misplaced.d,
             misplaced.u.node.name + ' is in the wrong hole on ' + misplaced.m.slot.name +
@@ -593,13 +630,13 @@
           if (meScrew === otherScrew && (hostIssue.d + hostIssue.ang * 0.01) > (it.d + it.ang * 0.01)) return;
         }
       }
-      issues.push({ severity: it.severity, node: it.node, slot: it.slot, msg: it.msg });
+      issues.push({ severity: it.severity, kind: it.kind, node: it.node, slot: it.slot, msg: it.msg });
     });
 
     if (lastPick) {
       var cur = next();
       if (cur && cur.i === lastPick.step) {
-        issues.push({ key: 'pick', severity: 'error', node: lastPick.node, msg: lastPick.msg });
+        issues.push({ key: 'pick', severity: 'error', kind: 'pick', node: lastPick.node, msg: lastPick.msg });
       } else {
         lastPick = null;
       }
@@ -626,10 +663,11 @@
         users.forEach(function (u) {
           if (u.ckey !== t.ref.ckey || spoken[u.node.uuid]) return;
           if (u.slot) return;                      // 已经被认成别的位置(比如上一步装好的那对)
+          if (levelPlaced[u.node.uuid]) return;    // 按难度级别自动摆的,位置就是答案
           if (!wasMated(u.node)) return;
           if (window.KBWorkspace && !KBWorkspace.contains(u.node)) return;
           spoken[u.node.uuid] = true;
-          issues.push({ severity: 'error', node: u.node, slot: t.ref,
+          issues.push({ severity: 'error', kind: 'hole', node: u.node, slot: t.ref,
             msg: u.node.name + ' is assembled, but not the way “' + cur.st.name +
                  '” needs it — check which hole it goes in and which way round' });
         });
@@ -659,6 +697,7 @@
             t.err.e.ang >= ANG_TOL ? t.ref.name + ' is tilted ' + t.err.e.ang.toFixed(0) + '° on the X-Lock.' :
             'Finish preparing ' + t.ref.name + ' and keep it fully inside the workspace.';
           issues.push({ severity: (!baseSlot.part || !t.near.length) ? 'hint' : 'error',
+            kind: (!baseSlot.part || !t.near.length) ? 'hint' : t.err.e.reversed ? 'hole' : 'align',
             hint: !t.near.length, node: t.part.node, step: st, msg: msg });
         });
       }
@@ -681,10 +720,34 @@
       var pre = s.requires.map(function (r) { return steps[r]; }).filter(function (p) { return p.state !== 'complete' && !p.started; })[0];
       if (!pre) return;
       var node = (s.slots.filter(function (x) { return x.part && x.near.length; })[0] || {}).part;
-      issues.push({ key: 'order|' + s.i, severity: 'error', node: node ? node.node : null, step: s,
+      issues.push({ key: 'order|' + s.i, severity: 'error', kind: 'pick', node: node ? node.node : null, step: s,
         msg: 'Out of order: “' + s.name + '” ' + (s.state === 'premature' ? 'done' : 'started') +
           ' before “' + pre.name + '” (' + pre.slots.map(function (x) { return x.ref.name; }).join(', ') + ')' });
     });
+
+    // 二级:点错孔(点的时候就拒了,几何上什么都没发生)—— 挂在清单里,到下一步或装对了才消
+    if (lastHole) {
+      var curH = next();
+      if (curH && curH.i === lastHole.step) issues.push({ key: 'hole', severity: 'error', kind: 'hole', node: lastHole.node, msg: lastHole.msg });
+      else lastHole = null;
+    }
+    // 按难度只报该报的:
+    //   一级 —— 只有"零件点错了";
+    //   二级 —— 零件点错了 / 孔点错了;
+    //   三级 —— 上面两种还是 error,零件和孔都对、只是还没对齐的,降成 warn
+    var lv = window.KBLevel ? KBLevel.get() : 3;
+    issues = issues.filter(function (i) {
+      var k = i.kind || 'hole';
+      if (k === 'hint') return true;
+      if (lv === 1) return k === 'pick';
+      if (lv === 2) return k === 'pick' || k === 'hole';
+      return true;
+    });
+    if (lv === 3) issues.forEach(function (i) {
+      if (i.kind === 'align' && i.severity === 'error') { i.severity = 'warn'; i.msg = 'Not aligned yet: ' + i.msg; }
+    });
+    var RANK = { error: 0, warn: 1, hint: 2 };
+    issues.sort(function (a, b) { return (RANK[a.severity] || 0) - (RANK[b.severity] || 0); });
 
     results = { ready: true, issues: issues, correct: correct, total: slots.length,
       steps: steps, slots: slots, users: users,
@@ -940,6 +1003,42 @@
     return best;
   }
 
+  /* 一步里的基座:还没放的零件中,别的零件往它孔里插得最多的那个(并列看配合数,再看个头) */
+  function baseOf(list) {
+    var inStep = {}, best = null;
+    list.forEach(function (t) { inStep[t.ref.i] = true; });
+    list.forEach(function (t) {
+      var inner = t.ref.mates.filter(function (m) { return inStep[m.slot.i]; });
+      // 别的零件插进它的孔里 -> 它是被装的那个(楔块之于螺丝)。这条最优先:
+      // 光比个头的话,16 mm 的螺丝会比楔块"大",反过来叫人先放螺丝
+      var receives = inner.filter(function (m) {
+        return (m.features || []).some(function (f) { return String(f[0]).charAt(0) === 'H'; });
+      }).length;
+      var score = receives * 100 + inner.length * 10 + partRadius(t.ref.key);
+      if (!best || score > best.score) best = { score: score, t: t };
+    });
+    return best ? best.t : null;
+  }
+  /* 给人看的"这个零件放好了":单独一个基座(比如第一步的楔块)没有配合件可对照,
+     判定上永远算不了"到位" —— 按级别自动摆好的,或者已经放进装配区、这一步还没有别的零件装上去的,
+     清单里就先打勾。不影响判定:整步完成还是看配合关系 */
+  function baseSeated(t) {
+    if (!results || !results.ready || !t || t.ok) return false;
+    var hit = false, parts = collectParts();
+    parts.forEach(function (n) { if (levelPlaced[n.uuid] === t.ref) hit = true; });
+    if (hit) return true;
+    var st = results.steps[t.ref.step];
+    if (!st || st.assembly) return false;
+    if (st.slots.some(function (x) { return x.ok || (x.part && x.near.length); })) return false;
+    var base = baseOf(st.slots);
+    if (!base || base.ref !== t.ref) return false;
+    return parts.some(function (n) {
+      if (canon(n.userData.kbType.slice(5)) !== t.ref.ckey) return false;
+      var s = slotForNode(n);
+      if (s && s.ok) return false;
+      return !window.KBWorkspace || KBWorkspace.contains(n);
+    });
+  }
   function slotForNode(node) {
     if (!results || !results.ready) return null;
     for (var i = 0; i < results.slots.length; i++) {
@@ -1152,6 +1251,235 @@
     return count;
   }
 
+  /* ---------- 难度分级:算出零件"该去哪" ----------
+     一级:点零件,直接飞到答案位姿;二级:点对了孔,位姿由答案给(不用再微调)。
+     两者都只是"算目标",动画和交互在 levels.js。 */
+  var levelPlaced = Object.create(null);    // 按级别摆放过的零件 uuid -> 参考槽位
+  var liftCache = null;
+  function refLift() {
+    // 参考装配是绕原点、并且倒着采的(桨在最下面),整体抬到台面以上再放进装配区
+    // 用零件真实的包围盒量最低点 —— 拿"半径"估的话,扁平的桨会把整机抬到半空
+    if (liftCache !== null) return liftCache;
+    var minY = Infinity, box = new THREE.Box3();
+    ref.slots.forEach(function (sl) {
+      var spec = KBParts.spec(sl.key);
+      if (!spec || !spec.bbox) return;
+      box.min.fromArray(spec.bbox.min); box.max.fromArray(spec.bbox.max);
+      minY = Math.min(minY, box.clone().applyMatrix4(sl.M).min.y);
+    });
+    liftCache = isFinite(minY) ? Math.max(0.01, -minY + 0.01) : 0.5;
+    return liftCache;
+  }
+  /* 参考坐标 -> 世界:场上已判对的基准优先;其次是按级别摆过、还在场上的零件;都没有就摆在装配区正中 */
+  function refToWorld() {
+    var a = anchorSlot();
+    if (a) return new THREE.Matrix4().multiplyMatrices(a.part.M, a.ref.Minv);
+    var hit = null;
+    collectParts().forEach(function (n) {
+      if (hit || !levelPlaced[n.uuid]) return;
+      n.updateMatrixWorld(true);
+      hit = new THREE.Matrix4().multiplyMatrices(n.matrixWorld, levelPlaced[n.uuid].Minv);
+    });
+    if (hit) return hit;
+    var c = window.KBWorkspace ? KBWorkspace.center : new THREE.Vector3();
+    return new THREE.Matrix4().makeTranslation(c.x, refLift(), c.z);
+  }
+  function approachOf(sl) {
+    var a = KBParts.answer();
+    var d = a && a.parts.filter(function (x) { return x.id === sl.id; })[0];
+    if (!d || !d.path || d.path.length < 2) return null;
+    var tr = KBParts.nodeTransform(d.key, d.path[0]);
+    return new THREE.Matrix4().compose(new THREE.Vector3().fromArray(tr.p),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(tr.r[0], tr.r[1], tr.r[2], 'XYZ')), new THREE.Vector3(1, 1, 1));
+  }
+  function openSteps() {
+    var open = {};
+    results.steps.forEach(function (st) { if (st.state === 'available') open[st.i] = true; });
+    return open;
+  }
+  /* 一级:这个零件该去哪。只认"现在能做"的步骤里还空着的位置,按顺序来 */
+  function levelTarget(node) {
+    evaluate();
+    if (!results || !results.ready || !node || !node.userData.kbType) return { reason: 'Parts are still loading' };
+    var mine = slotForNode(node);
+    if (mine && mine.ok) return { already: true };
+    var key = canon(node.userData.kbType.slice(5));
+    // 一级严格按引导的顺序:只认当前这一步。推导补的步骤在任务图里没有前置关系,
+    // 按"可做"放行的话,立柱 #1 会被当成第 28 步的立柱 #5 飞过去
+    var nx = next();
+    if (!nx) return { reason: null };
+    var pool = results.slots.filter(function (t) {
+      return t.ref.ckey === key && !t.ok && (!t.part || t.part.node === node) && t.ref.step === nx.i;
+    });
+    if (!pool.length) return { reason: null };           // 不属于现在能做的步骤:拿错零件的提示会说
+    pool.sort(function (a, b) { return a.ref.i - b.ref.i; });
+    var t = pool[0], W = refToWorld();
+    var A0 = approachOf(t.ref);
+    return { slot: t.ref, want: new THREE.Matrix4().multiplyMatrices(W, t.ref.M),
+             approach: A0 ? new THREE.Matrix4().multiplyMatrices(W, A0) : null };
+  }
+  /* 二级:源零件上点的孔/销 -> 目标零件上点的孔。点对了孔,就给出答案位姿;
+     点错了孔说"不是这个孔",两个零件根本不配就说"这两个不装在一起" */
+  function featureOf(key, id) {
+    var spec = KBParts.spec(key);
+    var all = ((spec && spec.holes) || []).concat((spec && spec.pegs) || []);
+    return all.filter(function (f) { return f.id === id; })[0] || null;
+  }
+  function levelMateTarget(srcNode, srcId, dstNode, dstId) {
+    evaluate();
+    if (!results || !results.ready) return { reason: 'Parts are still loading' };
+    var sKey = srcNode.userData.kbType.slice(5), dKey = dstNode.userData.kbType.slice(5);
+    var fS = featureOf(sKey, srcId), fD = featureOf(dKey, dstId);
+    if (!fS || !fD) return { reason: 'Not that one — try again' };
+    dstNode.updateMatrixWorld(true);
+    var Md = dstNode.matrixWorld.clone();
+    var cD = new THREE.Vector3().fromArray(fD.c).applyMatrix4(Md);
+    var aD = new THREE.Vector3().fromArray(fD.d).transformDirection(Md);
+    var sMine = slotForNode(srcNode), dMine = slotForNode(dstNode);
+    // 同型号还没装好的位置都算候选(包括检查暂时把这个零件归过去的那个)。只看"归过去的那个"的话,
+    // 对称的板子会把别的孔位映射到点的孔上:零件装对了孔,却被记成另一颗螺丝,随后报"插错孔"
+    var srcSlots = sMine && sMine.ok ? [] : results.slots.filter(function (t) {
+      return t.ref.ckey === canon(sKey) && !t.ok && (!t.part || t.part.node === srcNode);
+    });
+    var dstSlots = dMine ? [dMine] : results.slots.filter(function (t) { return t.ref.ckey === canon(dKey); });
+    var paired = false, best = null, open = openSteps();
+    srcSlots.forEach(function (s) {
+      dstSlots.forEach(function (d) {
+        if (!s.ref.mates.some(function (m) { return m.slot === d.ref; })) return;
+        paired = true;
+        symTransforms(d.ref.key).forEach(function (Sm, si) {
+          var want = new THREE.Matrix4().multiplyMatrices(Md, Sm)
+            .multiply(d.ref.Minv).multiply(s.ref.M);
+          var cS = new THREE.Vector3().fromArray(fS.c).applyMatrix4(want);
+          var aS = new THREE.Vector3().fromArray(fS.d).transformDirection(want);
+          if (Math.abs(aS.dot(aD)) < Math.cos(THREE.MathUtils.degToRad(20))) return;
+          var off = cS.clone().sub(cD);
+          var radial = off.clone().sub(aD.clone().multiplyScalar(off.dot(aD))).length();
+          // 同样贴合时,优先现在能做的那一步,再优先不经过对称映射的
+          var score = radial + (open[s.ref.step] ? 0 : 0.5) + (si ? 0.01 : 0);
+          if (!best || score < best.score) best = { s: s, want: want, radial: radial, score: score };
+        });
+      });
+    });
+    if (!paired) return { reason: 'These two parts do not go together' };
+    var tol = 3 * KBParts.unitScale() / 1000;                   // 孔位偏 3 mm 以内算点对了孔
+    if (!best || best.radial > tol) return { reason: 'Not this hole — look at where the ghost goes' };
+    var A0 = approachOf(best.s.ref);
+    var W = new THREE.Matrix4().multiplyMatrices(best.want, best.s.ref.Minv);
+    return { slot: best.s.ref, want: best.want,
+             approach: A0 ? new THREE.Matrix4().multiplyMatrices(W, A0) : null };
+  }
+  function markLevelPlaced(node, slotRef) { if (node && slotRef) levelPlaced[node.uuid] = slotRef; }
+
+  /* 二级引导:这个零件该点它自己的哪个孔/销,再点装配区里哪个零件的哪个孔。
+     不查答案里的特征表(有的配合只记了"接触"),直接算几何:把零件放到最终位置,
+     找它哪个孔/销和场上已经装好的零件的哪个孔同轴、对得上 —— 和二级判"点对了没有"是同一个标准。 */
+  function worldFeat(f, M) {
+    return { c: new THREE.Vector3().fromArray(f.c).applyMatrix4(M),
+             d: new THREE.Vector3().fromArray(f.d).transformDirection(M), r: f.r, depth: f.depth, id: f.id,
+             kind: f.id.charAt(0) === 'H' ? 'hole' : 'peg' };
+  }
+  function featsOf(key) {
+    var spec = KBParts.spec(key);
+    return ((spec && spec.holes) || []).concat((spec && spec.pegs) || []);
+  }
+  /* 场上哪些孔/销已经被占了:有别的零件的销同轴插在孔里(轴平行、偏心 1.5 mm 内、轴向有重叠)。
+     返回 { 'uuid|featId|end': true }(孔口 end = ±1,销 end = 0),被占的孔口和销不再放圆片 */
+  function occupied() {
+    var feats = [];
+    collectParts().forEach(function (n) {
+      n.updateMatrixWorld(true);
+      featsOf(n.userData.kbType.slice(5)).forEach(function (f) { feats.push({ n: n, w: worldFeat(f, n.matrixWorld) }); });
+    });
+    var mm = KBParts.unitScale() / 1000, tol = 1.5 * mm, minFree = 2 * mm;
+    var cosTol = Math.cos(THREE.MathUtils.degToRad(15)), out = {}, pairs = [];
+    feats.forEach(function (a) {
+      if (a.w.kind !== 'hole') return;
+      feats.forEach(function (b) {
+        if (b.w.kind !== 'peg' || b.n === a.n) return;
+        if (Math.abs(a.w.d.dot(b.w.d)) < cosTol) return;
+        var off = b.w.c.clone().sub(a.w.c);
+        var along = off.dot(a.w.d);
+        if (Math.abs(along) > (a.w.depth + b.w.depth) / 2) return;
+        if (off.addScaledVector(a.w.d, -along).length() > tol) return;
+        // 孔在销自己轴上占的那一段
+        var t = a.w.c.clone().sub(b.w.c).dot(b.w.d);
+        pairs.push({ a: a, b: b, along: along, t: t, sgn: a.w.d.dot(b.w.d) > 0 ? 1 : -1 });
+      });
+    });
+    // 销上没被任何孔包住、又超过 2 mm 的那几截:还露在外面,别的零件还要套上去
+    var free = new Map();
+    feats.forEach(function (b) {
+      if (b.w.kind !== 'peg') return;
+      var h = b.w.depth / 2, cov = pairs.filter(function (p) { return p.b === b; })
+        .map(function (p) { return [p.t - p.a.w.depth / 2, p.t + p.a.w.depth / 2]; })
+        .sort(function (x, y) { return x[0] - y[0]; });
+      var segs = [], at = -h;
+      cov.forEach(function (c) { if (c[0] - at > minFree) segs.push([at, c[0]]); at = Math.max(at, c[1]); });
+      if (h - at > minFree) segs.push([at, h]);
+      if (cov.length && !segs.length) out[b.n.uuid + '|' + b.w.id + '|0'] = true;
+      free.set(b, segs);
+    });
+    // 孔口:销盖住了这个孔口,而且从这个孔口往外没有露出来的一截,才算被占。
+    // 立柱底下插了螺丝,顶上那头还空着;螺丝穿过板子还露在下面,板子下面那头也还要用
+    pairs.forEach(function (p) {
+      var a = p.a, b = p.b, segs = free.get(b);
+      [-1, 1].forEach(function (e) {
+        var m = e * a.w.depth / 2;
+        if (Math.abs(m - p.along) > b.w.depth / 2 + tol) return;
+        var tm = p.t + e * p.sgn * a.w.depth / 2, out1 = e * p.sgn;
+        var open = segs.some(function (sg) { return out1 > 0 ? sg[0] >= tm - tol : sg[1] <= tm + tol; });
+        if (!open) out[a.n.uuid + '|' + a.w.id + '|' + e] = true;
+      });
+    });
+    return out;
+  }
+  function level2Guide(node) {
+    var tg = levelTarget(node);
+    if (!tg || !tg.want) return null;
+    var sKey = node.userData.kbType.slice(5);
+    var srcFeats = featsOf(sKey).map(function (f) { return worldFeat(f, tg.want); });
+    if (!srcFeats.length) return null;
+    // 候选目标:和这个槽位有配合关系、已经在场上摆好的零件
+    var partners = [];
+    tg.slot.mates.forEach(function (m) {
+      var ms = results.slots[m.slot.i], pn = null;
+      if (ms && ms.part && (ms.ok || levelPlaced[ms.part.node.uuid])) pn = ms.part.node;
+      if (!pn) collectParts().forEach(function (n) { if (!pn && levelPlaced[n.uuid] === m.slot) pn = n; });
+      if (!pn && ms && ms.part && window.KBWorkspace && KBWorkspace.contains(ms.part.node)) pn = ms.part.node;
+      if (pn && pn !== node) partners.push({ node: pn, step: m.slot.step });
+    });
+    var tol = 1.5 * KBParts.unitScale() / 1000, cosTol = Math.cos(THREE.MathUtils.degToRad(15));
+    var best = null;
+    partners.forEach(function (pt) {
+      pt.node.updateMatrixWorld(true);
+      var dKey = pt.node.userData.kbType.slice(5);
+      featsOf(dKey).forEach(function (fd0) {
+        if (fd0.id.charAt(0) !== 'H') return;                 // 要点的目标是孔
+        var fd = worldFeat(fd0, pt.node.matrixWorld);
+        srcFeats.forEach(function (fs) {
+          if (Math.abs(fs.d.dot(fd.d)) < cosTol) return;
+          var off = fs.c.clone().sub(fd.c);
+          var radial = off.clone().sub(fd.d.clone().multiplyScalar(off.dot(fd.d))).length();
+          if (radial > tol) return;
+          var axial = Math.abs(off.dot(fd.d));
+          if (axial > (fs.depth + fd.depth) / 2 + tol * 4) return;   // 同一条轴上,但离得太远就不算
+          // 优先刚装上去的那个零件;同一处优先细的那个销(螺丝杆),而不是螺丝头
+          var score = pt.step * 10 - radial / tol - (fs.kind === 'peg' ? fs.r / tol : 0);
+          if (!best || score > best.score) best = { score: score, fs: fs, fd: fd, node: pt.node };
+        });
+      });
+    });
+    if (!best) return null;
+    // 目标孔从哪一头进:看零件是从哪边接近的
+    var from = tg.approach ? new THREE.Vector3().setFromMatrixPosition(tg.approach) : new THREE.Vector3().setFromMatrixPosition(tg.want).add(new THREE.Vector3(0, 1, 0));
+    var dEnd = from.clone().sub(best.fd.c).dot(best.fd.d) >= 0 ? 1 : -1;
+    var sEnd = best.fs.kind === 'hole' ? (best.fd.c.clone().sub(best.fs.c).dot(best.fs.d) >= 0 ? 1 : -1) : 0;
+    var mouth = best.fd.c.clone().addScaledVector(best.fd.d, dEnd * best.fd.depth / 2);
+    return { srcId: best.fs.id, srcEnd: sEnd, dst: best.node, dstId: best.fd.id, dstEnd: dEnd,
+             mouth: mouth, axis: best.fd.d.clone().multiplyScalar(dEnd), holeR: best.fd.r };
+  }
+
   /* ---------- 用户真的配上去过的零件 ----------
      料盘里的零件从没被配过,拿这个当门槛,装配区外也能放心判错,
      不会再把托盘里挨着摆的螺丝和立柱说成"装反了" */
@@ -1176,6 +1504,7 @@
      说的是"这一步要什么、你手上这个是第几步用的",不拦着操作(可能只是想挪开)。 */
   var warnedFor = null;
   var lastPick = null;      // 手上拿着的这个零件不属于当前步骤 —— 面板里一直挂着,换零件就消
+  var lastHole = null;      // 二级:孔点错了 —— 到下一步 / 装对一次就消
   function stepNeeding(node) {
     if (!ref) return null;
     var key = canon(node.userData.kbType.slice(5));
@@ -1199,16 +1528,19 @@
     if (slot && slot.ok) return;                     // 已经装到位的零件,随便挪
     var key = canon(node.userData.kbType.slice(5));
     var wanted = nx.slots.filter(function (t) { return !t.ok; });
+    // "把预装好的组件装到基座上"这种步骤,零件清单里只有组件,基座(X-Lock)不在里面 ——
+    // 不补上的话,点 X-Lock 会被说成"这一步用不到"
+    if (nx.base && !nx.base.ok && wanted.indexOf(nx.base) < 0) wanted.push(nx.base);
     if (!wanted.length || wanted.some(function (t) { return canon(t.ref.key) === key; })) { lastPick = null; return; }
-    var tag = nx.i + '|' + node.uuid;
-    if (warnedFor === tag) return;                   // 同一步同一个零件只说一次
-    warnedFor = tag;
     var mine = stepNeeding(node);
     var msg = 'This step needs ' + wanted.map(function (t) { return t.ref.name; }).join(' / ') +
       '. ' + (node.name || 'That part') +
       (mine ? ' belongs to step ' + (mine.step + 1) + ' \u2014 ' + ref.steps[mine.step].name
             : ' is not used in this step');
-    lastPick = { node: node, step: nx.i, msg: msg };
+    lastPick = { node: node, step: nx.i, msg: msg };   // 清单里每次都挂上
+    var tag = nx.i + '|' + node.uuid;
+    if (warnedFor === tag) return;                   // 弹窗同一步同一个零件只说一次
+    warnedFor = tag;
     KB.toast(msg);
     KB.emit('pickWarn', { objectId: node.userData.kbId || null, name: node.name,
       key: node.userData.kbType.slice(5), step: nx.i, stepName: nx.name,
@@ -1229,6 +1561,41 @@
     /* 落位吸附开关:放下时离正确位置 10 mm / 25° 以内就吸到参考位姿 */
     autoSnap: function (on) { if (on !== undefined) autoSnap = !!on; return autoSnap; },
     snapIntoPlace: snapIntoPlace,
+    levelTarget: levelTarget,
+    canon: canon,
+    /* 二级点错孔:记一条 error(null 清掉) */
+    noteHole: function (node, msg) {
+      var nx = next();
+      lastHole = node && msg && nx ? { node: node, step: nx.i, msg: msg } : null;
+      evaluate();
+    },
+    /* 参考坐标 -> 世界(场上那台机器实际怎么摆的):focus.js 用它判断机头朝哪 */
+    refToWorld: function () { evaluate(); return results && results.ready ? refToWorld() : new THREE.Matrix4(); },
+    levelMateTarget: levelMateTarget,
+    markLevelPlaced: markLevelPlaced,
+    level2Guide: function (node) { evaluate(); return results && results.ready ? level2Guide(node) : null; },
+    occupied: function () { return (window.KBParts && KBParts.ready()) ? occupied() : {}; },
+    /* 二级:这个零件现在没有可配的孔时,是它自己就是这一步的基座(该直接放进装配区),
+       还是得先放别的零件。基座 = 这一步里还没放的零件中,和同一步别的零件配合最多的那个(并列取个头大的) */
+    level2Base: function (node) {
+      evaluate();
+      if (!results || !results.ready) return null;
+      var nx = next(), tg = levelTarget(node);
+      if (!nx || !tg || !tg.slot) return null;
+      var open = nx.slots.map(function (t) { return t; }).filter(function (t) {
+        if (t.ok) return false;
+        var placed = false;
+        collectParts().forEach(function (n) { if (levelPlaced[n.uuid] === t.ref) placed = true; });
+        return !placed;
+      });
+      if (nx.base && !nx.base.ok && open.indexOf(nx.base) < 0) open.unshift(nx.base);
+      var best = baseOf(open);
+      if (!best) return null;
+      return { isBase: best.ref === tg.slot, baseName: best.ref.name };
+    },
+    baseSeated: baseSeated,
+    /* 按级别自动摆过、占着哪个参考槽位(没有则 null) */
+    levelPlacedSlot: function (node) { return (node && levelPlaced[node.uuid]) || null; },
     snapAll: snapAll,
     results: function () { return results; },
     state: state,

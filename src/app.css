@@ -514,7 +514,16 @@ input[type="range"]::-moz-range-thumb {
 }
 .ck-row.error:hover { background: rgba(224, 96, 79, 0.24); color: #fff; }
 .ck-row.error .ck-dot { background: var(--danger); box-shadow: 0 0 0 3px rgba(224, 96, 79, 0.22); }
-.ck-row.warn .ck-dot, .ck-row.hint .ck-dot { background: #6aa6e8; }
+.ck-row.hint .ck-dot { background: #6aa6e8; }
+.ck-row.warn { color: #f3d9a4; }
+.ck-row.warn .ck-dot { background: #f0b44c; box-shadow: 0 0 0 3px rgba(240, 180, 76, 0.2); }
+#checkNotice.warn button { border-color:#d9a44a66; background:#2e2716ee; color:#f6dfaa; }
+#checkNotice.warn button:hover { background:#3d331c; }
+#checkNotice.warn .ck-notice-icon { color:#f0b44c; }
+#nextGuide[data-state="warn"] { border-color:#c99a45; }
+#nextGuide[data-state="warn"] .ng-status { color:#f3c97a; }
+#nextGuide[data-state="warn"] .ng-feedback { background:#6b52203d; color:#f6e2b8; }
+#nextGuide[data-state="warn"] .ng-pdot { background:#f0b44c; }
 .ck-row.hint { color: var(--text-faint); }
 /* 有错时工具栏上的 Checks 也要看得见 */
 .tool.has-errors { color: var(--danger); background: rgba(224, 96, 79, 0.16); }
@@ -712,7 +721,47 @@ input[type="range"]::-moz-range-thumb {
    只留装配需要的:不能缩放、删除、复制、分组,也不能改材质 ---------- */
 .trainee #btnExpert, .trainee #mode-scale, .trainee #btnDel, .trainee #btnDup,
 .trainee #inspMaterial, .trainee #btnResetXform { display: none !important; }
-.embed #btnNext { display: inline-flex; }
+/* Next 不再是按钮:逐步指引常驻(help.js 自动打开),卡住时用顶部的 Help */
+#btnNext, .embed #btnNext { display: none !important; }
+.embed #btnHelp, .embed #btnHelp .lbl { display: inline-flex; }
+#btnHelp.on { background: #2a4a5e; color: #bfe9ff; }
+#btnHelp.nudge { animation: helpNudge 1.6s ease-in-out infinite; color: #ffd98a; }
+@keyframes helpNudge { 0%, 100% { box-shadow: 0 0 0 0 #ffc81e00; } 50% { box-shadow: 0 0 0 5px #ffc81e55; background: #3a3218; } }
+#nextGuide .ng-close, #ansClose { display: none; }   /* 常驻:可以收起,不能关 */
+/* 右上角,和推荐视角卡片同一个位置、同样宽;打开时盖住那张卡片 */
+#helpPop { position: fixed; z-index: 27; top: 76px; right: 16px; width: 264px;
+  box-sizing: border-box; padding: 10px 10px 12px; border: 1px solid #3b6a80; border-radius: 12px; background: rgba(16,27,38,.97);
+  box-shadow: 0 12px 36px #0007; color: #e0e8ee; font: 13px/1.5 system-ui, sans-serif; }
+body.help-open #viewTip { visibility: hidden; }
+#helpPop[hidden] { display: none; }
+.hp-head { display: flex; justify-content: space-between; align-items: center; }
+.hp-kicker { font-size: 10px; letter-spacing: 2px; color: #8fd3f5; font-weight: 600; }
+.hp-x { background: none; border: 0; color: #b2c4d0; font-size: 20px; cursor: pointer; padding: 0 4px; }
+.hp-title { font-size: 12.5px; line-height: 1.35; margin: 4px 0 8px; color: #f2f6f9; font-weight: 600; }
+.hp-anim { border-radius: 10px; overflow: hidden; background: #0d1a28; border: 1px solid #ffffff14; }
+.hp-anim svg { display: block; width: 100%; height: auto; }
+.hp-anim.real { position: relative; border-radius: 10px; overflow: hidden; background: radial-gradient(120% 100% at 50% 20%, #1a2d42, #0d1a28); border: 1px solid #ffffff14; }
+.hp-anim.real canvas { display: block; width: 100%; height: auto; }
+.hp-cursor { position: absolute; width: 16px; height: 22px; margin: -2px 0 0 -2px; pointer-events: none; filter: drop-shadow(0 1px 2px #0008); }
+.hp-cursor svg { width: 100%; height: 100%; display: block; }
+.hp-ripple { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border: 2px solid #fff; border-radius: 50%; pointer-events: none; animation: hpRipple .5s ease-out infinite; }
+@keyframes hpRipple { from { transform: scale(.3); opacity: .95; } to { transform: scale(1.2); opacity: 0; } }
+.hp-cap { display: block; padding: 6px 8px; border-top: 1px solid #ffffff12; background: #0b1522; color: #e8f1f6; font: 600 11.5px/1.4 system-ui, sans-serif; text-align: center; min-height: 32px; box-sizing: border-box; }
+.hp-kkeys { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; pointer-events: none; }
+.hp-kkeys kbd { min-width: 18px; padding: 1px 5px; border: 1px solid #efbf78; border-radius: 4px; background: #efbf78; color: #1b1a17; font: 700 12px/18px system-ui, sans-serif; text-align: center; }
+.hp-cursor[hidden], .hp-ripple[hidden], .hp-kkeys[hidden] { display: none; }
+.hp-steps { margin: 12px 0 8px; padding-left: 20px; }
+.hp-steps li { margin: 4px 0; color: #d5e1e9; }
+.hp-steps b { color: #ffd76a; font-weight: 600; }
+.hp-keys { margin: 8px 0; padding: 8px 10px; border-radius: 8px; background: #26405466; color: #cfe3ee; font-size: 12px; }
+.hp-keys kbd, .hp-more kbd { display: inline-block; min-width: 16px; padding: 0 4px; border: 1px solid #efbf78; border-radius: 4px; background: #263a51; color: #fff1d8; font: 11px/16px system-ui, sans-serif; text-align: center; }
+.hp-nokeys { background: #1f4a3a66; color: #a9ecc9; font-weight: 600; }
+.hp-more { margin: 6px 0 0; font-size: 11.5px; color: #93a9b8; }
+.hp-btns { display: flex; gap: 8px; margin-top: 12px; }
+.hp-btns button { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #7f97aa66; background: #1c2d3f; color: #e0e9ef; cursor: pointer; font: 600 12.5px system-ui, sans-serif; }
+.hp-btns .hp-show { border-color: #d7a74a; background: #e9b756; color: #1b1a17; }
+.hp-btns button[hidden] { display: none; }
+.embed #helpPop { top: 56px; right: 8px; width: 220px; }
 
 /* ---------- general 模式(默认):只留孔位高亮,收起 gizmo 相关工具 ---------- */
 .general .seg, .general #btnSpace, .general #btnSnap, .general #hints .x { display: none !important; }
@@ -815,6 +864,8 @@ input[type="range"]::-moz-range-thumb {
 .tt-foot { align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid #344052; padding-top: 11px; margin-top: 12px; }
 .tt-status { color: #91a4bb; font-size: 10px; line-height: 1.4; max-width: 190px; }
 #ttNext { white-space: nowrap; font-size: 11px; }
+#ttNext.primary { font-size: 14px; font-weight: 600; padding: 10px 22px; border-color: #d7a74a; color: #1b1a17; background: #e9b756; border-radius: 8px; }
+#ttNext.primary:hover { background: #f2c66d; border-color: #f2c66d; }
 #tutorial.done .tt-status { color: #94d8b8; }
 .tt-finish-icon { color: #91e0b8; font-size: 27px; }
 .tt-keyboard { text-align: center; flex-shrink: 0; }
@@ -885,6 +936,18 @@ input[type="range"]::-moz-range-thumb {
 /* Real-time assembly guidance, separate from ghost playback controls. */
 #nextGuide { position: fixed; z-index: 19; top: 76px; left: 16px; width: min(330px, calc(100vw - 32px)); box-sizing: border-box; padding: 18px; border: 1px solid #3b5260; border-radius: 16px; background: rgba(20,29,36,.96); box-shadow: 0 12px 40px #0005; color: #e0e8ee; max-height: calc(100vh - 240px); overflow: auto; font: 13px/1.5 system-ui,sans-serif; }
 #nextGuide[hidden] { display: none; }
+#nextGuide.collapsed { width:auto; padding:0; border-radius:999px; overflow:visible; }
+#nextGuide.collapsed .ng-body, #nextGuide:not(.collapsed) .ng-pill { display:none; }
+.ng-pill { display:flex; align-items:center; gap:9px; padding:8px 14px 8px 11px; background:none; border:0; border-radius:999px; color:#e0e8ee; font:600 12px system-ui,sans-serif; cursor:pointer; }
+.ng-pill:hover { background:#ffffff0d; }
+.ng-pill svg { width:15px; height:15px; color:#83c9ed; }
+.ng-pbar { width:72px; height:4px; border-radius:3px; overflow:hidden; background:#33434e; }
+.ng-pbar i { display:block; height:100%; background:#67d8b0; transition:width .25s; }
+.ng-pdot { width:8px; height:8px; border-radius:50%; background:#83c9ed; }
+#nextGuide[data-state="error"] .ng-pdot { background:#ff6b5a; box-shadow:0 0 0 3px #ff6b5a44; }
+#nextGuide[data-state="success"] .ng-pdot { background:#67d8b0; }
+#nextGuide.collapsed[data-state="error"] { border-color:#ff6b5a; }
+.ng-min { background:none; border:0; color:#b2c4d0; font-size:20px; cursor:pointer; padding:0 6px; }
 .ng-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .ng-kicker { font-size:10px; letter-spacing:2px; color:#95aabb; }
 .ng-close { background:none; border:0; color:#b2c4d0; font-size:22px; cursor:pointer; padding:0 4px; }
@@ -905,7 +968,7 @@ input[type="range"]::-moz-range-thumb {
 #nextGuide[data-state="success"] .ng-status { color:#7be3b8; }
 #nextGuide[data-state="success"] .ng-feedback { background:#265b483d; color:#b7f0d6; }
 #answerBar.next-guidance #ansLabel { display:none; }
-.embed #nextGuide { top:12px; }
+.embed #nextGuide { top:56px; }
 @media(max-width:600px) { #nextGuide { top:62px; padding:12px; max-height:38vh; } #nextGuide h2 { font-size:14px; margin:6px 0 10px; } .ng-parts { max-height:90px; overflow:auto; } }
 @media(prefers-reduced-motion:reduce) { .ng-progress i { transition:none; } }
 
@@ -1004,3 +1067,53 @@ input[type="range"]::-moz-range-thumb {
 .ck-notice-count {flex:none;color:#f3b38e;font-size:10px;}
 .has-check-error #panel {top:99px;}
 @media(prefers-reduced-motion:reduce) {#checkNotice {transition:none;}}
+
+/* ---------- 难度级别 ---------- */
+#levelSeg {
+  display: inline-flex; align-items: center; gap: 2px; padding: 2px;
+  border: 1px solid var(--line); border-radius: 8px; background: rgba(12, 15, 19, 0.35);
+}
+#levelSeg .lvl-label {
+  font: 10px var(--font-mono, ui-monospace, monospace); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--text-faint); padding: 0 6px 0 5px;
+}
+#levelSeg button {
+  all: unset; cursor: pointer; min-width: 22px; height: 22px; padding: 0 4px; border-radius: 6px;
+  display: grid; place-items: center; font: 600 12px/1 inherit; color: var(--text-dim);
+}
+#levelSeg button:hover { color: var(--text); background: var(--line-soft); }
+#levelSeg button.on { background: var(--accent-soft); color: var(--accent); }
+#levelSeg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.embed #levelSeg { display: inline-flex; }
+body[data-level="1"] #hints .lv2only, body[data-level="1"] #hints .lv3only,
+body[data-level="2"] #hints .lv1only, body[data-level="2"] #hints .lv3only,
+body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { display: none; }
+
+/* ---------- 右上角:推荐视角 ---------- */
+#viewTip {
+  position: fixed; z-index: 18; top: 76px; right: 16px; width: 264px; padding: 10px 10px 12px;
+  border-color: rgba(79, 209, 255, 0.35);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(79, 209, 255, 0.08) inset;
+  animation: vtIn .28s cubic-bezier(.2, .8, .2, 1);
+}
+#viewTip[hidden] { display: none; }
+@keyframes vtIn { from { transform: translateY(-6px); opacity: 0; } to { transform: none; opacity: 1; } }
+.vt-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+.vt-kicker { font: 600 10px var(--font-mono, ui-monospace, monospace); letter-spacing: .14em; color: #7fd8ff; }
+.vt-x { all: unset; cursor: pointer; color: var(--text-faint); font-size: 18px; line-height: 1; padding: 0 3px; }
+.vt-x:hover { color: var(--text); }
+.vt-img {
+  display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 8px;
+  background: #0d1117; border: 1px solid var(--line);
+}
+.vt-cap { margin: 8px 2px 10px; font-size: 12px; line-height: 1.4; color: var(--text-dim); }
+.vt-btns { display: flex; gap: 6px; }
+.vt-btns button {
+  all: unset; cursor: pointer; flex: 1; text-align: center; padding: 7px 8px; border-radius: 7px;
+  font-size: 12px; font-weight: 600; border: 1px solid var(--line); color: var(--text-dim);
+}
+.vt-btns button:hover { color: var(--text); background: var(--line-soft); }
+.vt-btns .vt-use { background: rgba(79, 209, 255, 0.16); border-color: rgba(79, 209, 255, 0.45); color: #bfeeff; }
+.vt-btns .vt-use:hover { background: rgba(79, 209, 255, 0.26); color: #fff; }
+.vt-btns button:focus-visible, .vt-x:focus-visible { outline: 2px solid #7fd8ff; outline-offset: 2px; }
+.embed #viewTip { top: 56px; right: 8px; width: 220px; }
