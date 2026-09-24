@@ -1006,6 +1006,8 @@ body.help-open #viewTip { visibility: hidden; }
 .tt-choice[hidden] { display: none; }
 
 
+
+#tutorial.finale:not(.show) { display: none; }
 #tutorial.finale {
   left: 0; right: 0; top: 0; bottom: 0; width: auto; max-height: none;
   border: 0; border-radius: 0; padding: 0; overflow-y: auto;
@@ -1457,7 +1459,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-24 17:26';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-24 17:29';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -14703,7 +14705,7 @@ KBWorkspace.overview();
         if (hb)
             hb.classList.remove('nudge');
         statusEl.classList.remove('err');
-        el.classList.remove('show');
+        el.classList.remove('show', 'finale', 'done');
         if (wasActive && reason !== 'restart')
             KB.emit('tutorialEnd', { reason: reason === 'completed' ? 'completed' : 'skipped', experience: experience, level: level });
     }
