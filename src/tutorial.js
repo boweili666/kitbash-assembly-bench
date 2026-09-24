@@ -50,18 +50,18 @@
   var VIEW = { p: [3.9, 4.8, 17.6], t: [1.0, 0.3, 11.8] };
   var courses = [
     {
-      name: 'Find your way', names: { plate: 'Front Plate', arm: 'Arm' },
+      name: 'Find your way', names: {},
       view: { p: [0, 6.2, 13.5], t: [0, 0.3, 10.5] },
       scene: function () {
-        // 两件零件摆在装配区里,转视角时有东西可看
-        return [o('split_front_plate', 'Front Plate', [-0.6, 0, 10.6]), o('arm_5in', 'Arm', [1.1, 0, 10.9], [0, Math.PI / 2, 0])];
+        // 只教怎么看:不摆零件,转的是装配区和网格
+        return [];
       },
       steps: [
         { tag: 'orbit', light: function () { return []; },
           done: function () { return (flags.orbitDrags || 0) >= ORBIT_DRAGS; },
-          lesson: { title: 'Look at it from another side', hint: 'Drag on empty space with the LEFT mouse button to swing the view around. Do it a few times, from different sides: which disc of a hole you can click depends on where you are looking from.',
+          lesson: { title: 'Look at it from another side', hint: 'Drag with the LEFT mouse button to swing the view around. Do it a few times, from different sides \u2014 it is how you look at a part from above, from the side or from underneath.',
             demo: 'move', label: 'Drag empty space to orbit', target: 'View',
-            actions: ['Press and hold on empty space, drag until the parts turn',
+            actions: ['Press and hold the left button, drag until the view turns',
                       'Let go and do it again \u2014 ' + ORBIT_DRAGS + ' separate drags'] } },
         { tag: 'pan', light: function () { return []; },
           done: function () { return (flags.panDrags || 0) >= PAN_DRAGS; },
@@ -79,7 +79,7 @@
             if ((flags.zooms || 0) >= ZOOMS) return '';
             return 'Zoomed ' + (flags.zooms || 0) + ' of ' + ZOOMS + ' times \u2014 roll the mouse wheel.';
           },
-          lesson: { title: 'Get closer, then back out', hint: 'Roll the mouse wheel to zoom. Close up you can tell two holes apart and click the right disc; zoomed out you can see the whole frame at once.',
+          lesson: { title: 'Get closer, then back out', hint: 'Roll the mouse wheel to zoom. Close up you can see small parts clearly; zoomed out you can see the whole workspace at once.',
             demo: 'adjust', label: 'Wheel to zoom', target: 'View',
             actions: ['Roll the wheel forward to come closer',
                       'Roll it back to pull out \u2014 ' + ZOOMS + ' zooms in all'] } },

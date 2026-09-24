@@ -5,7 +5,8 @@
  * 收取用户动作(拿起 / 移动 / 放下)和渲染帧。协议 v1:
  *
  *   宿主 → 仿真台
- *     {type:'kb:init',     scene:[ScenePart], options:{frames, fps, width, quality, moveHz, guide, level}}
+ *     {type:'kb:init',     scene:[ScenePart], options:{frames, fps, width, quality, moveHz, guide, level, tray}}
+ *                                                  tray:false = 料盘里的零件也按传入坐标摆(默认按类型分格重排)
  *                                                  level:1 点零件就到位 / 2 点对孔就摆正 / 3 手动(现在的做法)
  *                                                  guide:true 装完场景就打开逐步指引(第一次装的人)
  *     {type:'kb:setScene', scene:[ScenePart]}
@@ -95,6 +96,16 @@
       if (!o.id) o.id = KB.newId();
       objects.push(o);
     });
+    // 料盘里的零件按类型 / 螺丝长度分格摆(和独立网页"摆整套零件"一样,带格子和标签);
+    // 已经在装配区里的(比如恢复进度)保持宿主给的位置。options.tray === false 时全按宿主坐标
+    if (window.KBTray && options.tray !== false) {
+      var ws = window.KBWorkspace && KBWorkspace.bounds;
+      var loose = objects.filter(function (o) {
+        var p = o.p || [0, 0, 0];
+        return !(ws && p[0] >= ws.minX && p[0] <= ws.maxX && p[2] >= ws.minZ && p[2] <= ws.maxZ);
+      });
+      if (loose.length) KBTray.arrange(loose);
+    }
     KB.loadSceneData({ v: 1, objects: objects }, true);
     KB.setSelection([]);
     KB.pushSnapshot();
