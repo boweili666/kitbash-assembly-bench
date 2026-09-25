@@ -738,6 +738,13 @@ input[type="range"]::-moz-range-thumb {
 
 #btnNext, .embed #btnNext { display: none !important; }
 #btnHome[hidden] { display: none !important; }
+
+body.public #btnRecord, body.public #btnCheck, body.public #btnImport, body.public #btnExportJson,
+body.public #btnExportGlb, body.public #btnAgent + .vsep { display: none !important; }
+body.public #btnHome { background: #e8ba78; color: #15212d; font-weight: 700; padding: 6px 14px; border-radius: 8px;
+  box-shadow: 0 0 0 1px #f3ce9866, 0 4px 14px #e4ad5733; margin-right: 6px; }
+body.public #btnHome:hover { background: #f3ce98; }
+body.public #btnHome svg { stroke-width: 2; }
 .embed #btnHelp, .embed #btnHelp .lbl, .embed #btnView, .embed #btnView .lbl { display: inline-flex; }
 #btnHelp.on { background: #2a4a5e; color: #bfe9ff; }
 #btnHelp.nudge { animation: helpNudge 1.6s ease-in-out infinite; color: #ffd98a; }
@@ -1468,7 +1475,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-24 20:08';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-24 20:14';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -20424,6 +20431,7 @@ KBWorkspace.overview();
     setInterval(ensureGuide, 1500);
     var home = document.getElementById('btnHome');
     if (home && /\/sim\.html$/.test(location.pathname) && !document.body.classList.contains('embed')) {
+        document.body.classList.add('public');
         home.hidden = false;
         home.addEventListener('click', function () {
             var busy = KB.objectsRoot && KB.objectsRoot.children.length;
