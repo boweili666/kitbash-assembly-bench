@@ -1186,7 +1186,7 @@ body.demo-mode #celebrate { display: none !important; }
 #demoBar {
   position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 20;
   display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 12px;
-  width: min(calc(100vw - 32px), 640px); box-sizing: border-box;
+  width: min(calc(100vw - 32px), 780px); box-sizing: border-box;
   background: var(--panel-solid); border: 1px solid var(--line); border-radius: 12px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, .35); color: var(--text);
 }
@@ -1195,6 +1195,9 @@ body.demo-mode #celebrate { display: none !important; }
   padding: 3px 7px; border-radius: 6px; background: var(--accent-soft); }
 #demoBar .db-step { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 #demoBar .db-count { font: 600 12px/1.3 inherit; }
+#demoBar .db-sub { font-size: 11.5px; line-height: 1.3; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#demoBar .db-sub:empty { display: none; }
+#demoBar .db-mode, #demoBar .db-speed { color: var(--text-dim); font-size: 11.5px; padding: 7px 8px; }
 #demoBar .db-name { font-size: 12px; line-height: 1.3; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #demoBar .db-prog { flex: 0 0 90px; height: 4px; border-radius: 2px; background: var(--line-soft); overflow: hidden; }
 #demoBar .db-prog i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
@@ -1203,8 +1206,8 @@ body.demo-mode #celebrate { display: none !important; }
 #demoBar button:hover { background: var(--line-soft); }
 #demoBar button:disabled { opacity: .5; cursor: default; }
 #demoBar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-#demoBar .db-pause { background: var(--accent-soft); color: var(--accent); border-color: transparent; min-width: 38px; text-align: center; }
-@media (max-width: 560px) { #demoBar .db-prog { display: none; } #demoBar { gap: 6px; } }
+#demoBar .db-main { background: var(--accent-soft); color: var(--accent); border-color: transparent; min-width: 44px; text-align: center; white-space: nowrap; }
+@media (max-width: 700px) { #demoBar .db-prog, #demoBar .db-mode { display: none; } #demoBar { gap: 6px; } }
 
 
 #btnCheck { display: none !important; }
@@ -1541,7 +1544,7 @@ body.demo-mode #celebrate { display: none !important; }
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-25 13:55';  /* build.py replaces this with the build time */</script>
+<script>window.KB_BUILD = '2026-09-25 14:15';  /* build.py replaces this with the build time */</script>
 <script>
 /**
  * @license
@@ -19158,21 +19161,18 @@ KBWorkspace.overview();
         var delta = new THREE.Matrix4().multiplyMatrices(want, new THREE.Matrix4().copy(node.matrixWorld).invert());
         return { node: top, want: delta.multiply(top.matrixWorld.clone()) };
     }
-    function fly(part, target, then) {
+    function fly(part, target, then, opts) {
+        opts = opts || {};
+        var speed = opts.speed > 0 ? opts.speed : 1;
         var mv = moverFor(part, target.want);
         var end = toParentLocal(mv.node, mv.want);
         var start = mv.node.position.clone();
-        var via = null;
-        if (target.approach) {
-            var aw = mv.node === part ? target.approach
-                : new THREE.Matrix4().multiplyMatrices(target.approach, new THREE.Matrix4().copy(part.matrixWorld).invert())
-                    .multiply(mv.node.matrixWorld.clone());
-            via = toParentLocal(mv.node, aw);
-        }
+        var ways = (target.via && target.via.length ? target.via : target.approach ? [target.approach] : []).map(function (w) {
+            return toParentLocal(mv.node, mv.node === part ? w
+                : new THREE.Matrix4().multiplyMatrices(w, new THREE.Matrix4().copy(part.matrixWorld).invert()).multiply(mv.node.matrixWorld.clone()));
+        });
         busy = true;
         KB.emit('grab', mv.node);
-        KB.emit('levelFlight', { node: part, want: target.want.clone(), force: !!target.followCam,
-            approach: target.approach ? target.approach.clone() : null });
         function done(interrupted) {
             busy = false;
             if (interrupted)
@@ -19181,22 +19181,32 @@ KBWorkspace.overview();
             KB.pushSnapshot();
             then && then(mv.node);
         }
-        var dist = start.distanceTo(via ? via.p : end.p);
-        var first = { duration: 0.45 + Math.min(0.45, dist * 0.08), arc: Math.min(0.7, 0.15 + dist * 0.1) };
-        if (via) {
-            first.onDone = function (interrupted) {
+        if (opts.instant) {
+            mv.node.position.copy(end.p);
+            mv.node.quaternion.copy(end.q);
+            mv.node.updateMatrixWorld(true);
+            done(false);
+            return;
+        }
+        KB.emit('levelFlight', { node: part, want: target.want.clone(), force: !!target.followCam,
+            approach: ways.length ? (target.via ? target.via[0] : target.approach).clone() : null });
+        var legs = ways.concat([end]), from = start;
+        function leg(i) {
+            var to = legs[i], last = i === legs.length - 1, dist = from.distanceTo(to.p);
+            var o = i === 0 ? { duration: 0.45 + Math.min(0.45, dist * 0.08), arc: Math.min(0.7, 0.15 + dist * 0.1) }
+                : { duration: last ? 0.34 : 0.2 + Math.min(0.4, dist * 0.08) };
+            o.duration /= speed;
+            o.onDone = last ? done : function (interrupted) {
                 if (interrupted) {
                     busy = false;
                     return;
                 }
-                KB.tween(mv.node, end.p, end.q, { duration: 0.34, onDone: done });
+                from = to.p;
+                leg(i + 1);
             };
-            KB.tween(mv.node, via.p, via.q, first);
+            KB.tween(mv.node, to.p, to.q, o);
         }
-        else {
-            first.onDone = done;
-            KB.tween(mv.node, end.p, end.q, first);
-        }
+        leg(0);
     }
     var justAssembled = null, curSel = [];
     KB.onSelection(function (sel) {
@@ -19256,7 +19266,7 @@ KBWorkspace.overview();
         }, true);
     }
     var queued = null;
-    function placeByClick(node, followCam, then) {
+    function placeByClick(node, followCam, then, opts) {
         if (!window.KBCheck)
             return false;
         if (busy) {
@@ -19267,6 +19277,11 @@ KBWorkspace.overview();
         if (!r || r.already || !r.want)
             return false;
         r.followCam = !!followCam;
+        var tr = opts && opts.trajectory;
+        if (tr === 'direct')
+            r.approach = null;
+        else if (tr === 'answer')
+            r.via = recordedPath(r);
         fly(node, r, function (moved) {
             KBCheck.markLevelPlaced(node, r.slot);
             KB.setSelection([]);
@@ -19279,6 +19294,18 @@ KBWorkspace.overview();
             then && then(node);
         });
         return true;
+    }
+    function recordedPath(r) {
+        var a = window.KBParts && KBParts.answer && KBParts.answer(), id = r.slot && r.slot.id;
+        var d = a && id && a.parts.filter(function (x) { return x.id === id; })[0];
+        if (!d || !d.path || d.path.length < 2)
+            return null;
+        var mats = d.path.map(function (pose) {
+            var t = KBParts.nodeTransform(d.key, pose);
+            return new THREE.Matrix4().compose(new THREE.Vector3().fromArray(t.p), new THREE.Quaternion().setFromEuler(new THREE.Euler(t.r[0], t.r[1], t.r[2], 'XYZ')), new THREE.Vector3(1, 1, 1));
+        });
+        var delta = new THREE.Matrix4().multiplyMatrices(r.want, mats[mats.length - 1].clone().invert());
+        return mats.slice(0, -1).map(function (m) { return new THREE.Matrix4().multiplyMatrices(delta, m); });
     }
     KB.onSelection(function (sel) {
         if (level !== 1 || tutorialOn() || demoOn() || sel.length !== 1)
@@ -19918,6 +19945,8 @@ KBWorkspace.overview();
         hideCard(); soon(); });
     KB.on('levelFlight', function (f) {
         if (!f || !f.node || tutorialOn() || !(follow || f.force || autoView()))
+            return;
+        if (window.KBDemo && KBDemo.active() && !f.force)
             return;
         followTo(keyOf(f.node), f.want, f.approach, f.node);
     });
@@ -20703,11 +20732,122 @@ KBWorkspace.overview();
 (function () {
     'use strict';
     var KB = window.KB;
-    var GAP_MS = 450;
-    var STEP_GAP_MS = 900;
-    var on = false, paused = false, finished = false;
-    var saved = null, prevLevel = 3, timer = 0, stuck = 0, lastStep = -1;
+    var DEFAULTS = { autoplay: true, by: 'substep', speed: 1, gap: 450, substepGap: 700, stepGap: 1000,
+        trajectory: 'approach', camera: 'follow', from: null, to: null, steps: null,
+        fresh: true, loop: false, restore: true, hideTray: true, bar: true };
+    var SPEEDS = [0.5, 1, 2, 4];
+    var opt = Object.assign({}, DEFAULTS);
+    var on = false, paused = false, finished = false, holding = false, passBoundary = false;
+    var saved = null, prevLevel = 3, timer = 0, stuck = 0, loopTimer = 0;
+    var cur = null;
+    var lastPlayed = null;
     var hidden = [];
+    var kitLoader = null;
+    function loadStart() {
+        if (opt.fresh) {
+            if (kitLoader)
+                kitLoader();
+            else
+                KB.loadKit();
+        }
+        else if (saved) {
+            KB.loadSceneData(JSON.parse(saved), true);
+            KB.pushSnapshot(true);
+        }
+    }
+    function norm(o) {
+        var out = Object.assign({}, opt);
+        Object.keys(o || {}).forEach(function (k) { if (k in DEFAULTS)
+            out[k] = o[k]; });
+        out.speed = +out.speed > 0 ? +out.speed : 1;
+        ['gap', 'substepGap', 'stepGap'].forEach(function (k) { out[k] = Math.max(0, +out[k] || 0); });
+        if (['part', 'substep', 'step'].indexOf(out.by) < 0)
+            out.by = 'substep';
+        if (['approach', 'direct', 'answer'].indexOf(out.trajectory) < 0)
+            out.trajectory = 'approach';
+        if (['follow', 'fixed'].indexOf(out.camera) < 0)
+            out.camera = 'follow';
+        if (typeof out.steps === 'string')
+            out.steps = out.steps.split(',');
+        if (out.steps && !out.steps.length)
+            out.steps = null;
+        return out;
+    }
+    function stepList() { var r = KBCheck.results(); return (r && r.steps) || []; }
+    function stepIndex(x) {
+        if (x === null || x === undefined || x === '')
+            return null;
+        var list = stepList();
+        if (/^\d+$/.test(String(x))) {
+            var n = +x - 1;
+            return n >= 0 && n < list.length ? n : null;
+        }
+        for (var i = 0; i < list.length; i++)
+            if (list[i].id === x || list[i].name === x)
+                return list[i].i;
+        return null;
+    }
+    function inPlay(i) {
+        var f = stepIndex(opt.from), t = stepIndex(opt.to);
+        if (f !== null && i < f)
+            return false;
+        if (t !== null && i > t)
+            return false;
+        if (opt.steps)
+            return opt.steps.some(function (x) { return stepIndex(x) === i; });
+        return true;
+    }
+    function lastInPlay() {
+        var list = stepList(), last = -1;
+        list.forEach(function (s) { if (inPlay(s.i))
+            last = s.i; });
+        return last;
+    }
+    function kindOf(node) { return KBCheck.canon(node.userData.kbType ? node.userData.kbType.slice(5) : ''); }
+    function baseName(name) { return String(name || '').replace(/\s*#[\d-]+$/, '').replace(/\s*\([A-Z]\)$/, ''); }
+    function planOf(st) {
+        if (st.assembly && st.assembly.groups) {
+            var plan = [];
+            if (st.base && !st.base.ok)
+                plan.push({ kind: null, count: 1, left: 1, label: baseName(st.base.ref.name) });
+            st.assembly.groups.forEach(function () { plan.push({ kind: null, count: 1, left: 1, label: null }); });
+            return plan;
+        }
+        var slots = st.slots.slice();
+        if (st.base && !st.base.ok && slots.indexOf(st.base) < 0)
+            slots.unshift(st.base);
+        slots.sort(function (a, b) { return Number(KBCheck.comesFirst(b.ref)) - Number(KBCheck.comesFirst(a.ref)); });
+        var subs = [];
+        slots.forEach(function (t) {
+            if (t.ok)
+                return;
+            var last = subs[subs.length - 1];
+            if (last && last.kind === t.ref.ckey) {
+                last.count++;
+                last.left++;
+            }
+            else
+                subs.push({ kind: t.ref.ckey, count: 1, left: 1, name: baseName(t.ref.name) });
+        });
+        subs.forEach(function (s) { s.label = s.name + (s.count > 1 ? ' ×' + s.count : ''); });
+        return subs;
+    }
+    function subFor(node) {
+        if (cur.plan.length && cur.plan[0].kind === null) {
+            for (var j = 0; j < cur.plan.length; j++)
+                if (cur.plan[j].left > 0) {
+                    if (!cur.plan[j].label)
+                        cur.plan[j].label = baseName(node.name) + ' assembly';
+                    return j;
+                }
+        }
+        var k = kindOf(node);
+        for (var i = 0; i < cur.plan.length; i++)
+            if (cur.plan[i].left > 0 && cur.plan[i].kind === k)
+                return i;
+        cur.plan.push({ kind: k, count: 1, left: 1, name: baseName(node.name), label: baseName(node.name) });
+        return cur.plan.length - 1;
+    }
     var bar = document.createElement('div');
     bar.id = 'demoBar';
     bar.className = 'float';
@@ -20715,14 +20855,17 @@ KBWorkspace.overview();
     bar.setAttribute('role', 'region');
     bar.setAttribute('aria-label', 'Demo playback');
     bar.innerHTML = '<span class="db-tag">DEMO</span>' +
-        '<span class="db-step"><b class="db-count"></b><span class="db-name"></span></span>' +
+        '<span class="db-step"><b class="db-count"></b><span class="db-name"></span><span class="db-sub"></span></span>' +
         '<span class="db-prog"><i></i></span>' +
-        '<button class="db-pause" title="Pause (Space)">Pause</button>' +
-        '<button class="db-replay" title="Play the whole build again">Replay</button>' +
+        '<button class="db-main" title="Pause / play (Space)">Pause</button>' +
+        '<button class="db-mode" title="Plays by itself, or waits for Next">Auto</button>' +
+        '<button class="db-speed" title="Speed">1×</button>' +
+        '<button class="db-replay" title="Play it again from the start">Replay</button>' +
         '<button class="db-exit" title="Leave the demo and go back to your build (Esc)">Exit</button>';
     document.body.appendChild(bar);
-    var elCount = bar.querySelector('.db-count'), elName = bar.querySelector('.db-name');
-    var elProg = bar.querySelector('.db-prog i'), elPause = bar.querySelector('.db-pause');
+    var elCount = bar.querySelector('.db-count'), elName = bar.querySelector('.db-name'), elSub = bar.querySelector('.db-sub');
+    var elProg = bar.querySelector('.db-prog i'), elMain = bar.querySelector('.db-main');
+    var elMode = bar.querySelector('.db-mode'), elSpeed = bar.querySelector('.db-speed');
     var seg = document.getElementById('levelSeg');
     var btn = document.createElement('button');
     btn.dataset.demo = '1';
@@ -20731,6 +20874,7 @@ KBWorkspace.overview();
     btn.setAttribute('aria-pressed', 'false');
     if (seg)
         seg.appendChild(btn);
+    var UNIT = { part: 'part', substep: 'substep', step: 'step' };
     function paint() {
         btn.classList.toggle('on', on);
         btn.setAttribute('aria-pressed', String(on));
@@ -20747,27 +20891,36 @@ KBWorkspace.overview();
                 }
             });
         document.body.classList.toggle('demo-mode', on);
-        bar.hidden = !on;
-        elPause.textContent = finished ? 'Done' : paused ? 'Play' : 'Pause';
-        elPause.disabled = finished;
+        bar.hidden = !on || !opt.bar;
+        elMain.textContent = finished ? 'Done' : !opt.autoplay ? 'Next ' + UNIT[opt.by] : paused ? 'Play' : 'Pause';
+        elMain.title = opt.autoplay ? 'Pause / play (Space)' : 'Play the next ' + UNIT[opt.by] + ' (Space)';
+        elMain.disabled = finished || (!opt.autoplay && !holding);
+        elMode.textContent = opt.autoplay ? 'Auto' : 'By ' + UNIT[opt.by];
+        elSpeed.textContent = opt.speed + '×';
     }
-    function progress(st) {
-        var res = KBCheck.results(), total = res && res.steps ? res.steps.length : 0;
-        var doneN = res ? res.stepsSettled : 0;
+    function progress(st, sub) {
+        var list = stepList(), total = list.length, res = KBCheck.results();
         if (finished) {
-            elCount.textContent = 'All ' + total + ' steps';
-            elName.textContent = 'The drone is assembled';
+            elCount.textContent = lastInPlay() === total - 1 || total === 0 ? 'All ' + total + ' steps' : 'Done';
+            elName.textContent = lastInPlay() === total - 1 ? 'The drone is assembled' : 'End of the selected steps';
+            elSub.textContent = '';
         }
         else if (st) {
-            elCount.textContent = 'Step ' + (st.i + 1) + ' / ' + total;
+            var n = cur && cur.step === st.i ? cur.plan.length : 0;
+            elCount.textContent = 'Step ' + (st.i + 1) + ' / ' + total + (n > 1 && sub !== undefined ? ' · ' + (sub + 1) + ' / ' + n : '');
             elName.textContent = st.name || '';
+            elSub.textContent = cur && sub !== undefined && cur.plan[sub] ? cur.plan[sub].label : '';
         }
-        elProg.style.width = total ? Math.round(100 * (finished ? 1 : doneN / total)) + '%' : '0';
+        elProg.style.width = total ? Math.round(100 * (finished ? 1 : (res ? res.stepsSettled : 0) / total)) + '%' : '0';
     }
-    function trayScenery() { return KB.scene.children.filter(function (o) { return o.name === 'Parts tray' || o.type === 'GridHelper'; }); }
-    function scenery(show) { trayScenery().forEach(function (o) { o.visible = show; }); }
+    function scenery(show) {
+        KB.scene.children.forEach(function (o) { if (o.name === 'Parts tray' || o.type === 'GridHelper')
+            o.visible = show; });
+    }
     function hideTray() {
         hidden = [];
+        if (!opt.hideTray)
+            return;
         KB.objectsRoot.children.forEach(function (n) {
             if (n.visible && window.KBWorkspace && !KBWorkspace.contains(n)) {
                 n.visible = false;
@@ -20806,53 +20959,115 @@ KBWorkspace.overview();
         }
     }
     function later(ms) { clearTimeout(timer); timer = setTimeout(tick, ms); }
+    function wait(ms) { return ms / opt.speed; }
     function tick() {
         timer = 0;
-        if (!on || paused || finished)
+        if (!on || paused || finished || holding)
             return;
         if (KB.interacting() || (KB.tweening && KB.tweening()) || KBLevel.busy()) {
-            later(250);
+            later(200);
             return;
         }
         KBCheck.evaluate();
         var st = KBCheck.next();
         if (!st) {
-            finish();
+            finish('done');
             return;
         }
-        if (st.i !== lastStep && lastStep >= 0 && stuck === 0) {
-            lastStep = st.i;
-            progress(st);
-            later(STEP_GAP_MS);
-            return;
-        }
-        lastStep = st.i;
-        progress(st);
         var nodes = window.KBFocus ? KBFocus.partsToMove(st) : [];
-        for (var i = 0; i < nodes.length; i++) {
-            var n = nodes[i];
-            reveal(n);
-            if (KBLevel.place(n, true, function () { stuck = 0; later(GAP_MS); }))
+        if (!inPlay(st.i)) {
+            if (st.i > lastInPlay()) {
+                finish('done');
                 return;
+            }
+            for (var j = 0; j < nodes.length; j++) {
+                reveal(nodes[j]);
+                if (KBLevel.place(nodes[j], false, function () { stuck = 0; later(0); }, { instant: true }))
+                    return;
+            }
+            return giveUp(st);
         }
+        if (!cur || cur.step !== st.i)
+            cur = { step: st.i, plan: planOf(st) };
+        if (!nodes.length)
+            return giveUp(st);
+        var n = nodes[0], sub = subFor(n);
+        var boundary = !lastPlayed ? 'first' : lastPlayed.step !== st.i ? 'step' : lastPlayed.sub !== sub ? 'substep' : 'part';
+        progress(st, sub);
+        if (!passBoundary) {
+            if (!opt.autoplay && (boundary === 'first' || boundary === 'step' ||
+                (boundary === 'substep' && opt.by !== 'step') || (boundary === 'part' && opt.by === 'part'))) {
+                holding = true;
+                paint();
+                return;
+            }
+            var extra = boundary === 'step' ? opt.stepGap - opt.gap : boundary === 'substep' ? opt.substepGap - opt.gap : 0;
+            if (opt.autoplay && extra > 0) {
+                passBoundary = true;
+                later(wait(extra));
+                return;
+            }
+        }
+        passBoundary = false;
+        for (var i = 0; i < nodes.length; i++) {
+            var node = nodes[i];
+            if (i > 0) {
+                sub = subFor(node);
+            }
+            reveal(node);
+            var ok = KBLevel.place(node, opt.camera === 'follow', (function (s, nd) {
+                return function () {
+                    stuck = 0;
+                    cur.plan[s].left = Math.max(0, cur.plan[s].left - 1);
+                    later(wait(opt.gap));
+                };
+            })(sub, node), { speed: opt.speed, trajectory: opt.trajectory });
+            if (ok) {
+                lastPlayed = { step: st.i, sub: sub };
+                KB.emit('demoProgress', { step: st.i + 1, steps: stepList().length, stepId: st.id, stepName: st.name,
+                    substep: sub + 1, substeps: cur.plan.length, substepName: cur.plan[sub].label,
+                    partId: node.userData.kbId || null, partName: node.name });
+                return;
+            }
+        }
+        giveUp(st);
+    }
+    function giveUp(st) {
         if (++stuck > 8) {
-            finished = true;
-            paint();
-            progress(st);
-            elName.textContent = 'Stopped at step ' + (st.i + 1) + ' — ' + (st.name || '');
+            finish('stuck', st);
             return;
         }
-        later(500);
+        later(400);
     }
-    function finish() {
+    function finish(reason, st) {
         finished = true;
+        holding = false;
         paint();
         progress(null);
+        if (reason === 'stuck' && st)
+            elName.textContent = 'Stopped at step ' + (st.i + 1) + ' — ' + (st.name || '');
         frameWorkspace(true);
+        KB.emit('demoEnd', { reason: reason, step: st ? st.i + 1 : null });
+        clearTimeout(loopTimer);
+        if (opt.loop && reason === 'done')
+            loopTimer = setTimeout(function () { if (on && finished)
+                replay(); }, 2500);
     }
-    function start() {
-        if (on)
+    function reset() {
+        paused = false;
+        finished = false;
+        holding = false;
+        passBoundary = false;
+        stuck = 0;
+        cur = null;
+        lastPlayed = null;
+    }
+    function start(o) {
+        if (on) {
+            if (o)
+                set(o);
             return;
+        }
         if (!(window.KBCheck && window.KBLevel && window.KBParts && KBParts.ready())) {
             KB.toast('Parts are still loading');
             return;
@@ -20861,13 +21076,11 @@ KBWorkspace.overview();
             KB.toast('Finish or close the tutorial first');
             return;
         }
+        opt = norm(o);
         saved = JSON.stringify(KB.serializeScene());
         prevLevel = KBLevel.get();
         on = true;
-        paused = false;
-        finished = false;
-        stuck = 0;
-        lastStep = -1;
+        reset();
         if (window.KBHelp)
             KBHelp.close();
         if (window.KBCelebrate)
@@ -20878,26 +21091,29 @@ KBWorkspace.overview();
             KBMate.cancel();
         KB.setSelection([]);
         KBLevel.set(1, true);
+        if (opt.fresh)
+            loadStart();
         paint();
         hideTray();
         frameWorkspace(false);
-        KB.emit('demo', { on: true });
-        later(1200);
+        KB.emit('demo', { on: true, options: Object.assign({}, opt) });
+        later(1000);
     }
     function stop(restore) {
         if (!on)
             return;
         clearTimeout(timer);
         timer = 0;
+        clearTimeout(loopTimer);
+        var wasDone = finished;
         on = false;
-        paused = false;
-        finished = false;
+        reset();
         if (KB.finishTween)
             KB.finishTween();
         if (KB.orbit)
             KB.orbit.autoRotate = false;
         showAll();
-        if (restore !== false && saved) {
+        if ((restore === undefined ? opt.restore : restore) && saved) {
             KB.loadSceneData(JSON.parse(saved), true);
             KB.pushSnapshot(true);
         }
@@ -20910,35 +21126,71 @@ KBWorkspace.overview();
             KBFocus.refresh();
         if (window.KBWorkspace)
             KBWorkspace.look('work');
+        if (!wasDone)
+            KB.emit('demoEnd', { reason: 'stopped', step: null });
         KB.emit('demo', { on: false });
     }
     function replay() {
         if (!on || !saved)
             return;
         clearTimeout(timer);
+        clearTimeout(loopTimer);
         if (KB.finishTween)
             KB.finishTween();
         if (KB.orbit)
             KB.orbit.autoRotate = false;
         showAll();
-        KB.loadSceneData(JSON.parse(saved), true);
-        KB.pushSnapshot(true);
-        paused = false;
-        finished = false;
-        stuck = 0;
-        lastStep = -1;
+        loadStart();
+        reset();
         paint();
         hideTray();
         frameWorkspace(false);
-        later(900);
+        later(800);
+    }
+    function set(o) {
+        var before = opt;
+        opt = norm(o);
+        if (!on)
+            return Object.assign({}, opt);
+        if (opt.hideTray !== before.hideTray) {
+            if (opt.hideTray)
+                hideTray();
+            else
+                showAll();
+        }
+        if (String([opt.from, opt.to, opt.steps]) !== String([before.from, before.to, before.steps]))
+            replay();
+        else {
+            if (opt.autoplay && holding) {
+                holding = false;
+                passBoundary = true;
+                later(0);
+            }
+            paint();
+        }
+        return Object.assign({}, opt);
     }
     function togglePause() {
-        if (!on || finished)
+        if (!on || finished || !opt.autoplay)
             return;
         paused = !paused;
         paint();
         if (!paused)
             later(0);
+    }
+    function next() {
+        if (!on || finished)
+            return;
+        if (opt.autoplay) {
+            togglePause();
+            return;
+        }
+        if (!holding)
+            return;
+        holding = false;
+        passBoundary = true;
+        paint();
+        later(0);
     }
     btn.addEventListener('click', function () { if (on)
         stop();
@@ -20949,7 +21201,17 @@ KBWorkspace.overview();
             if (on && e.target.closest('button[data-level]'))
                 stop();
         }, true);
-    elPause.addEventListener('click', togglePause);
+    elMain.addEventListener('click', next);
+    elMode.addEventListener('click', function () {
+        var seq = [[true, opt.by], [false, 'substep'], [false, 'step'], [false, 'part']];
+        var k = opt.autoplay ? 0 : ['substep', 'step', 'part'].indexOf(opt.by) + 1;
+        var nx = seq[(k + 1) % seq.length];
+        set({ autoplay: nx[0], by: nx[0] ? opt.by : nx[1] });
+    });
+    elSpeed.addEventListener('click', function () {
+        var i = SPEEDS.indexOf(opt.speed);
+        set({ speed: SPEEDS[(i + 1) % SPEEDS.length] });
+    });
     bar.querySelector('.db-replay').addEventListener('click', replay);
     bar.querySelector('.db-exit').addEventListener('click', function () { stop(); });
     window.addEventListener('keydown', function (e) {
@@ -20960,10 +21222,10 @@ KBWorkspace.overview();
             e.stopImmediatePropagation();
             stop();
         }
-        else if (e.code === 'Space') {
+        else if (e.code === 'Space' || (e.code === 'ArrowRight' && !opt.autoplay)) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            togglePause();
+            next();
         }
         else if (/^(Arrow|Key[WERQGSVBP]|Delete|Backspace)/.test(e.code) || e.ctrlKey || e.metaKey)
             e.stopImmediatePropagation();
@@ -20974,16 +21236,41 @@ KBWorkspace.overview();
         window.addEventListener(ev, function () { if (on && finished && KB.orbit)
             KB.orbit.autoRotate = false; }, true);
     });
-    window.KBDemo = { active: function () { return on; }, start: start, stop: stop, replay: replay,
-        pause: function (p) { if (on && !finished && !!p !== paused)
+    window.KBDemo = {
+        active: function () { return on; },
+        start: start, stop: stop, replay: replay, set: set, next: next,
+        pause: function (p) { if (on && !finished && opt.autoplay && !!p !== paused)
             togglePause(); return paused; },
-        finished: function () { return finished; } };
-    if (new URLSearchParams(location.search).get('level') === 'demo') {
-        (function wait() { if (window.KBParts && KBParts.ready() && window.KBCheck && KBCheck.results())
-            setTimeout(start, 800);
-        else
-            setTimeout(wait, 200); })();
-    }
+        finished: function () { return finished; },
+        setKit: function (fn) { kitLoader = typeof fn === 'function' ? fn : null; },
+        options: function () { return Object.assign({}, opt); },
+        defaults: function () { return Object.assign({}, DEFAULTS); },
+        state: function () {
+            return { on: on, paused: paused, waiting: holding, finished: finished,
+                step: cur ? cur.step + 1 : null, substep: lastPlayed ? lastPlayed.sub + 1 : null,
+                substeps: cur ? cur.plan.length : null };
+        }
+    };
+    (function fromUrl() {
+        var q = new URLSearchParams(location.search), o = {}, any = false;
+        q.forEach(function (v, k) {
+            if (k.indexOf('demo.') !== 0)
+                return;
+            var name = k.slice(5);
+            o[name] = /^(true|1|yes)$/i.test(v) && name !== 'from' && name !== 'to' && name !== 'steps' ? true
+                : /^(false|0|no)$/i.test(v) && name !== 'from' && name !== 'to' && name !== 'steps' ? false
+                    : /^\d+(\.\d+)?$/.test(v) && name !== 'steps' ? +v : v;
+            any = true;
+        });
+        if (any)
+            opt = norm(o);
+        if (q.get('level') === 'demo') {
+            (function waitReady() { if (window.KBParts && KBParts.ready() && window.KBCheck && KBCheck.results())
+                setTimeout(function () { start(any ? o : null); }, 800);
+            else
+                setTimeout(waitReady, 200); })();
+        }
+    })();
 })();
 
 </script>
@@ -21003,6 +21290,8 @@ KBWorkspace.overview();
     var lastMove = 0;
     function post(msg) {
         if (tutorialSession && /^kb:(frame|grab|move|place|state|snapAttempt|collision|handleClick|handleMatch)$/.test(msg.type))
+            return;
+        if (window.KBDemo && KBDemo.active() && /^kb:(frame|grab|move|place|state|snapAttempt|collision|handleClick|handleMatch|pickWarn|guide)$/.test(msg.type))
             return;
         try {
             host.postMessage(msg, origin);
@@ -21128,6 +21417,20 @@ KBWorkspace.overview();
     }
     KB.on('guide', function (g) { post({ type: 'kb:guide', guide: g || null }); });
     KB.on('pickWarn', function (w) { post({ type: 'kb:pickWarn', pick: w }); });
+    KB.on('demoProgress', function (p) { post(Object.assign({ type: 'kb:demoProgress' }, p)); });
+    KB.on('demoEnd', function (e) { post({ type: 'kb:demoEnd', reason: e.reason, step: e.step }); });
+    KB.on('demo', function (d) { if (d && !d.on)
+        setTimeout(function () { var st = stateMsg(); if (st)
+            post(st); }, 0); });
+    function demoOpts(o) { return o && typeof o === 'object' ? o : undefined; }
+    var hostKit = null;
+    if (window.KBDemo)
+        KBDemo.setKit(function () { if (hostKit) {
+            setScene(hostKit);
+            KB.pushSnapshot(true);
+        }
+        else
+            KB.loadKit(); });
     KB.on('tutorialEnd', function (result) {
         if (tutorialSession)
             post({ type: 'kb:tutorialEnd', reason: result.reason, experience: result.experience || null, level: result.level || null });
@@ -21148,14 +21451,18 @@ KBWorkspace.overview();
                 warn('This simulator build does not include the tutorial.');
             return;
         }
-        if (msg.scene)
+        if (msg.scene) {
             setScene(msg.scene);
+            hostKit = msg.scene;
+        }
         startFrames();
         var st = stateMsg();
         if (st)
             post(st);
         if (options.guide && window.KBAnswer)
             setTimeout(function () { KBAnswer.showNext(); }, 400);
+        if ((options.demo || options.level === 'demo') && window.KBDemo)
+            setTimeout(function () { KBDemo.start(demoOpts(options.demo)); }, 600);
     }
     window.addEventListener('message', function (ev) {
         var msg = ev.data;
@@ -21173,6 +21480,10 @@ KBWorkspace.overview();
                     pendingInit = msg;
                 break;
             case 'kb:setScene':
+                if (window.KBDemo && KBDemo.active())
+                    KBDemo.stop(false);
+                if (msg.scene)
+                    hostKit = msg.scene;
                 if (KBParts.ready())
                     setScene(msg.scene);
                 else
@@ -21185,7 +21496,7 @@ KBWorkspace.overview();
             case 'kb:setLevel':
                 if (msg.level === 'demo') {
                     if (window.KBDemo)
-                        KBDemo.start();
+                        KBDemo.start(demoOpts(msg.demo));
                 }
                 else {
                     if (window.KBDemo && KBDemo.active())
@@ -21194,6 +21505,35 @@ KBWorkspace.overview();
                         KBLevel.set(msg.level);
                 }
                 break;
+            case 'kb:demo': {
+                var D = window.KBDemo;
+                if (!D) {
+                    warn('This simulator build does not include the demo.');
+                    break;
+                }
+                var o = demoOpts(msg.options);
+                if (msg.action === 'start')
+                    D.start(o);
+                else if (msg.action === 'stop')
+                    D.stop(msg.restore);
+                else if (msg.action === 'pause')
+                    D.pause(true);
+                else if (msg.action === 'play') {
+                    if (o)
+                        D.set(o);
+                    D.pause(false);
+                }
+                else if (msg.action === 'next')
+                    D.next();
+                else if (msg.action === 'replay') {
+                    if (o)
+                        D.set(o);
+                    D.replay();
+                }
+                else if (msg.action === 'set')
+                    D.set(o);
+                break;
+            }
             case 'kb:getAnswer': {
                 var a = window.KBParts && KBParts.answer && KBParts.answer();
                 var mm = 1000 / KBParts.unitScale();

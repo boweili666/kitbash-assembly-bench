@@ -318,6 +318,7 @@
   KB.on('levelFlight', function (f) {
     // 一二级零件飞到哪镜头就跟到哪(没有卡片可以"采用",就不等人点了)
     if (!f || !f.node || tutorialOn() || !(follow || f.force || autoView())) return;
+    if (window.KBDemo && KBDemo.active() && !f.force) return;      // demo with a fixed camera
     followTo(keyOf(f.node), f.want, f.approach, f.node);
   });
   // 三级(自己点孔配合):零件落位时镜头跟过去

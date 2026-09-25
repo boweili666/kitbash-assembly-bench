@@ -1178,7 +1178,7 @@ body.demo-mode #celebrate { display: none !important; }
 #demoBar {
   position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 20;
   display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 12px;
-  width: min(calc(100vw - 32px), 640px); box-sizing: border-box;
+  width: min(calc(100vw - 32px), 780px); box-sizing: border-box;
   background: var(--panel-solid); border: 1px solid var(--line); border-radius: 12px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, .35); color: var(--text);
 }
@@ -1187,6 +1187,9 @@ body.demo-mode #celebrate { display: none !important; }
   padding: 3px 7px; border-radius: 6px; background: var(--accent-soft); }
 #demoBar .db-step { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 #demoBar .db-count { font: 600 12px/1.3 inherit; }
+#demoBar .db-sub { font-size: 11.5px; line-height: 1.3; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#demoBar .db-sub:empty { display: none; }
+#demoBar .db-mode, #demoBar .db-speed { color: var(--text-dim); font-size: 11.5px; padding: 7px 8px; }
 #demoBar .db-name { font-size: 12px; line-height: 1.3; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #demoBar .db-prog { flex: 0 0 90px; height: 4px; border-radius: 2px; background: var(--line-soft); overflow: hidden; }
 #demoBar .db-prog i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
@@ -1195,8 +1198,8 @@ body.demo-mode #celebrate { display: none !important; }
 #demoBar button:hover { background: var(--line-soft); }
 #demoBar button:disabled { opacity: .5; cursor: default; }
 #demoBar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-#demoBar .db-pause { background: var(--accent-soft); color: var(--accent); border-color: transparent; min-width: 38px; text-align: center; }
-@media (max-width: 560px) { #demoBar .db-prog { display: none; } #demoBar { gap: 6px; } }
+#demoBar .db-main { background: var(--accent-soft); color: var(--accent); border-color: transparent; min-width: 44px; text-align: center; white-space: nowrap; }
+@media (max-width: 700px) { #demoBar .db-prog, #demoBar .db-mode { display: none; } #demoBar { gap: 6px; } }
 
 /* The Checks shield is gone from the toolbar; the checks still run behind the guide card */
 #btnCheck { display: none !important; }

@@ -11,7 +11,11 @@
  *                                                  guide:true 装完场景就打开逐步指引(第一次装的人)
  *     {type:'kb:setScene', scene:[ScenePart]}
  *     {type:'kb:setErrors', on:boolean}            error feedback on / off (off = no wrong-part / wrong-hole / not-aligned reports)
- *     {type:'kb:setLevel', level:1|2|3|'demo'}     switch level ('demo' = the whole build plays itself, step by step)
+ *     {type:'kb:setLevel', level:1|2|3|'demo', demo?}  switch level ('demo' = the build plays itself; demo = demo options)
+ *     {type:'kb:demo', action:'start'|'stop'|'pause'|'play'|'next'|'replay'|'set', options?, restore?}
+ *                                                  demo control; options: see src/demo.js (autoplay, by, speed, gap,
+ *                                                  substepGap, stepGap, trajectory, camera, from, to, steps, loop,
+ *                                                  restore, hideTray, bar). kb:init options.demo (true | options) starts it
  *     {type:'kb:getScene'}                         → 回 kb:scene
  *     {type:'kb:getAnswer'}                        → 回 kb:answer{steps,parts}(参考装配的最终位姿)
  *     {type:'kb:getState'}                         → 回 kb:state
@@ -38,6 +42,10 @@
  *     {type:'kb:handleMatch', object1, handle1, object2, handle2, success, error}
  *                                                  点完目标后的结论:object1/handle1 是先点的(要动的),object2/handle2 是后点的。
  *                                                  success=false 时 error 是原因;三级配合后被判错撤销的,会再补一条 success=false
+ *     {type:'kb:demoProgress', step, steps, stepId, stepName, substep, substeps, substepName, partId, partName}
+ *                                                  demo: a part starts flying (step / substep are 1-based)
+ *     {type:'kb:demoEnd', reason:'done'|'stopped'|'stuck', step}
+ *                                                  while the demo plays, grab / move / place / state / guide / handle* are not sent
  *     {type:'kb:warn',  message}
  *     {type:'kb:tutorialEnd', reason:'completed'|'skipped', experience:'first'|'again'|null, level:1|2|3|null}
  *                                                  experience 是最后一屏问出来的:第一次装 / 装过
@@ -70,6 +78,8 @@
   function post(msg) {
     // Practice must never become training frames, actions, or scored progress.
     if (tutorialSession && /^kb:(frame|grab|move|place|state|snapAttempt|collision|handleClick|handleMatch)$/.test(msg.type)) return;
+    // The demo's moves are not the trainee's: no actions or progress while it plays (kb:demoProgress instead)
+    if (window.KBDemo && KBDemo.active() && /^kb:(frame|grab|move|place|state|snapAttempt|collision|handleClick|handleMatch|pickWarn|guide)$/.test(msg.type)) return;
     try { host.postMessage(msg, origin); } catch (e) { /* 宿主已关闭 */ } }
   function warn(message) { post({ type: 'kb:warn', message: message }); }
 
@@ -193,6 +203,14 @@
   KB.on('guide', function (g) { post({ type: 'kb:guide', guide: g || null }); });
   // 学员拿了这一步用不到的零件 —— 只是提醒,没拦着
   KB.on('pickWarn', function (w) { post({ type: 'kb:pickWarn', pick: w }); });
+  KB.on('demoProgress', function (p) { post(Object.assign({ type: 'kb:demoProgress' }, p)); });
+  KB.on('demoEnd', function (e) { post({ type: 'kb:demoEnd', reason: e.reason, step: e.step }); });
+  // leaving the demo puts the trainee's scene back: resync the host
+  KB.on('demo', function (d) { if (d && !d.on) setTimeout(function () { var st = stateMsg(); if (st) post(st); }, 0); });
+  function demoOpts(o) { return o && typeof o === 'object' ? o : undefined; }
+  // the demo starts from the host's kit (the latest scene it sent), so part ids stay the host's
+  var hostKit = null;
+  if (window.KBDemo) KBDemo.setKit(function () { if (hostKit) { setScene(hostKit); KB.pushSnapshot(true); } else KB.loadKit(); });
 
   KB.on('tutorialEnd', function (result) {
     if (tutorialSession) post({ type: 'kb:tutorialEnd', reason: result.reason, experience: result.experience || null, level: result.level || null });
@@ -210,12 +228,13 @@
       else warn('This simulator build does not include the tutorial.');
       return;
     }
-    if (msg.scene) setScene(msg.scene);
+    if (msg.scene) { setScene(msg.scene); hostKit = msg.scene; }
     startFrames();
     var st = stateMsg();
     if (st) post(st);
     // options.guide:第一次装的人,宿主换到任务场景后直接把逐步指引打开,不用再点 Next
     if (options.guide && window.KBAnswer) setTimeout(function () { KBAnswer.showNext(); }, 400);
+    if ((options.demo || options.level === 'demo') && window.KBDemo) setTimeout(function () { KBDemo.start(demoOpts(options.demo)); }, 600);
   }
 
   window.addEventListener('message', function (ev) {
@@ -228,13 +247,28 @@
         if (KBParts.ready()) applyInit(msg); else pendingInit = msg;
         break;
       case 'kb:setScene':
+        if (window.KBDemo && KBDemo.active()) KBDemo.stop(false);   // a new scene replaces whatever the demo built
+        if (msg.scene) hostKit = msg.scene;
         if (KBParts.ready()) setScene(msg.scene); else pendingInit = { scene: msg.scene };
         break;
       case 'kb:setErrors': if (window.KBCheck) KBCheck.showErrors(msg.on !== false); break;
       case 'kb:setLevel':
-        if (msg.level === 'demo') { if (window.KBDemo) KBDemo.start(); }
+        if (msg.level === 'demo') { if (window.KBDemo) KBDemo.start(demoOpts(msg.demo)); }
         else { if (window.KBDemo && KBDemo.active()) KBDemo.stop(); if (window.KBLevel) KBLevel.set(msg.level); }
         break;
+      case 'kb:demo': {
+        var D = window.KBDemo;
+        if (!D) { warn('This simulator build does not include the demo.'); break; }
+        var o = demoOpts(msg.options);
+        if (msg.action === 'start') D.start(o);
+        else if (msg.action === 'stop') D.stop(msg.restore);
+        else if (msg.action === 'pause') D.pause(true);
+        else if (msg.action === 'play') { if (o) D.set(o); D.pause(false); }
+        else if (msg.action === 'next') D.next();
+        else if (msg.action === 'replay') { if (o) D.set(o); D.replay(); }
+        else if (msg.action === 'set') D.set(o);
+        break;
+      }
       case 'kb:getAnswer': {
         // 参考装配(含推导补的那部分)原样给出去,调试页面拿它拼"装到第 N 步"的场景
         var a = window.KBParts && KBParts.answer && KBParts.answer();

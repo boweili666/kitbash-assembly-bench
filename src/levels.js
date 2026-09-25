@@ -51,23 +51,21 @@
     var delta = new THREE.Matrix4().multiplyMatrices(want, new THREE.Matrix4().copy(node.matrixWorld).invert());
     return { node: top, want: delta.multiply(top.matrixWorld.clone()) };
   }
-  function fly(part, target, then) {
+  /* opts (demo mode): speed - flight speed multiplier; instant - jump straight to the pose.
+     target.via - waypoint world poses of the part (a recorded trajectory); otherwise target.approach */
+  function fly(part, target, then, opts) {
+    opts = opts || {};
+    var speed = opts.speed > 0 ? opts.speed : 1;
     var mv = moverFor(part, target.want);
     var end = toParentLocal(mv.node, mv.want);
     var start = mv.node.position.clone();
-    var via = null;
-    if (target.approach) {
-      // 接近位姿给的是"零件本身";整组挪时,组跟零件保持现在的相对关系
-      var aw = mv.node === part ? target.approach
-        : new THREE.Matrix4().multiplyMatrices(target.approach, new THREE.Matrix4().copy(part.matrixWorld).invert())
-            .multiply(mv.node.matrixWorld.clone());
-      via = toParentLocal(mv.node, aw);
-    }
+    // waypoints are poses of the part itself; when a whole group moves, it keeps its current offset to the part
+    var ways = (target.via && target.via.length ? target.via : target.approach ? [target.approach] : []).map(function (w) {
+      return toParentLocal(mv.node, mv.node === part ? w
+        : new THREE.Matrix4().multiplyMatrices(w, new THREE.Matrix4().copy(part.matrixWorld).invert()).multiply(mv.node.matrixWorld.clone()));
+    });
     busy = true;
     KB.emit('grab', mv.node);
-    // 告诉 focus.js 零件要飞去哪:用户采用过推荐视角的话,镜头跟着过去
-    KB.emit('levelFlight', { node: part, want: target.want.clone(), force: !!target.followCam,
-                             approach: target.approach ? target.approach.clone() : null });
     function done(interrupted) {
       busy = false;
       if (interrupted) return;
@@ -75,18 +73,27 @@
       KB.pushSnapshot();
       then && then(mv.node);
     }
-    var dist = start.distanceTo(via ? via.p : end.p);
-    var first = { duration: 0.45 + Math.min(0.45, dist * 0.08), arc: Math.min(0.7, 0.15 + dist * 0.1) };
-    if (via) {
-      first.onDone = function (interrupted) {
-        if (interrupted) { busy = false; return; }
-        KB.tween(mv.node, end.p, end.q, { duration: 0.34, onDone: done });
-      };
-      KB.tween(mv.node, via.p, via.q, first);
-    } else {
-      first.onDone = done;
-      KB.tween(mv.node, end.p, end.q, first);
+    if (opts.instant) {
+      mv.node.position.copy(end.p); mv.node.quaternion.copy(end.q); mv.node.updateMatrixWorld(true);
+      done(false);
+      return;
     }
+    // tell focus.js where the part is flying: the camera follows if the user took the suggested view
+    KB.emit('levelFlight', { node: part, want: target.want.clone(), force: !!target.followCam,
+                             approach: ways.length ? (target.via ? target.via[0] : target.approach).clone() : null });
+    var legs = ways.concat([end]), from = start;
+    function leg(i) {
+      var to = legs[i], last = i === legs.length - 1, dist = from.distanceTo(to.p);
+      var o = i === 0 ? { duration: 0.45 + Math.min(0.45, dist * 0.08), arc: Math.min(0.7, 0.15 + dist * 0.1) }
+        : { duration: last ? 0.34 : 0.2 + Math.min(0.4, dist * 0.08) };
+      o.duration /= speed;
+      o.onDone = last ? done : function (interrupted) {
+        if (interrupted) { busy = false; return; }
+        from = to.p; leg(i + 1);
+      };
+      KB.tween(mv.node, to.p, to.q, o);
+    }
+    leg(0);
   }
   /* ---------- 装好了就松手(所有级别) ----------
      一次装配(配合成功 / 一二级自动飞到位)落定后,零件判定到位就取消选中 ——
@@ -134,12 +141,16 @@
   }
   var queued = null;         // 飞行动画还没结束时点的零件:等前一个落位再飞,别让点击石沉大海
   // then: called once the part lands (demo mode places parts one after another); returns false when it cannot be placed
-  function placeByClick(node, followCam, then) {
+  // opts (demo mode): speed, instant, trajectory 'approach' (default) | 'direct' | 'answer' (the recorded path)
+  function placeByClick(node, followCam, then, opts) {
     if (!window.KBCheck) return false;
     if (busy) { queued = node; return true; }
     var r = KBCheck.levelTarget(node);
     if (!r || r.already || !r.want) return false;  // already in place / not part of this step (hinted elsewhere)
     r.followCam = !!followCam;
+    var tr = opts && opts.trajectory;
+    if (tr === 'direct') r.approach = null;
+    else if (tr === 'answer') r.via = recordedPath(r);
     fly(node, r, function (moved) {
       KBCheck.markLevelPlaced(node, r.slot);
       KB.setSelection([]);                           // 放好就松手,免得下一下点网格把它又挪走
@@ -148,6 +159,20 @@
       then && then(node);
     });
     return true;
+  }
+  /* The captured trajectory of this slot's part (answer path, reference frame) moved so that its
+     last point lands exactly on the target pose; null when only one pose was recorded */
+  function recordedPath(r) {
+    var a = window.KBParts && KBParts.answer && KBParts.answer(), id = r.slot && r.slot.id;
+    var d = a && id && a.parts.filter(function (x) { return x.id === id; })[0];
+    if (!d || !d.path || d.path.length < 2) return null;
+    var mats = d.path.map(function (pose) {
+      var t = KBParts.nodeTransform(d.key, pose);
+      return new THREE.Matrix4().compose(new THREE.Vector3().fromArray(t.p),
+        new THREE.Quaternion().setFromEuler(new THREE.Euler(t.r[0], t.r[1], t.r[2], 'XYZ')), new THREE.Vector3(1, 1, 1));
+    });
+    var delta = new THREE.Matrix4().multiplyMatrices(r.want, mats[mats.length - 1].clone().invert());
+    return mats.slice(0, -1).map(function (m) { return new THREE.Matrix4().multiplyMatrices(delta, m); });
   }
   KB.onSelection(function (sel) {
     if (level !== 1 || tutorialOn() || demoOn() || sel.length !== 1) return;
