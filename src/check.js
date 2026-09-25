@@ -32,6 +32,17 @@
   noticeButton.innerHTML = '<span class="ck-notice-icon" aria-hidden="true">!</span><span class="ck-notice-text"></span><span class="ck-notice-count"></span>';
   noticeButton.tabIndex = -1; notice.appendChild(noticeButton); document.body.appendChild(notice);
   noticeButton.addEventListener('click', function () { panel.style.display = 'flex'; elClose.focus(); });
+  var errBtn = document.getElementById('btnErrors');
+  function paintErrors() {
+    if (!errBtn) return;
+    errBtn.classList.toggle('on', showErrors);
+    errBtn.setAttribute('aria-pressed', String(showErrors));
+    errBtn.textContent = showErrors ? 'Errors' : 'Errors off';
+  }
+  if (errBtn) errBtn.addEventListener('click', function () {
+    KBCheck.showErrors(!showErrors);
+    KB.toast(showErrors ? 'Error messages on' : 'Error messages off \u2014 no feedback on wrong parts or holes');
+  });
   function renderNotice(issues) {
     var errors = issues.filter(function (issue) { return issue.severity === 'error'; });
     var warn = !errors.length;
@@ -90,6 +101,14 @@
     return r;
   }
   var autoSnap = false;
+  /* Error feedback switch (dev toolbar Errors / URL ?errors=0 / host options.errors, kb:setErrors).
+     Off: no wrong-part / wrong-hole / not-aligned reports, no toasts or events for them, and Level 3
+     no longer undoes a move because of them. Remembered in localStorage. */
+  var showErrors = (function () {
+    var u = new URLSearchParams(location.search).get('errors');
+    if (u !== null) return !/^(0|off|false)$/i.test(u);
+    try { return localStorage.getItem('kb.errors') !== '0'; } catch (e) { return true; }
+  })();
   var snapping = false;
 
   function collectParts() {
@@ -299,7 +318,7 @@
     out.push(Object.keys(levelPlaced).join(','), Object.keys(userMated).length,
       lastPick ? lastPick.node.uuid + lastPick.step + lastPick.msg : '',
       lastHole ? lastHole.node.uuid + lastHole.step + lastHole.msg : '',
-      window.KBLevel ? KBLevel.get() : 3);
+      window.KBLevel ? KBLevel.get() : 3, showErrors);
     return out.join('|');
   }
   function evaluate() {
@@ -739,6 +758,7 @@
     issues = issues.filter(function (i) {
       var k = i.kind || 'hole';
       if (k === 'hint') return true;
+      if (!showErrors) return false;
       if (lv === 1) return k === 'pick';
       if (lv === 2) return k === 'pick' || k === 'hole';
       return true;
@@ -1676,6 +1696,7 @@
     var tag = nx.i + '|' + node.uuid;
     if (warnedFor === tag) return;                   // 弹窗同一步同一个零件只说一次
     warnedFor = tag;
+    if (!showErrors) return;          // errors off: no toast and no pickWarn event
     KB.toast(msg);
     KB.emit('pickWarn', { objectId: node.userData.kbId || null, name: node.name,
       key: node.userData.kbType.slice(5), step: nx.i, stepName: nx.name,
@@ -1695,6 +1716,17 @@
     diagnose: diagnose,
     /* 落位吸附开关:放下时离正确位置 10 mm / 25° 以内就吸到参考位姿 */
     autoSnap: function (on) { if (on !== undefined) autoSnap = !!on; return autoSnap; },
+    showErrors: function (on) {
+      if (on !== undefined && !!on !== showErrors) {
+        showErrors = !!on;
+        try { localStorage.setItem('kb.errors', showErrors ? '1' : '0'); } catch (e) { /* private mode */ }
+        if (!showErrors) lastHole = null;
+        paintErrors();
+        evaluate();
+        KB.emit('errorsChange', showErrors);
+      }
+      return showErrors;
+    },
     snapIntoPlace: snapIntoPlace,
     levelTarget: levelTarget,
     canon: canon,

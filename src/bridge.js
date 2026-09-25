@@ -10,7 +10,8 @@
  *                                                  level:1 点零件就到位 / 2 点对孔就摆正 / 3 手动(现在的做法)
  *                                                  guide:true 装完场景就打开逐步指引(第一次装的人)
  *     {type:'kb:setScene', scene:[ScenePart]}
- *     {type:'kb:setLevel', level:1|2|3}            切换难度级别
+ *     {type:'kb:setErrors', on:boolean}            error feedback on / off (off = no wrong-part / wrong-hole / not-aligned reports)
+ *     {type:'kb:setLevel', level:1|2|3|'demo'}     switch level ('demo' = the whole build plays itself, step by step)
  *     {type:'kb:getScene'}                         → 回 kb:scene
  *     {type:'kb:getAnswer'}                        → 回 kb:answer{steps,parts}(参考装配的最终位姿)
  *     {type:'kb:getState'}                         → 回 kb:state
@@ -202,6 +203,7 @@
     if (msg.options) Object.keys(msg.options).forEach(function (k) { options[k] = msg.options[k]; });
     tutorialSession = !!options.tutorial;
     if (options.level && window.KBLevel) KBLevel.set(options.level, true);   // 宿主给的难度级别
+    if (options.errors !== undefined && window.KBCheck) KBCheck.showErrors(options.errors !== false);   // error feedback switch
     if (tutorialSession) {
       stopFrames();
       if (window.KBTutorial) KBTutorial.start({ onboarding: true, level: options.level });
@@ -228,7 +230,11 @@
       case 'kb:setScene':
         if (KBParts.ready()) setScene(msg.scene); else pendingInit = { scene: msg.scene };
         break;
-      case 'kb:setLevel': if (window.KBLevel) KBLevel.set(msg.level); break;
+      case 'kb:setErrors': if (window.KBCheck) KBCheck.showErrors(msg.on !== false); break;
+      case 'kb:setLevel':
+        if (msg.level === 'demo') { if (window.KBDemo) KBDemo.start(); }
+        else { if (window.KBDemo && KBDemo.active()) KBDemo.stop(); if (window.KBLevel) KBLevel.set(msg.level); }
+        break;
       case 'kb:getAnswer': {
         // 参考装配(含推导补的那部分)原样给出去,调试页面拿它拼"装到第 N 步"的场景
         var a = window.KBParts && KBParts.answer && KBParts.answer();

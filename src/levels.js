@@ -29,6 +29,7 @@
   })();
 
   function tutorialOn() { return !!(window.KBTutorial && KBTutorial.active()); }
+  function demoOn() { return !!(window.KBDemo && KBDemo.active()); }
 
   /* ---------- 飞过去:先到接近位姿,再落位 —— 和点孔配合是同一种手感 ---------- */
   function toParentLocal(node, world) {
@@ -132,21 +133,24 @@
     }, true);
   }
   var queued = null;         // 飞行动画还没结束时点的零件:等前一个落位再飞,别让点击石沉大海
-  function placeByClick(node, followCam) {
-    if (!window.KBCheck) return;
-    if (busy) { queued = node; return; }
+  // then: called once the part lands (demo mode places parts one after another); returns false when it cannot be placed
+  function placeByClick(node, followCam, then) {
+    if (!window.KBCheck) return false;
+    if (busy) { queued = node; return true; }
     var r = KBCheck.levelTarget(node);
-    if (!r || r.already || !r.want) return;       // 已经装好了 / 不属于这一步(另有提示)
+    if (!r || r.already || !r.want) return false;  // already in place / not part of this step (hinted elsewhere)
     r.followCam = !!followCam;
     fly(node, r, function (moved) {
       KBCheck.markLevelPlaced(node, r.slot);
       KB.setSelection([]);                           // 放好就松手,免得下一下点网格把它又挪走
       KBCheck.evaluate();
       if (queued) { var q = queued; queued = null; placeByClick(q); }
+      then && then(node);
     });
+    return true;
   }
   KB.onSelection(function (sel) {
-    if (level !== 1 || tutorialOn() || sel.length !== 1) return;
+    if (level !== 1 || tutorialOn() || demoOn() || sel.length !== 1) return;
     if (performance.now() - clickAt > 450) return;   // 只响应真正的点击,程序里设的选择不算
     var node = sel[0];
     if (!KB.isPart(node)) {                          // 点到的是一组:取组里第一个还没到位的零件
@@ -269,6 +273,7 @@
      放行的,配合完再看一眼:这个零件报了错(比如装反了)-> 退回原位,错误挂在指引卡片上(红) */
   var pendingCheck = null;
   function guard3(src, dst) {
+    if (window.KBCheck && KBCheck.showErrors && !KBCheck.showErrors()) return null;   // errors off: no blocking, no undo
     var r = KBCheck.levelMateTarget(src.node, src.id, dst.node, dst.id);
     if (r.reason) {
       var back = KBCheck.levelMateTarget(dst.node, dst.id, src.node, src.id);
@@ -381,7 +386,8 @@
     if (b) set(b.dataset.level);
   });
 
-  window.KBLevel = { get: function () { return level; }, set: set, tips: TIPS, busy: function () { return busy; } };
+  window.KBLevel = { get: function () { return level; }, set: set, tips: TIPS, busy: function () { return busy; },
+                     place: placeByClick };   // demo mode: fly a part into place the Level 1 way
   // mate.js 在本文件之后加载,等它就绪再接上开关
   (function hook() { if (window.KBMate) apply(); else setTimeout(hook, 50); })();
 })();

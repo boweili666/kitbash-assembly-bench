@@ -417,7 +417,8 @@
       if (demo && demo.card && demo.card.node) showDemoCard(demo.card); else hideCard();
       return;
     }
-    if (!window.KBCheck || !(window.KBParts && KBParts.ready())) {
+    // demo mode picks the parts itself and the camera follows them: no highlight, no suggested view
+    if (!window.KBCheck || !(window.KBParts && KBParts.ready()) || (window.KBDemo && KBDemo.active())) {
       setLit([]); hideCard(); return;
     }
     // 零件还在飞(自动到位 / 装配吸附):这时弹"推荐视角"只会让人摸不着头脑,落定了再说
@@ -534,7 +535,7 @@
   });
 
   window.KBFocus = { refresh: refresh, following: function () { return follow; }, viewForSlot: viewForSlot,
-                     snapshot: snapshot, lit: function () { return lit.slice(); },
+                     snapshot: snapshot, lit: function () { return lit.slice(); }, partsToMove: partsToMove,
                      suggestion: function () { return shown ? { key: shown.key, view: shown.view } : null; },
                      use: function () { answer(true); }, dismiss: function () { answer(false); },
                      // 某几个零件的特写视角(和推荐视角同一套取景),教程里镜头跟着零件走用

@@ -382,8 +382,8 @@
     }
     if (reason) {
       report(a, b, false, reason);
-      flash(dst, COLOR_BAD);
-      KB.toast(reason === 'peg-on-peg' ? 'Cannot mate a peg to a peg' : 'The peg is wider than that hole');
+      if (errorsOn()) flash(dst, COLOR_BAD);
+      if (errorsOn()) KB.toast(reason === 'peg-on-peg' ? 'Cannot mate a peg to a peg' : 'The peg is wider than that hole');
       return false;
     }
 
@@ -539,7 +539,12 @@
     flashTimer = setTimeout(function () { if (markers.indexOf(m) >= 0) restyle(m); }, 600);
   }
   // 守卫拒绝:目标闪红,提示原因,并通知(教程卡片显示)
+  // Error feedback switch (KBCheck.showErrors). The tutorial always gives feedback: it teaches by it.
+  function errorsOn() {
+    return (window.KBTutorial && KBTutorial.active()) || !window.KBCheck || !KBCheck.showErrors || KBCheck.showErrors();
+  }
   function reject(m, reason) {
+    if (!errorsOn()) return;          // errors off: the click just does nothing, no message and no event
     flash(m, COLOR_BAD);
     var msg = typeof reason === 'string' ? reason : 'Not that one \u2014 try again';
     KB.toast(msg);
@@ -598,7 +603,7 @@
       armed = null;
       // 宿主要的"这两个孔 / 销配上了没有":点完目标就给结论(成功,或失败原因)
       var matched = function (ok, why) {
-        if (!(window.KBTutorial && KBTutorial.active())) KB.emit('handleMatch', { a: info(src), b: info(m), success: ok, error: ok ? null : (why || 'These two do not fit') });
+        if (!(window.KBTutorial && KBTutorial.active())) KB.emit('handleMatch', { a: info(src), b: info(m), success: ok, error: ok || !errorsOn() ? null : (why || 'These two do not fit') });
       };
       if (resolver && !(window.KBTutorial && KBTutorial.active())) {
         var r = resolver(info(src), info(m));

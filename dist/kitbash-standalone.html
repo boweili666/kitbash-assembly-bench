@@ -744,7 +744,7 @@ input[type="range"]::-moz-range-thumb {
 #btnNext, .embed #btnNext { display: none !important; }
 #btnHome[hidden] { display: none !important; }
 
-body.public #btnRecord, body.public #btnCheck, body.public #btnImport, body.public #btnExportJson,
+body.public #btnRecord, body.public #btnCheck, body.public #btnErrors, body.public #btnImport, body.public #btnExportJson,
 body.public #btnExportGlb, body.public #btnAgent + .vsep { display: none !important; }
 body.public #btnHome { background: #e8ba78; color: #15212d; font-weight: 700; padding: 6px 14px; border-radius: 8px;
   box-shadow: 0 0 0 1px #f3ce9866, 0 4px 14px #e4ad5733; margin-right: 6px; }
@@ -1177,6 +1177,38 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 #answerBar, #hints { display: none !important; }
 
+
+body.demo-mode #topbar > *:not(.brand):not(#levelSeg):not(#btnHome) { display: none !important; }
+body.demo-mode #panel, body.demo-mode #tutorial, body.demo-mode #agentPanel, body.demo-mode #checkPanel,
+body.demo-mode #viewTip, body.demo-mode #checkNotice, body.demo-mode #nextGuide, body.demo-mode #helpPop,
+body.demo-mode #celebrate { display: none !important; }
+#levelSeg button[data-demo] { padding: 0 7px; margin-left: 3px; font-weight: 600; letter-spacing: .02em; }
+#demoBar {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 20;
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 12px;
+  width: min(calc(100vw - 32px), 640px); box-sizing: border-box;
+  background: var(--panel-solid); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .35); color: var(--text);
+}
+#demoBar[hidden] { display: none; }
+#demoBar .db-tag { font: 600 10px var(--font-mono, ui-monospace, monospace); letter-spacing: .16em; color: var(--accent);
+  padding: 3px 7px; border-radius: 6px; background: var(--accent-soft); }
+#demoBar .db-step { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+#demoBar .db-count { font: 600 12px/1.3 inherit; }
+#demoBar .db-name { font-size: 12px; line-height: 1.3; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#demoBar .db-prog { flex: 0 0 90px; height: 4px; border-radius: 2px; background: var(--line-soft); overflow: hidden; }
+#demoBar .db-prog i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+#demoBar button { all: unset; cursor: pointer; font: 500 12px/1 inherit; padding: 7px 10px; border-radius: 7px;
+  border: 1px solid var(--line); color: var(--text); }
+#demoBar button:hover { background: var(--line-soft); }
+#demoBar button:disabled { opacity: .5; cursor: default; }
+#demoBar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+#demoBar .db-pause { background: var(--accent-soft); color: var(--accent); border-color: transparent; min-width: 38px; text-align: center; }
+@media (max-width: 560px) { #demoBar .db-prog { display: none; } #demoBar { gap: 6px; } }
+
+
+#btnCheck { display: none !important; }
+
 </style>
 </head>
 <body>
@@ -1276,6 +1308,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
     <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l7 3v4c0 4-3 6.5-7 7.5C6 16.5 3 14 3 10V6z"/><path d="M7.5 10l2 2 3.5-4"/></svg>
     <span class="lbl">Checks</span>
   </button>
+  <button id="btnErrors" class="tool on" aria-pressed="true" title="Error messages on / off: wrong part, wrong hole, not aligned. Off = the build runs without any error feedback">Errors</button>
   <button id="btnAgent" style="display:none" class="tool" title="Live view: share the viewport to another page / window, or stream it to the assembly agent">
     <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M7 9.5h.01M13 9.5h.01M7.5 13h5"/></svg>
     <span class="lbl">Agent</span>
@@ -1508,7 +1541,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-25 13:40';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-25 13:55';  /* build.py replaces this with the build time */</script>
 <script>
 /**
  * @license
@@ -15345,8 +15378,10 @@ KBWorkspace.overview();
         }
         if (reason) {
             report(a, b, false, reason);
-            flash(dst, COLOR_BAD);
-            KB.toast(reason === 'peg-on-peg' ? 'Cannot mate a peg to a peg' : 'The peg is wider than that hole');
+            if (errorsOn())
+                flash(dst, COLOR_BAD);
+            if (errorsOn())
+                KB.toast(reason === 'peg-on-peg' ? 'Cannot mate a peg to a peg' : 'The peg is wider than that hole');
             return false;
         }
         var side = b.n ? b.n.clone() : b.d.clone();
@@ -15504,7 +15539,12 @@ KBWorkspace.overview();
         flashTimer = setTimeout(function () { if (markers.indexOf(m) >= 0)
             restyle(m); }, 600);
     }
+    function errorsOn() {
+        return (window.KBTutorial && KBTutorial.active()) || !window.KBCheck || !KBCheck.showErrors || KBCheck.showErrors();
+    }
     function reject(m, reason) {
+        if (!errorsOn())
+            return;
         flash(m, COLOR_BAD);
         var msg = typeof reason === 'string' ? reason : 'Not that one \u2014 try again';
         KB.toast(msg);
@@ -15584,7 +15624,7 @@ KBWorkspace.overview();
             armed = null;
             var matched = function (ok, why) {
                 if (!(window.KBTutorial && KBTutorial.active()))
-                    KB.emit('handleMatch', { a: info(src), b: info(m), success: ok, error: ok ? null : (why || 'These two do not fit') });
+                    KB.emit('handleMatch', { a: info(src), b: info(m), success: ok, error: ok || !errorsOn() ? null : (why || 'These two do not fit') });
             };
             if (resolver && !(window.KBTutorial && KBTutorial.active())) {
                 var r = resolver(info(src), info(m));
@@ -16300,6 +16340,8 @@ KBWorkspace.overview();
         update(step, phase, ''); });
     KB.on('snapAttempt', function (a) {
         if (!step)
+            return;
+        if (!a.success && window.KBCheck && KBCheck.showErrors && !KBCheck.showErrors())
             return;
         attempt = { error: !a.success, message: a.success ? 'Connection made. Checking position and step completion…' : failures[a.reason] || 'Connection failed. Check the selected features and their alignment.' };
         update(step, phase, 'Move the base into the workspace.');
@@ -17203,6 +17245,19 @@ KBWorkspace.overview();
     notice.appendChild(noticeButton);
     document.body.appendChild(notice);
     noticeButton.addEventListener('click', function () { panel.style.display = 'flex'; elClose.focus(); });
+    var errBtn = document.getElementById('btnErrors');
+    function paintErrors() {
+        if (!errBtn)
+            return;
+        errBtn.classList.toggle('on', showErrors);
+        errBtn.setAttribute('aria-pressed', String(showErrors));
+        errBtn.textContent = showErrors ? 'Errors' : 'Errors off';
+    }
+    if (errBtn)
+        errBtn.addEventListener('click', function () {
+            KBCheck.showErrors(!showErrors);
+            KB.toast(showErrors ? 'Error messages on' : 'Error messages off \u2014 no feedback on wrong parts or holes');
+        });
     function renderNotice(issues) {
         var errors = issues.filter(function (issue) { return issue.severity === 'error'; });
         var warn = !errors.length;
@@ -17251,6 +17306,17 @@ KBWorkspace.overview();
         return r;
     }
     var autoSnap = false;
+    var showErrors = (function () {
+        var u = new URLSearchParams(location.search).get('errors');
+        if (u !== null)
+            return !/^(0|off|false)$/i.test(u);
+        try {
+            return localStorage.getItem('kb.errors') !== '0';
+        }
+        catch (e) {
+            return true;
+        }
+    })();
     var snapping = false;
     function collectParts() {
         var list = [];
@@ -17458,7 +17524,7 @@ KBWorkspace.overview();
             for (var i = 0; i < 16; i++)
                 out.push(Math.round(e[i] * 1e5));
         });
-        out.push(Object.keys(levelPlaced).join(','), Object.keys(userMated).length, lastPick ? lastPick.node.uuid + lastPick.step + lastPick.msg : '', lastHole ? lastHole.node.uuid + lastHole.step + lastHole.msg : '', window.KBLevel ? KBLevel.get() : 3);
+        out.push(Object.keys(levelPlaced).join(','), Object.keys(userMated).length, lastPick ? lastPick.node.uuid + lastPick.step + lastPick.msg : '', lastHole ? lastHole.node.uuid + lastHole.step + lastHole.msg : '', window.KBLevel ? KBLevel.get() : 3, showErrors);
         return out.join('|');
     }
     function evaluate() {
@@ -17922,6 +17988,8 @@ KBWorkspace.overview();
             var k = i.kind || 'hole';
             if (k === 'hint')
                 return true;
+            if (!showErrors)
+                return false;
             if (lv === 1)
                 return k === 'pick';
             if (lv === 2)
@@ -18952,6 +19020,8 @@ KBWorkspace.overview();
         if (warnedFor === tag)
             return;
         warnedFor = tag;
+        if (!showErrors)
+            return;
         KB.toast(msg);
         KB.emit('pickWarn', { objectId: node.userData.kbId || null, name: node.name,
             key: node.userData.kbType.slice(5), step: nx.i, stepName: nx.name,
@@ -18974,6 +19044,21 @@ KBWorkspace.overview();
         diagnose: diagnose,
         autoSnap: function (on) { if (on !== undefined)
             autoSnap = !!on; return autoSnap; },
+        showErrors: function (on) {
+            if (on !== undefined && !!on !== showErrors) {
+                showErrors = !!on;
+                try {
+                    localStorage.setItem('kb.errors', showErrors ? '1' : '0');
+                }
+                catch (e) { }
+                if (!showErrors)
+                    lastHole = null;
+                paintErrors();
+                evaluate();
+                KB.emit('errorsChange', showErrors);
+            }
+            return showErrors;
+        },
         snapIntoPlace: snapIntoPlace,
         levelTarget: levelTarget,
         canon: canon,
@@ -19053,6 +19138,7 @@ KBWorkspace.overview();
         level = fromUrl || saved || DEFAULT;
     })();
     function tutorialOn() { return !!(window.KBTutorial && KBTutorial.active()); }
+    function demoOn() { return !!(window.KBDemo && KBDemo.active()); }
     function toParentLocal(node, world) {
         var m = world.clone();
         if (node.parent) {
@@ -19170,16 +19256,16 @@ KBWorkspace.overview();
         }, true);
     }
     var queued = null;
-    function placeByClick(node, followCam) {
+    function placeByClick(node, followCam, then) {
         if (!window.KBCheck)
-            return;
+            return false;
         if (busy) {
             queued = node;
-            return;
+            return true;
         }
         var r = KBCheck.levelTarget(node);
         if (!r || r.already || !r.want)
-            return;
+            return false;
         r.followCam = !!followCam;
         fly(node, r, function (moved) {
             KBCheck.markLevelPlaced(node, r.slot);
@@ -19190,10 +19276,12 @@ KBWorkspace.overview();
                 queued = null;
                 placeByClick(q);
             }
+            then && then(node);
         });
+        return true;
     }
     KB.onSelection(function (sel) {
-        if (level !== 1 || tutorialOn() || sel.length !== 1)
+        if (level !== 1 || tutorialOn() || demoOn() || sel.length !== 1)
             return;
         if (performance.now() - clickAt > 450)
             return;
@@ -19340,6 +19428,8 @@ KBWorkspace.overview();
     }
     var pendingCheck = null;
     function guard3(src, dst) {
+        if (window.KBCheck && KBCheck.showErrors && !KBCheck.showErrors())
+            return null;
         var r = KBCheck.levelMateTarget(src.node, src.id, dst.node, dst.id);
         if (r.reason) {
             var back = KBCheck.levelMateTarget(dst.node, dst.id, src.node, src.id);
@@ -19478,7 +19568,8 @@ KBWorkspace.overview();
             if (b)
                 set(b.dataset.level);
         });
-    window.KBLevel = { get: function () { return level; }, set: set, tips: TIPS, busy: function () { return busy; } };
+    window.KBLevel = { get: function () { return level; }, set: set, tips: TIPS, busy: function () { return busy; },
+        place: placeByClick };
     (function hook() { if (window.KBMate)
         apply();
     else
@@ -19933,7 +20024,7 @@ KBWorkspace.overview();
                 hideCard();
             return;
         }
-        if (!window.KBCheck || !(window.KBParts && KBParts.ready())) {
+        if (!window.KBCheck || !(window.KBParts && KBParts.ready()) || (window.KBDemo && KBDemo.active())) {
             setLit([]);
             hideCard();
             return;
@@ -20078,7 +20169,7 @@ KBWorkspace.overview();
         backToView();
     });
     window.KBFocus = { refresh: refresh, following: function () { return follow; }, viewForSlot: viewForSlot,
-        snapshot: snapshot, lit: function () { return lit.slice(); },
+        snapshot: snapshot, lit: function () { return lit.slice(); }, partsToMove: partsToMove,
         suggestion: function () { return shown ? { key: shown.key, view: shown.view } : null; },
         use: function () { answer(true); }, dismiss: function () { answer(false); },
         viewOf: function (nodes) { var b = boxOfNodes(nodes.filter(Boolean)).expandByScalar(0.25); return framing(b, new THREE.Vector3(0.35, 1.0, 0.75)); },
@@ -20597,7 +20688,7 @@ KBWorkspace.overview();
     KB.onChange(function () {
         clearTimeout(timer);
         timer = setTimeout(function () {
-            if (shown || tutorialOn() || !window.KBCheck || KB.interacting() || (KB.tweening && KB.tweening()))
+            if (shown || tutorialOn() || (window.KBDemo && KBDemo.active()) || !window.KBCheck || KB.interacting() || (KB.tweening && KB.tweening()))
                 return;
             var res = KBCheck.evaluate();
             if (res && res.ready && res.steps.length && res.stepsSettled === res.steps.length)
@@ -20605,6 +20696,294 @@ KBWorkspace.overview();
         }, 900);
     });
     window.KBCelebrate = { show: celebrate, hide: close, reset: reset };
+})();
+
+</script>
+<script>
+(function () {
+    'use strict';
+    var KB = window.KB;
+    var GAP_MS = 450;
+    var STEP_GAP_MS = 900;
+    var on = false, paused = false, finished = false;
+    var saved = null, prevLevel = 3, timer = 0, stuck = 0, lastStep = -1;
+    var hidden = [];
+    var bar = document.createElement('div');
+    bar.id = 'demoBar';
+    bar.className = 'float';
+    bar.hidden = true;
+    bar.setAttribute('role', 'region');
+    bar.setAttribute('aria-label', 'Demo playback');
+    bar.innerHTML = '<span class="db-tag">DEMO</span>' +
+        '<span class="db-step"><b class="db-count"></b><span class="db-name"></span></span>' +
+        '<span class="db-prog"><i></i></span>' +
+        '<button class="db-pause" title="Pause (Space)">Pause</button>' +
+        '<button class="db-replay" title="Play the whole build again">Replay</button>' +
+        '<button class="db-exit" title="Leave the demo and go back to your build (Esc)">Exit</button>';
+    document.body.appendChild(bar);
+    var elCount = bar.querySelector('.db-count'), elName = bar.querySelector('.db-name');
+    var elProg = bar.querySelector('.db-prog i'), elPause = bar.querySelector('.db-pause');
+    var seg = document.getElementById('levelSeg');
+    var btn = document.createElement('button');
+    btn.dataset.demo = '1';
+    btn.textContent = 'Demo';
+    btn.title = 'Demo — watch the whole build play itself, step by step';
+    btn.setAttribute('aria-pressed', 'false');
+    if (seg)
+        seg.appendChild(btn);
+    function paint() {
+        btn.classList.toggle('on', on);
+        btn.setAttribute('aria-pressed', String(on));
+        if (seg)
+            Array.prototype.forEach.call(seg.querySelectorAll('button[data-level]'), function (b) {
+                if (on) {
+                    b.classList.remove('on');
+                    b.setAttribute('aria-pressed', 'false');
+                }
+                else {
+                    var o = +b.dataset.level === KBLevel.get();
+                    b.classList.toggle('on', o);
+                    b.setAttribute('aria-pressed', String(o));
+                }
+            });
+        document.body.classList.toggle('demo-mode', on);
+        bar.hidden = !on;
+        elPause.textContent = finished ? 'Done' : paused ? 'Play' : 'Pause';
+        elPause.disabled = finished;
+    }
+    function progress(st) {
+        var res = KBCheck.results(), total = res && res.steps ? res.steps.length : 0;
+        var doneN = res ? res.stepsSettled : 0;
+        if (finished) {
+            elCount.textContent = 'All ' + total + ' steps';
+            elName.textContent = 'The drone is assembled';
+        }
+        else if (st) {
+            elCount.textContent = 'Step ' + (st.i + 1) + ' / ' + total;
+            elName.textContent = st.name || '';
+        }
+        elProg.style.width = total ? Math.round(100 * (finished ? 1 : doneN / total)) + '%' : '0';
+    }
+    function trayScenery() { return KB.scene.children.filter(function (o) { return o.name === 'Parts tray' || o.type === 'GridHelper'; }); }
+    function scenery(show) { trayScenery().forEach(function (o) { o.visible = show; }); }
+    function hideTray() {
+        hidden = [];
+        KB.objectsRoot.children.forEach(function (n) {
+            if (n.visible && window.KBWorkspace && !KBWorkspace.contains(n)) {
+                n.visible = false;
+                hidden.push(n);
+            }
+        });
+        scenery(false);
+    }
+    function reveal(node) {
+        var top = KB.topOf ? KB.topOf(node) : node;
+        top.visible = true;
+        var i = hidden.indexOf(top);
+        if (i >= 0)
+            hidden.splice(i, 1);
+    }
+    function showAll() {
+        hidden.forEach(function (n) { n.visible = true; });
+        hidden = [];
+        scenery(true);
+    }
+    function frameWorkspace(spin) {
+        var box = new THREE.Box3();
+        KB.objectsRoot.traverse(function (n) { if (KB.isPart(n) && n.visible && (!window.KBWorkspace || KBWorkspace.contains(n)))
+            box.expandByObject(n); });
+        if (box.isEmpty()) {
+            if (window.KBWorkspace)
+                KBWorkspace.look('work');
+        }
+        else {
+            var c = box.getCenter(new THREE.Vector3()), r = Math.max(box.getSize(new THREE.Vector3()).length() * 0.9, 2);
+            KB.flyCamera([c.x + r * 0.9, c.y + r * 0.7, c.z + r * 0.9], [c.x, c.y, c.z]);
+        }
+        if (KB.orbit) {
+            KB.orbit.autoRotate = !!spin;
+            KB.orbit.autoRotateSpeed = 0.8;
+        }
+    }
+    function later(ms) { clearTimeout(timer); timer = setTimeout(tick, ms); }
+    function tick() {
+        timer = 0;
+        if (!on || paused || finished)
+            return;
+        if (KB.interacting() || (KB.tweening && KB.tweening()) || KBLevel.busy()) {
+            later(250);
+            return;
+        }
+        KBCheck.evaluate();
+        var st = KBCheck.next();
+        if (!st) {
+            finish();
+            return;
+        }
+        if (st.i !== lastStep && lastStep >= 0 && stuck === 0) {
+            lastStep = st.i;
+            progress(st);
+            later(STEP_GAP_MS);
+            return;
+        }
+        lastStep = st.i;
+        progress(st);
+        var nodes = window.KBFocus ? KBFocus.partsToMove(st) : [];
+        for (var i = 0; i < nodes.length; i++) {
+            var n = nodes[i];
+            reveal(n);
+            if (KBLevel.place(n, true, function () { stuck = 0; later(GAP_MS); }))
+                return;
+        }
+        if (++stuck > 8) {
+            finished = true;
+            paint();
+            progress(st);
+            elName.textContent = 'Stopped at step ' + (st.i + 1) + ' — ' + (st.name || '');
+            return;
+        }
+        later(500);
+    }
+    function finish() {
+        finished = true;
+        paint();
+        progress(null);
+        frameWorkspace(true);
+    }
+    function start() {
+        if (on)
+            return;
+        if (!(window.KBCheck && window.KBLevel && window.KBParts && KBParts.ready())) {
+            KB.toast('Parts are still loading');
+            return;
+        }
+        if (window.KBTutorial && KBTutorial.active()) {
+            KB.toast('Finish or close the tutorial first');
+            return;
+        }
+        saved = JSON.stringify(KB.serializeScene());
+        prevLevel = KBLevel.get();
+        on = true;
+        paused = false;
+        finished = false;
+        stuck = 0;
+        lastStep = -1;
+        if (window.KBHelp)
+            KBHelp.close();
+        if (window.KBCelebrate)
+            KBCelebrate.hide();
+        if (window.KBAnswer)
+            KBAnswer.hide();
+        if (window.KBMate && KBMate.cancel)
+            KBMate.cancel();
+        KB.setSelection([]);
+        KBLevel.set(1, true);
+        paint();
+        hideTray();
+        frameWorkspace(false);
+        KB.emit('demo', { on: true });
+        later(1200);
+    }
+    function stop(restore) {
+        if (!on)
+            return;
+        clearTimeout(timer);
+        timer = 0;
+        on = false;
+        paused = false;
+        finished = false;
+        if (KB.finishTween)
+            KB.finishTween();
+        if (KB.orbit)
+            KB.orbit.autoRotate = false;
+        showAll();
+        if (restore !== false && saved) {
+            KB.loadSceneData(JSON.parse(saved), true);
+            KB.pushSnapshot(true);
+        }
+        saved = null;
+        KBLevel.set(prevLevel, true);
+        paint();
+        if (window.KBCelebrate)
+            KBCelebrate.reset();
+        if (window.KBFocus)
+            KBFocus.refresh();
+        if (window.KBWorkspace)
+            KBWorkspace.look('work');
+        KB.emit('demo', { on: false });
+    }
+    function replay() {
+        if (!on || !saved)
+            return;
+        clearTimeout(timer);
+        if (KB.finishTween)
+            KB.finishTween();
+        if (KB.orbit)
+            KB.orbit.autoRotate = false;
+        showAll();
+        KB.loadSceneData(JSON.parse(saved), true);
+        KB.pushSnapshot(true);
+        paused = false;
+        finished = false;
+        stuck = 0;
+        lastStep = -1;
+        paint();
+        hideTray();
+        frameWorkspace(false);
+        later(900);
+    }
+    function togglePause() {
+        if (!on || finished)
+            return;
+        paused = !paused;
+        paint();
+        if (!paused)
+            later(0);
+    }
+    btn.addEventListener('click', function () { if (on)
+        stop();
+    else
+        start(); });
+    if (seg)
+        seg.addEventListener('click', function (e) {
+            if (on && e.target.closest('button[data-level]'))
+                stop();
+        }, true);
+    elPause.addEventListener('click', togglePause);
+    bar.querySelector('.db-replay').addEventListener('click', replay);
+    bar.querySelector('.db-exit').addEventListener('click', function () { stop(); });
+    window.addEventListener('keydown', function (e) {
+        if (!on || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))
+            return;
+        if (e.code === 'Escape') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            stop();
+        }
+        else if (e.code === 'Space') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            togglePause();
+        }
+        else if (/^(Arrow|Key[WERQGSVBP]|Delete|Backspace)/.test(e.code) || e.ctrlKey || e.metaKey)
+            e.stopImmediatePropagation();
+    }, true);
+    KB.onSelection(function (sel) { if (on && sel.length)
+        setTimeout(function () { KB.setSelection([]); }, 0); });
+    ['pointerdown', 'wheel'].forEach(function (ev) {
+        window.addEventListener(ev, function () { if (on && finished && KB.orbit)
+            KB.orbit.autoRotate = false; }, true);
+    });
+    window.KBDemo = { active: function () { return on; }, start: start, stop: stop, replay: replay,
+        pause: function (p) { if (on && !finished && !!p !== paused)
+            togglePause(); return paused; },
+        finished: function () { return finished; } };
+    if (new URLSearchParams(location.search).get('level') === 'demo') {
+        (function wait() { if (window.KBParts && KBParts.ready() && window.KBCheck && KBCheck.results())
+            setTimeout(start, 800);
+        else
+            setTimeout(wait, 200); })();
+    }
 })();
 
 </script>
@@ -20759,6 +21138,8 @@ KBWorkspace.overview();
         tutorialSession = !!options.tutorial;
         if (options.level && window.KBLevel)
             KBLevel.set(options.level, true);
+        if (options.errors !== undefined && window.KBCheck)
+            KBCheck.showErrors(options.errors !== false);
         if (tutorialSession) {
             stopFrames();
             if (window.KBTutorial)
@@ -20797,9 +21178,21 @@ KBWorkspace.overview();
                 else
                     pendingInit = { scene: msg.scene };
                 break;
+            case 'kb:setErrors':
+                if (window.KBCheck)
+                    KBCheck.showErrors(msg.on !== false);
+                break;
             case 'kb:setLevel':
-                if (window.KBLevel)
-                    KBLevel.set(msg.level);
+                if (msg.level === 'demo') {
+                    if (window.KBDemo)
+                        KBDemo.start();
+                }
+                else {
+                    if (window.KBDemo && KBDemo.active())
+                        KBDemo.stop();
+                    if (window.KBLevel)
+                        KBLevel.set(msg.level);
+                }
                 break;
             case 'kb:getAnswer': {
                 var a = window.KBParts && KBParts.answer && KBParts.answer();

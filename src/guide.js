@@ -113,6 +113,7 @@
   KB.on('move', function () { if (step && KB.interacting()) update(step, phase, ''); });
   KB.on('snapAttempt', function (a) {
     if (!step) return;
+    if (!a.success && window.KBCheck && KBCheck.showErrors && !KBCheck.showErrors()) return;   // errors off: no failure message
     attempt = { error: !a.success, message: a.success ? 'Connection made. Checking position and step completion…' : failures[a.reason] || 'Connection failed. Check the selected features and their alignment.' };
     update(step, phase, 'Move the base into the workspace.');
   });

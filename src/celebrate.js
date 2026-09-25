@@ -102,7 +102,7 @@
   KB.onChange(function () {
     clearTimeout(timer);
     timer = setTimeout(function () {
-      if (shown || tutorialOn() || !window.KBCheck || KB.interacting() || (KB.tweening && KB.tweening())) return;
+      if (shown || tutorialOn() || (window.KBDemo && KBDemo.active()) || !window.KBCheck || KB.interacting() || (KB.tweening && KB.tweening())) return;
       var res = KBCheck.evaluate();
       if (res && res.ready && res.steps.length && res.stepsSettled === res.steps.length) celebrate();
     }, 900);
