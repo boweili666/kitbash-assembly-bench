@@ -742,6 +742,7 @@ input[type="range"]::-moz-range-thumb {
 .trainee #inspMaterial, .trainee #btnResetXform { display: none !important; }
 
 #btnNext, .embed #btnNext { display: none !important; }
+#btnHome[hidden] { display: none !important; }
 .embed #btnHelp, .embed #btnHelp .lbl, .embed #btnView, .embed #btnView .lbl { display: inline-flex; }
 #btnHelp.on { background: #2a4a5e; color: #bfe9ff; }
 #btnHelp.nudge { animation: helpNudge 1.6s ease-in-out infinite; color: #ffd98a; }
@@ -1221,6 +1222,10 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
   </button>
   <button id="btnTutorial" class="tool" title="Tutorial: three parts, every move in the general mode">Tutorial</button>
   <button id="btnNext" class="tool" hidden title="Next step: ghost animation of what to do next, on your current assembly">Next</button>
+  <button id="btnHome" class="tool" hidden title="Back to the start screen">
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3.5 9.5L10 4l6.5 5.5"/><path d="M5.5 8.5V16h9V8.5"/></svg>
+    <span class="lbl">Home</span>
+  </button>
   <button id="btnView" class="tool" title="Back to the suggested view (V)">
     <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="3"/><path d="M10 2.5v3M10 14.5v3M2.5 10h3M14.5 10h3"/></svg>
     <span class="lbl">View</span>
@@ -1469,7 +1474,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-24 19:44';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-24 20:08';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -20423,6 +20428,16 @@ KBWorkspace.overview();
         KBAnswer.showNext();
     }
     setInterval(ensureGuide, 1500);
+    var home = document.getElementById('btnHome');
+    if (home && /\/sim\.html$/.test(location.pathname) && !document.body.classList.contains('embed')) {
+        home.hidden = false;
+        home.addEventListener('click', function () {
+            var busy = KB.objectsRoot && KB.objectsRoot.children.length;
+            if (busy && !confirm('Back to the start screen? Your current build will be lost.'))
+                return;
+            location.href = './';
+        });
+    }
     window.KBHelp = { open: open, close: close, isOpen: function () { return !pop.hidden; },
         seek: function (frac) { if (mini)
             mini.seek(frac); } };
