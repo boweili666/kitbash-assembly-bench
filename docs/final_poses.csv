@@ -69,7 +69,7 @@ cf62e96d-6f1a-4967-88c8-58613e54d454,Standoff Screw #9,screw_m3x6_pan,33,Feed Sc
 04006a67-9212-492f-9290-fcc618dc1b51,Left Camera Plate,camera_plate_left,39,Place Left Camera Plate,derived,-16.6964,-4.7166,-68.8223,-1.5708,0.0,-1.5708
 06547ac5-ebea-465e-a83c-24f7fd0d2d30,M3x6 Left Camera Plate Lower Screw,screw_m3x6_pan,40,Attach Left Camera Plate to Split Front Plate,derived,-12.8514,7.9995,-71.7423,-0.0,0.0,-0.0
 ecce827e-a997-4655-a55a-15efcafa3062,M3x6 Left Camera Plate Upper Screw,screw_m3x6_pan,41,Feed Screw through Top Plate and into Left Camera Plate,derived,-12.3642,-20.9984,-72.6102,3.1416,0.0,-0.0
-e90a620f-36e0-48a6-aef1-60430437390f,Propeller #1,propeller_cw,42,Place Propeller on Motor Shaft (A),derived,91.0005,-30.0995,65.7511,1.5708,0.0,-0.0
-3e60a8b6-000c-4d4c-8d1e-0f0070c3b7d7,Propeller #2,propeller_ccw,43,Place Propeller on Motor Shaft (B),derived,91.0017,-35.002,-66.1138,1.5708,0.0,-0.0
-a88f96eb-782a-4f40-93cb-248879d58667,Propeller #3,propeller_ccw,44,Place Propeller on Motor Shaft (C),derived,-90.6263,-35.002,65.8522,1.5708,0.0,-0.0
-f502ea84-b1af-475c-8d95-351dfaef24ee,Propeller #4,propeller_cw,45,Place Propeller on Motor Shaft (D),derived,-85.3018,-30.0995,-72.4208,1.5708,0.0,-0.0
+e90a620f-36e0-48a6-aef1-60430437390f,Propeller #1,propeller_cw,42,Place Propeller on Motor Shaft (A),derived,91.0005,-23.6001,65.7511,1.5708,0.0,-0.0
+3e60a8b6-000c-4d4c-8d1e-0f0070c3b7d7,Propeller #2,propeller_ccw,43,Place Propeller on Motor Shaft (B),derived,91.0017,-29.5138,-66.1137,1.5708,0.0,-0.0
+a88f96eb-782a-4f40-93cb-248879d58667,Propeller #3,propeller_ccw,44,Place Propeller on Motor Shaft (C),derived,-90.6263,-29.5138,65.8523,1.5708,0.0,-0.0
+f502ea84-b1af-475c-8d95-351dfaef24ee,Propeller #4,propeller_cw,45,Place Propeller on Motor Shaft (D),derived,-85.3018,-23.6001,-72.4208,1.5708,0.0,-0.0

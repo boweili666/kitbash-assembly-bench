@@ -246,22 +246,34 @@ def camera_plates(kit, plate):
 
 
 def propellers(kit):
-    """螺旋桨:桨毂孔套上电机轴,贴着电机最外端的面
+    """螺旋桨:桨毂孔套上电机轴,桨毂内侧贴住螺母
 
-    这个模型的电机轴整根缩在桨座里(轴特征 P2 的两端都在电机外形之内),真要"插进去"
-    没地方插,所以桨贴着电机沿轴最外侧的那个面 —— 螺母在里侧,两者不重叠。
+    电机网格沿轴最外的点是 M5 螺纹轴的尖(露出外壳约 13.5 mm),以前贴着它放,
+    桨毂就挂在轴尖外面,和螺母之间空出一截螺纹。ARISTOS 采到的螺母紧挨着电机外壳端面
+    (采集的位姿不改),所以桨毂内侧面贴住螺母外侧面 —— 桨整个套在螺纹轴上,两者贴紧。
+    没有对应螺母时,贴电机外壳端面(轴以外、半径比轴大的那部分网格最外的面)。
     """
     import trimesh
+
+    def world_verts(key, p, R):
+        mesh = trimesh.load(str(ROOT / 'assets' / 'parts' / kit.spec[key]['file']), force='mesh')
+        v = np.asarray(mesh.vertices) * kit.S - np.array(kit.spec[key]['offset']) * kit.S
+        return (R @ v.T).T + p
+
     out = []
     motors = sorted(kit.of_key('motor_2207'), key=lambda t: t[0]['name'])
+    nuts = {d['name']: (d, p, R) for d, p, R in kit.placed() if d['name'].startswith('Propeller Nut #')}
     keys = ['propeller_cw', 'propeller_ccw', 'propeller_ccw', 'propeller_cw']  # 对角同向
     for i, (d, p, R) in enumerate(motors):
         shaft_c, axis, r, depth = kit.world_feature('motor_2207', p, R, 'P2')
-        mesh = trimesh.load(str(ROOT / 'assets' / 'parts' / kit.spec['motor_2207']['file']),
-                            force='mesh')
-        v = np.asarray(mesh.vertices) * kit.S - np.array(kit.spec['motor_2207']['offset']) * kit.S
-        w = (R @ v.T).T + p
-        face = float(np.max(w @ axis))                   # 电机沿轴最外侧的面
+        nut = nuts.get(f'Propeller Nut #{i + 1}')
+        if nut:
+            face = float(np.max(world_verts(nut[0]['key'], nut[1], nut[2]) @ axis))   # 螺母外侧面
+        else:
+            w = world_verts('motor_2207', p, R)
+            rel = w - shaft_c
+            radial = np.linalg.norm(rel - np.outer(rel @ axis, axis), axis=1)
+            face = float(np.max((w @ axis)[radial > r * 1.5]))                          # 电机外壳端面
         key = keys[i]
         bore = kit.feature(key, 'H1')
         bd = np.array(bore['d'], float); bd /= np.linalg.norm(bd)
@@ -270,6 +282,9 @@ def propellers(kit):
         # 桨毂孔心落在轴线上,轴向位置让桨毂内侧面正好贴住电机端面
         target = shaft_c + axis * (face + bore['depth'] / 2 - shaft_c @ axis)
         pos = target - Rp @ bore_c
+        # 按桨自己的网格校正:有的桨(反转桨)桨毂比孔特征多伸出一点,网格最里面那一面才该贴住
+        inner = float(np.min(world_verts(key, pos, Rp) @ axis))
+        pos = pos + axis * (face - inner)
         out.append({'key': key, 'p': pos, 'R': Rp, 'motor': d['name'],
                     'name': f'Propeller #{i + 1}'})
     return out

@@ -249,133 +249,133 @@
   },
   {
    "i": 27,
-   "id": "472c000e-2966-4d4a-8a0f-0e98184ffa1c",
+   "id": "df202c42-4e67-4ea6-82ae-68144ec5aeca",
    "name": "Attach Knurled Standoff to Frame Bottom (E)",
    "requires": [],
    "derived": true
   },
   {
    "i": 28,
-   "id": "7e3bca0f-819a-4b49-84d9-8982c2b56096",
+   "id": "f2396b57-b70e-4c92-b16c-ddf4965cab5a",
    "name": "Attach Knurled Standoff to Frame Bottom (F)",
    "requires": [],
    "derived": true
   },
   {
    "i": 29,
-   "id": "6d6b1851-5899-4a4f-9c7e-ab38b4c7bb01",
+   "id": "8762399d-6e74-4add-8cd5-fb19a4d14278",
    "name": "Place Top Plate on Top of Frame",
    "requires": [],
    "derived": true
   },
   {
    "i": 30,
-   "id": "811b65de-f68e-4f3d-9b76-f825c989510a",
+   "id": "b17ad836-c5df-4079-8c4f-f2ca201cb64a",
    "name": "Feed Screw through Top Plate and into Standoff (A)",
    "requires": [],
    "derived": true
   },
   {
    "i": 31,
-   "id": "34ad121e-f1a4-4e70-afb8-4e9eb60a3a62",
+   "id": "e967d765-1813-4ccc-8cc5-33d224380c3a",
    "name": "Feed Screw through Top Plate and into Standoff (D)",
    "requires": [],
    "derived": true
   },
   {
    "i": 32,
-   "id": "c6a10268-d579-4c6d-87e9-f88bfb9e2544",
+   "id": "f484aa44-a7f2-42e7-9755-c9fd1b13ba63",
    "name": "Feed Screw through Top Plate and into Standoff (B)",
    "requires": [],
    "derived": true
   },
   {
    "i": 33,
-   "id": "56e59c87-2c8b-40c0-ad10-ddd52ff01f72",
+   "id": "448b9b45-4697-4ba3-9915-4679cf416cb1",
    "name": "Feed Screw through Top Plate and into Standoff (C)",
    "requires": [],
    "derived": true
   },
   {
    "i": 34,
-   "id": "200bb52c-930b-4eac-bd55-d64bd76f2f10",
+   "id": "6d451920-579b-46ab-b77a-d038ab6f31d3",
    "name": "Feed Screw through Top Plate and into Standoff (F)",
    "requires": [],
    "derived": true
   },
   {
    "i": 35,
-   "id": "8d0706d2-6f6b-4e2d-88e8-118b672133f0",
+   "id": "5c043fe5-d341-43c5-bb4e-3b1173a8e286",
    "name": "Feed Screw through Top Plate and into Standoff (E)",
    "requires": [],
    "derived": true
   },
   {
    "i": 36,
-   "id": "c1b7be3b-59b7-4076-96ee-3785fb706625",
+   "id": "84f4a09f-bcf9-46cc-9f07-ecfcfb719ab9",
    "name": "Place Right Camera Plate",
    "requires": [],
    "derived": true
   },
   {
    "i": 37,
-   "id": "e786730d-def8-4661-8089-1844f9812d65",
+   "id": "e5290f55-a3cc-4b82-a858-cbdf6e0017d4",
    "name": "Attach Right Camera Plate to Split Front Plate",
    "requires": [],
    "derived": true
   },
   {
    "i": 38,
-   "id": "f71f7fe1-d589-48b7-a2ce-9714fd0df767",
+   "id": "a4be5478-afd3-4e71-9635-779970d5e050",
    "name": "Feed Screw through Top Plate and into Right Camera Plate",
    "requires": [],
    "derived": true
   },
   {
    "i": 39,
-   "id": "90b770e9-94c0-421e-88aa-2fc192cce454",
+   "id": "98e65502-e36c-416e-a58e-02b09e530351",
    "name": "Place Left Camera Plate",
    "requires": [],
    "derived": true
   },
   {
    "i": 40,
-   "id": "17d69c2d-28b8-4e69-953e-46a7bce2826a",
+   "id": "53513e5e-4f15-4c74-92a8-065db6b5cdca",
    "name": "Attach Left Camera Plate to Split Front Plate",
    "requires": [],
    "derived": true
   },
   {
    "i": 41,
-   "id": "62cffe9c-afa7-4e0b-99a2-f2c6fc60a91a",
+   "id": "e19c94ee-1d31-4066-9592-3cb105deaa0b",
    "name": "Feed Screw through Top Plate and into Left Camera Plate",
    "requires": [],
    "derived": true
   },
   {
    "i": 42,
-   "id": "5a2d433f-9095-411d-b5ef-f400c35d563a",
+   "id": "a8e52c55-016d-404a-9bf7-da46ab47bb2f",
    "name": "Place Propeller on Motor Shaft (A)",
    "requires": [],
    "derived": true
   },
   {
    "i": 43,
-   "id": "49862771-a4f1-44bc-9ae7-5d2692949f9d",
+   "id": "0e78c52c-3221-467c-91f9-a774c0ef84a8",
    "name": "Place Propeller on Motor Shaft (B)",
    "requires": [],
    "derived": true
   },
   {
    "i": 44,
-   "id": "4935500b-c40f-4608-9e74-ace3bae4eb73",
+   "id": "75c18aa8-0882-4432-8d34-38c45f70c6df",
    "name": "Place Propeller on Motor Shaft (C)",
    "requires": [],
    "derived": true
   },
   {
    "i": 45,
-   "id": "c6c81c1e-a220-417a-97f4-1a061c7bd3c6",
+   "id": "a822d682-b236-4baf-9859-4ea5cd2659a8",
    "name": "Place Propeller on Motor Shaft (D)",
    "requires": [],
    "derived": true
@@ -4909,7 +4909,7 @@
      "rel": {
       "x": -2.715,
       "y": 53.747,
-      "z": -18.959,
+      "z": -12.46,
       "roll": -0.0,
       "pitch": 0.0,
       "yaw": -0.9599
@@ -5296,7 +5296,7 @@
      "rel": {
       "x": -16.41,
       "y": 35.865,
-      "z": -17.942,
+      "z": -12.454,
       "roll": -0.0,
       "pitch": 0.0,
       "yaw": -0.6109
@@ -5683,7 +5683,7 @@
      "rel": {
       "x": -16.41,
       "y": 35.865,
-      "z": -17.942,
+      "z": -12.454,
       "roll": -0.0,
       "pitch": 0.0,
       "yaw": -0.6109
@@ -6070,7 +6070,7 @@
      "rel": {
       "x": -1.987,
       "y": 52.798,
-      "z": -18.959,
+      "z": -12.46,
       "roll": -0.0,
       "pitch": 0.0,
       "yaw": -0.8727
@@ -8140,7 +8140,7 @@
      "rel": {
       "x": 45.583,
       "y": -28.606,
-      "z": 18.959,
+      "z": 12.46,
       "roll": 0.0,
       "pitch": 0.0,
       "yaw": 0.9599
@@ -8150,7 +8150,7 @@
    "path": [
     {
      "x": 91.0005,
-     "y": -66.0995,
+     "y": -59.6001,
      "z": 65.7511,
      "roll": 1.5708,
      "pitch": 0.0,
@@ -8158,7 +8158,7 @@
     },
     {
      "x": 91.0005,
-     "y": -30.0995,
+     "y": -23.6001,
      "z": 65.7511,
      "roll": 1.5708,
      "pitch": 0.0,
@@ -8185,7 +8185,7 @@
      "rel": {
       "x": 34.014,
       "y": -19.965,
-      "z": 17.942,
+      "z": 12.454,
       "roll": 0.0,
       "pitch": 0.0,
       "yaw": 0.6109
@@ -8195,16 +8195,16 @@
    "path": [
     {
      "x": 91.0017,
-     "y": -71.00200000000001,
-     "z": -66.1138,
+     "y": -65.5138,
+     "z": -66.1137,
      "roll": 1.5708,
      "pitch": 0.0,
      "yaw": -0.0
     },
     {
      "x": 91.0017,
-     "y": -35.002,
-     "z": -66.1138,
+     "y": -29.5138,
+     "z": -66.1137,
      "roll": 1.5708,
      "pitch": 0.0,
      "yaw": -0.0
@@ -8230,7 +8230,7 @@
      "rel": {
       "x": 34.014,
       "y": -19.965,
-      "z": 17.942,
+      "z": 12.454,
       "roll": 0.0,
       "pitch": 0.0,
       "yaw": 0.6109
@@ -8240,16 +8240,16 @@
    "path": [
     {
      "x": -90.6263,
-     "y": -71.00200000000001,
-     "z": 65.8522,
+     "y": -65.5138,
+     "z": 65.8523,
      "roll": 1.5708,
      "pitch": 0.0,
      "yaw": -0.0
     },
     {
      "x": -90.6263,
-     "y": -35.002,
-     "z": 65.8522,
+     "y": -29.5138,
+     "z": 65.8523,
      "roll": 1.5708,
      "pitch": 0.0,
      "yaw": -0.0
@@ -8275,7 +8275,7 @@
      "rel": {
       "x": 41.724,
       "y": -32.414,
-      "z": 18.959,
+      "z": 12.46,
       "roll": 0.0,
       "pitch": 0.0,
       "yaw": 0.8727
@@ -8285,7 +8285,7 @@
    "path": [
     {
      "x": -85.3018,
-     "y": -66.0995,
+     "y": -59.6001,
      "z": -72.4208,
      "roll": 1.5708,
      "pitch": 0.0,
@@ -8293,7 +8293,7 @@
     },
     {
      "x": -85.3018,
-     "y": -30.0995,
+     "y": -23.6001,
      "z": -72.4208,
      "roll": 1.5708,
      "pitch": 0.0,
