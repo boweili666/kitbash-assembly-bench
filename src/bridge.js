@@ -10,6 +10,7 @@
  *                                                  level:1 点零件就到位 / 2 点对孔就摆正 / 3 手动(现在的做法)
  *                                                  guide:true 装完场景就打开逐步指引(第一次装的人)
  *     {type:'kb:setScene', scene:[ScenePart]}
+ *     {type:'kb:config', config}                   settings, same shape as kitbash-config.json (also kb:init options.config)
  *     {type:'kb:setErrors', on:boolean}            error feedback on / off (off = no wrong-part / wrong-hole / not-aligned reports)
  *     {type:'kb:setLevel', level:1|2|3|'demo', demo?}  switch level ('demo' = the build plays itself; demo = demo options)
  *     {type:'kb:demo', action:'start'|'stop'|'pause'|'play'|'next'|'replay'|'set', options?, restore?}
@@ -219,6 +220,7 @@
 
   function applyInit(msg) {
     if (msg.options) Object.keys(msg.options).forEach(function (k) { options[k] = msg.options[k]; });
+    if (options.config && window.KBConfig) KBConfig.set(options.config, 'host');   // same shape as kitbash-config.json
     tutorialSession = !!options.tutorial;
     if (options.level && window.KBLevel) KBLevel.set(options.level, true);   // 宿主给的难度级别
     if (options.errors !== undefined && window.KBCheck) KBCheck.showErrors(options.errors !== false);   // error feedback switch
@@ -251,6 +253,7 @@
         if (msg.scene) hostKit = msg.scene;
         if (KBParts.ready()) setScene(msg.scene); else pendingInit = { scene: msg.scene };
         break;
+      case 'kb:config': if (window.KBConfig && msg.config) KBConfig.set(msg.config, 'host'); break;
       case 'kb:setErrors': if (window.KBCheck) KBCheck.showErrors(msg.on !== false); break;
       case 'kb:setLevel':
         if (msg.level === 'demo') { if (window.KBDemo) KBDemo.start(demoOpts(msg.demo)); }

@@ -1167,7 +1167,6 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 @media (max-width: 520px) { .cb-stats { grid-template-columns: repeat(3, 1fr); } }
 
 /* 底部的虚影进度条和快捷键说明栏不要了(虚影照常循环播放) */
-#answerBar, #hints { display: none !important; }
 
 /* ---------- Demo mode: workspace plus a playback bar only ---------- */
 body.demo-mode #topbar > *:not(.brand):not(#levelSeg):not(#btnHome) { display: none !important; }
@@ -1200,6 +1199,3 @@ body.demo-mode #celebrate { display: none !important; }
 #demoBar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 #demoBar .db-main { background: var(--accent-soft); color: var(--accent); border-color: transparent; min-width: 44px; text-align: center; white-space: nowrap; }
 @media (max-width: 700px) { #demoBar .db-prog, #demoBar .db-mode { display: none; } #demoBar { gap: 6px; } }
-
-/* The Checks shield is gone from the toolbar; the checks still run behind the guide card */
-#btnCheck { display: none !important; }

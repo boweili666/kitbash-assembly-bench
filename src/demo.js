@@ -37,6 +37,9 @@
                    fresh: true, loop: false, restore: true, hideTray: true, bar: true };
   var SPEEDS = [0.5, 1, 2, 4];
   var opt = Object.assign({}, DEFAULTS);
+  var urlOpt = null;         // demo.* URL parameters
+  // defaults < kitbash-config.json "demo" < URL demo.* < options passed to start()
+  function base() { return Object.assign({}, DEFAULTS, window.KBConfig ? KBConfig.get('demo') : null, urlOpt); }
 
   var on = false, paused = false, finished = false, holding = false, passBoundary = false;
   var saved = null, prevLevel = 3, timer = 0, stuck = 0, loopTimer = 0;
@@ -296,6 +299,7 @@
     if (on) { if (o) set(o); return; }
     if (!(window.KBCheck && window.KBLevel && window.KBParts && KBParts.ready())) { KB.toast('Parts are still loading'); return; }
     if (window.KBTutorial && KBTutorial.active()) { KB.toast('Finish or close the tutorial first'); return; }
+    opt = Object.assign({}, base());
     opt = norm(o);
     saved = JSON.stringify(KB.serializeScene());
     prevLevel = KBLevel.get();
@@ -432,9 +436,9 @@
         : /^\d+(\.\d+)?$/.test(v) && name !== 'steps' ? +v : v;
       any = true;
     });
-    if (any) opt = norm(o);
+    if (any) urlOpt = o;
     if (q.get('level') === 'demo') {
-      (function waitReady() { if (window.KBParts && KBParts.ready() && window.KBCheck && KBCheck.results()) setTimeout(function () { start(any ? o : null); }, 800); else setTimeout(waitReady, 200); })();
+      (function waitReady() { if (window.KBParts && KBParts.ready() && window.KBCheck && KBCheck.results()) setTimeout(function () { start(); }, 800); else setTimeout(waitReady, 200); })();
     }
   })();
 })();

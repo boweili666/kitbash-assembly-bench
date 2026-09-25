@@ -32,6 +32,20 @@
   noticeButton.innerHTML = '<span class="ck-notice-icon" aria-hidden="true">!</span><span class="ck-notice-text"></span><span class="ck-notice-count"></span>';
   noticeButton.tabIndex = -1; notice.appendChild(noticeButton); document.body.appendChild(notice);
   noticeButton.addEventListener('click', function () { panel.style.display = 'flex'; elClose.focus(); });
+  /* kitbash-config.json: tolerances, snapping, error switch */
+  function applyConfig(e) {
+    var C = window.KBConfig;
+    if (!C) return;
+    SNAP_POS_MM = C.num('level3.snapPosMm', 10);
+    SNAP_ANG = C.num('level3.snapAngDeg', 25);
+    var mm = C.num('checks.posTolMm', 3.2);
+    if (window.KBParts && KBParts.unitScale) POS_TOL = mm === 3.2 ? 0.08 : mm * KBParts.unitScale() / 1000;
+    ANG_TOL = C.num('checks.angTolDeg', 12);
+    PAIR_TOL = POS_TOL * 2;
+    var en = C.get('errors.enabled');
+    if (e && e.source !== 'defaults' && (en === true || en === false) && en !== showErrors && window.KBCheck) KBCheck.showErrors(en);
+  }
+  KB.on('config', applyConfig);
   var errBtn = document.getElementById('btnErrors');
   function paintErrors() {
     if (!errBtn) return;
@@ -85,7 +99,7 @@
   /* ---------- 归位:把零件吸到参考装配里的精确位姿 ----------
    * 默认不自动做 —— 自动吸会和手上的微调打架。按 S 对选中的零件手动归位;
    * 想要放下即吸的话 KBCheck.autoSnap(true)。插反的螺丝不吸:那是要指出来的错。*/
-  var SNAP_POS_MM = 10, SNAP_ANG = 25;
+  var SNAP_POS_MM = 10, SNAP_ANG = 25;     // overridden by kitbash-config.json level3.snapPosMm / snapAngDeg (see applyConfig)
   // 点选装配之后零件绕孔轴的转角是随手的,常常差几十度 —— 这种 Checks 根本认不出它占哪个槽位。
   // 归位时对「还没认领槽位」的零件放宽到这个范围,按"离哪个槽位最近"认领
   var LOOSE_POS_MM = 60, LOOSE_ANG = 60;
@@ -318,7 +332,7 @@
     out.push(Object.keys(levelPlaced).join(','), Object.keys(userMated).length,
       lastPick ? lastPick.node.uuid + lastPick.step + lastPick.msg : '',
       lastHole ? lastHole.node.uuid + lastHole.step + lastHole.msg : '',
-      window.KBLevel ? KBLevel.get() : 3, showErrors);
+      window.KBLevel ? KBLevel.get() : 3, showErrors, window.KBConfig ? KBConfig.version() : 0);
     return out.join('|');
   }
   function evaluate() {

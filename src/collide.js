@@ -547,6 +547,8 @@
     session = null;
   });
 
+  // kitbash-config.json collision.depthTolMm
+  KB.on('config', function () { if (window.KBConfig) DEPTH_TOL_MM = KBConfig.num('collision.depthTolMm', DEPTH_TOL_MM); });
   window.KBCollide = {
     test: test,
     penetration: penetration,

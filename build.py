@@ -102,3 +102,7 @@ artifact = "<title>Kitbash Assembly Bench</title>\n" + head_keep + "\n" + style_
 
 print("standalone:", (dist / "kitbash-standalone.html").stat().st_size, "bytes")
 print("artifact:  ", (dist / "kitbash-artifact.html").stat().st_size, "bytes")
+
+# The settings file sits next to the bundle (the page reads kitbash-config.json from its own folder)
+shutil.copyfile(root / "kitbash-config.json", dist / "kitbash-config.json")
+print("config:     dist/kitbash-config.json")

@@ -1170,7 +1170,6 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 @media (max-width: 520px) { .cb-stats { grid-template-columns: repeat(3, 1fr); } }
 
 
-#answerBar, #hints { display: none !important; }
 
 
 body.demo-mode #topbar > *:not(.brand):not(#levelSeg):not(#btnHome) { display: none !important; }
@@ -1203,9 +1202,6 @@ body.demo-mode #celebrate { display: none !important; }
 #demoBar button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 #demoBar .db-main { background: var(--accent-soft); color: var(--accent); border-color: transparent; min-width: 44px; text-align: center; white-space: nowrap; }
 @media (max-width: 700px) { #demoBar .db-prog, #demoBar .db-mode { display: none; } #demoBar { gap: 6px; } }
-
-
-#btnCheck { display: none !important; }
 
 </style>
 
@@ -1538,7 +1534,7 @@ body.demo-mode #celebrate { display: none !important; }
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-25 14:15';  /* build.py replaces this with the build time */</script>
+<script>window.KB_BUILD = '2026-09-25 14:25';  /* build.py replaces this with the build time */</script>
 <script>
 /**
  * @license
@@ -11807,6 +11803,135 @@ body.demo-mode #celebrate { display: none !important; }
 (function () {
     'use strict';
     var KB = window.KB;
+    var DEFAULTS = {
+        level: {
+            start: null
+        },
+        errors: {
+            enabled: null
+        },
+        level3: {
+            rotateStepDeg: 15,
+            rotateFineDeg: 1,
+            slideStepMm: 0.25,
+            slideFineMm: 0.05,
+            autoSnap: true,
+            snapPosMm: 10,
+            snapAngDeg: 25
+        },
+        flight: {
+            speed: 1
+        },
+        checks: {
+            posTolMm: 3.2,
+            angTolDeg: 12
+        },
+        collision: {
+            depthTolMm: 1.0
+        },
+        camera: {
+            autoView: true
+        },
+        ui: {
+            guideCard: true,
+            celebration: true,
+            levelButtons: true,
+            demoButton: true,
+            tutorialButton: true,
+            helpButton: true,
+            viewButton: true,
+            newButton: true,
+            trayButton: true,
+            errorsButton: true,
+            checksButton: false,
+            hintsBar: false,
+            answerBar: false
+        },
+        demo: {
+            autoplay: true, by: 'substep', speed: 1, gap: 450, substepGap: 700, stepGap: 1000,
+            trajectory: 'approach', camera: 'follow', from: null, to: null, steps: null,
+            fresh: true, loop: false, restore: true, hideTray: true, bar: true
+        }
+    };
+    var UI = {
+        guideCard: '#nextGuide', levelButtons: '#levelSeg', demoButton: '#levelSeg button[data-demo]',
+        tutorialButton: '#btnTutorial', helpButton: '#btnHelp, #helpPop', viewButton: '#btnView', newButton: '#btnDemo',
+        trayButton: '#btnArea', errorsButton: '#btnErrors', checksButton: '#btnCheck, #checkNotice',
+        hintsBar: '#hints', answerBar: '#answerBar'
+    };
+    function clone(o) { return JSON.parse(JSON.stringify(o)); }
+    function merge(dst, src) {
+        Object.keys(src || {}).forEach(function (k) {
+            if (k.charAt(0) === '_')
+                return;
+            var v = src[k];
+            if (v && typeof v === 'object' && !Array.isArray(v) && dst[k] && typeof dst[k] === 'object' && !Array.isArray(dst[k]))
+                merge(dst[k], v);
+            else
+                dst[k] = v;
+        });
+        return dst;
+    }
+    var cfg = clone(DEFAULTS), version = 0, loaded = false;
+    function get(path) {
+        var v = cfg;
+        String(path).split('.').forEach(function (k) { v = v === undefined || v === null ? undefined : v[k]; });
+        return v && typeof v === 'object' ? clone(v) : v;
+    }
+    function num(path, fallback) { var v = +get(path); return isFinite(v) ? v : fallback; }
+    var style = document.createElement('style');
+    style.id = 'kbConfigStyle';
+    document.head.appendChild(style);
+    function applyUi() {
+        var off = Object.keys(UI).filter(function (k) { return cfg.ui[k] === false; }).map(function (k) { return UI[k]; });
+        style.textContent = off.length ? off.join(', ') + ' { display: none !important; }' : '';
+    }
+    function set(partial, source) {
+        merge(cfg, partial);
+        version++;
+        applyUi();
+        KB.emit('config', { source: source || 'api', config: clone(cfg) });
+        return clone(cfg);
+    }
+    applyUi();
+    var url = new URLSearchParams(location.search).get('config') || 'kitbash-config.json';
+    if (location.protocol !== 'file:' && window.fetch) {
+        fetch(url, { cache: 'no-store' }).then(function (r) {
+            if (!r.ok)
+                throw { missing: true };
+            return r.text();
+        }).then(function (text) {
+            var data;
+            try {
+                data = JSON.parse(text);
+            }
+            catch (e) {
+                console.warn('[Kitbash] ' + url + ' is not valid JSON: ' + e.message);
+                KB.toast('Settings file has an error — using the defaults');
+                throw { handled: true };
+            }
+            loaded = true;
+            set(data, 'file');
+        }).catch(function (e) {
+            if (!e || (!e.missing && !e.handled))
+                console.warn('[Kitbash] could not read ' + url, e);
+            KB.emit('config', { source: 'defaults', config: clone(cfg) });
+        });
+    }
+    window.KBConfig = {
+        get: get, num: num, set: set,
+        all: function () { return clone(cfg); },
+        defaults: function () { return clone(DEFAULTS); },
+        version: function () { return version; },
+        loaded: function () { return loaded; }
+    };
+})();
+
+</script>
+<script>
+(function () {
+    'use strict';
+    var KB = window.KB;
     var bounds = { minX: -5, maxX: 5, minZ: 6, maxZ: 16 };
     var center = new THREE.Vector3(0, 0, 11);
     var group = new THREE.Group();
@@ -13320,6 +13445,8 @@ KBWorkspace.overview();
         test(node);
         session = null;
     });
+    KB.on('config', function () { if (window.KBConfig)
+        DEPTH_TOL_MM = KBConfig.num('collision.depthTolMm', DEPTH_TOL_MM); });
     window.KBCollide = {
         test: test,
         penetration: penetration,
@@ -15023,6 +15150,7 @@ KBWorkspace.overview();
     var RIM_COLOR = 0x07080b;
     var STEP_DEG = 15, STEP_FINE_DEG = 1;
     var STEP_SLIDE_MM = 0.25, STEP_SLIDE_FINE_MM = 0.05;
+    function cfgNum(path, fallback) { return window.KBConfig ? KBConfig.num(path, fallback) : fallback; }
     function unitsPerMm() { return (window.KBParts ? KBParts.unitScale() : 24.77) / 1000; }
     var root = new THREE.Group();
     root.userData.kbOverlay = true;
@@ -15681,13 +15809,13 @@ KBWorkspace.overview();
             e.stopImmediatePropagation();
             var q, t;
             if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
-                var dist = (e.shiftKey ? STEP_SLIDE_FINE_MM : STEP_SLIDE_MM) * unitsPerMm() * (e.code === 'ArrowUp' ? 1 : -1);
+                var dist = (e.shiftKey ? cfgNum('level3.slideFineMm', STEP_SLIDE_FINE_MM) : cfgNum('level3.slideStepMm', STEP_SLIDE_MM)) * unitsPerMm() * (e.code === 'ArrowUp' ? 1 : -1);
                 q = new THREE.Quaternion();
                 t = lastMate.dir.clone().multiplyScalar(dist);
                 lastMate.point.add(t);
             }
             else {
-                var deg = (e.shiftKey ? STEP_FINE_DEG : STEP_DEG) * (e.code === 'ArrowLeft' ? 1 : -1);
+                var deg = (e.shiftKey ? cfgNum('level3.rotateFineDeg', STEP_FINE_DEG) : cfgNum('level3.rotateStepDeg', STEP_DEG)) * (e.code === 'ArrowLeft' ? 1 : -1);
                 q = new THREE.Quaternion().setFromAxisAngle(lastMate.dir, THREE.MathUtils.degToRad(deg));
                 t = lastMate.point.clone().sub(lastMate.point.clone().applyQuaternion(q));
             }
@@ -17242,6 +17370,22 @@ KBWorkspace.overview();
     notice.appendChild(noticeButton);
     document.body.appendChild(notice);
     noticeButton.addEventListener('click', function () { panel.style.display = 'flex'; elClose.focus(); });
+    function applyConfig(e) {
+        var C = window.KBConfig;
+        if (!C)
+            return;
+        SNAP_POS_MM = C.num('level3.snapPosMm', 10);
+        SNAP_ANG = C.num('level3.snapAngDeg', 25);
+        var mm = C.num('checks.posTolMm', 3.2);
+        if (window.KBParts && KBParts.unitScale)
+            POS_TOL = mm === 3.2 ? 0.08 : mm * KBParts.unitScale() / 1000;
+        ANG_TOL = C.num('checks.angTolDeg', 12);
+        PAIR_TOL = POS_TOL * 2;
+        var en = C.get('errors.enabled');
+        if (e && e.source !== 'defaults' && (en === true || en === false) && en !== showErrors && window.KBCheck)
+            KBCheck.showErrors(en);
+    }
+    KB.on('config', applyConfig);
     var errBtn = document.getElementById('btnErrors');
     function paintErrors() {
         if (!errBtn)
@@ -17521,7 +17665,7 @@ KBWorkspace.overview();
             for (var i = 0; i < 16; i++)
                 out.push(Math.round(e[i] * 1e5));
         });
-        out.push(Object.keys(levelPlaced).join(','), Object.keys(userMated).length, lastPick ? lastPick.node.uuid + lastPick.step + lastPick.msg : '', lastHole ? lastHole.node.uuid + lastHole.step + lastHole.msg : '', window.KBLevel ? KBLevel.get() : 3, showErrors);
+        out.push(Object.keys(levelPlaced).join(','), Object.keys(userMated).length, lastPick ? lastPick.node.uuid + lastPick.step + lastPick.msg : '', lastHole ? lastHole.node.uuid + lastHole.step + lastHole.msg : '', window.KBLevel ? KBLevel.get() : 3, showErrors, window.KBConfig ? KBConfig.version() : 0);
         return out.join('|');
     }
     function evaluate() {
@@ -19157,7 +19301,7 @@ KBWorkspace.overview();
     }
     function fly(part, target, then, opts) {
         opts = opts || {};
-        var speed = opts.speed > 0 ? opts.speed : 1;
+        var speed = opts.speed > 0 ? opts.speed : window.KBConfig ? Math.max(0.05, KBConfig.num('flight.speed', 1)) : 1;
         var mv = moverFor(part, target.want);
         var end = toParentLocal(mv.node, mv.want);
         var start = mv.node.position.clone();
@@ -19556,7 +19700,7 @@ KBWorkspace.overview();
         if (level !== 2)
             clearGuide();
         if (window.KBCheck && KBCheck.autoSnap)
-            KBCheck.autoSnap(level === 3);
+            KBCheck.autoSnap(level === 3 && !(window.KBConfig && KBConfig.get('level3.autoSnap') === false));
         if (window.KBMate) {
             KBMate.setEnabled(level !== 1);
             KBMate.setResolver(resolve);
@@ -19591,6 +19735,22 @@ KBWorkspace.overview();
         });
     window.KBLevel = { get: function () { return level; }, set: set, tips: TIPS, busy: function () { return busy; },
         place: placeByClick };
+    var fromUrl = !!clamp(new URLSearchParams(location.search).get('level'));
+    KB.on('config', function (e) {
+        var start = window.KBConfig && KBConfig.get('level.start');
+        if (e && e.source !== 'defaults' && !fromUrl && !tutorialOn() && !(window.KBDemo && KBDemo.active())) {
+            if (start === 'demo') {
+                if (window.KBDemo)
+                    setTimeout(function () { KBDemo.start(); }, 800);
+            }
+            else if (clamp(start) && clamp(start) !== level) {
+                set(start, true);
+                return;
+            }
+        }
+        if (window.KBMate)
+            apply();
+    });
     (function hook() { if (window.KBMate)
         apply();
     else
@@ -20120,7 +20280,7 @@ KBWorkspace.overview();
     }
     function soon() { clearTimeout(timer); timer = setTimeout(refresh, 450); }
     var autoTimer = 0, pendingKey = null;
-    function autoView() { return window.KBLevel && KBLevel.get() <= 2; }
+    function autoView() { return window.KBLevel && KBLevel.get() <= 2 && !(window.KBConfig && KBConfig.get('camera.autoView') === false); }
     KB.onChange(soon);
     KB.onSelection(soon);
     KB.on('levelChange', soon);
@@ -20711,7 +20871,7 @@ KBWorkspace.overview();
     KB.onChange(function () {
         clearTimeout(timer);
         timer = setTimeout(function () {
-            if (shown || tutorialOn() || (window.KBDemo && KBDemo.active()) || !window.KBCheck || KB.interacting() || (KB.tweening && KB.tweening()))
+            if (shown || tutorialOn() || (window.KBDemo && KBDemo.active()) || (window.KBConfig && KBConfig.get('ui.celebration') === false) || !window.KBCheck || KB.interacting() || (KB.tweening && KB.tweening()))
                 return;
             var res = KBCheck.evaluate();
             if (res && res.ready && res.steps.length && res.stepsSettled === res.steps.length)
@@ -20731,6 +20891,8 @@ KBWorkspace.overview();
         fresh: true, loop: false, restore: true, hideTray: true, bar: true };
     var SPEEDS = [0.5, 1, 2, 4];
     var opt = Object.assign({}, DEFAULTS);
+    var urlOpt = null;
+    function base() { return Object.assign({}, DEFAULTS, window.KBConfig ? KBConfig.get('demo') : null, urlOpt); }
     var on = false, paused = false, finished = false, holding = false, passBoundary = false;
     var saved = null, prevLevel = 3, timer = 0, stuck = 0, loopTimer = 0;
     var cur = null;
@@ -21070,6 +21232,7 @@ KBWorkspace.overview();
             KB.toast('Finish or close the tutorial first');
             return;
         }
+        opt = Object.assign({}, base());
         opt = norm(o);
         saved = JSON.stringify(KB.serializeScene());
         prevLevel = KBLevel.get();
@@ -21257,10 +21420,10 @@ KBWorkspace.overview();
             any = true;
         });
         if (any)
-            opt = norm(o);
+            urlOpt = o;
         if (q.get('level') === 'demo') {
             (function waitReady() { if (window.KBParts && KBParts.ready() && window.KBCheck && KBCheck.results())
-                setTimeout(function () { start(any ? o : null); }, 800);
+                setTimeout(function () { start(); }, 800);
             else
                 setTimeout(waitReady, 200); })();
         }
@@ -21432,6 +21595,8 @@ KBWorkspace.overview();
     function applyInit(msg) {
         if (msg.options)
             Object.keys(msg.options).forEach(function (k) { options[k] = msg.options[k]; });
+        if (options.config && window.KBConfig)
+            KBConfig.set(options.config, 'host');
         tutorialSession = !!options.tutorial;
         if (options.level && window.KBLevel)
             KBLevel.set(options.level, true);
@@ -21482,6 +21647,10 @@ KBWorkspace.overview();
                     setScene(msg.scene);
                 else
                     pendingInit = { scene: msg.scene };
+                break;
+            case 'kb:config':
+                if (window.KBConfig && msg.config)
+                    KBConfig.set(msg.config, 'host');
                 break;
             case 'kb:setErrors':
                 if (window.KBCheck)

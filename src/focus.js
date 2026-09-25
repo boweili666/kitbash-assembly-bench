@@ -471,7 +471,7 @@
   }
   function soon() { clearTimeout(timer); timer = setTimeout(refresh, 450); }
   var autoTimer = 0, pendingKey = null;
-  function autoView() { return window.KBLevel && KBLevel.get() <= 2; }
+  function autoView() { return window.KBLevel && KBLevel.get() <= 2 && !(window.KBConfig && KBConfig.get('camera.autoView') === false); }
   KB.onChange(soon);
   KB.onSelection(soon);
   KB.on('levelChange', soon);

@@ -55,7 +55,7 @@
      target.via - waypoint world poses of the part (a recorded trajectory); otherwise target.approach */
   function fly(part, target, then, opts) {
     opts = opts || {};
-    var speed = opts.speed > 0 ? opts.speed : 1;
+    var speed = opts.speed > 0 ? opts.speed : window.KBConfig ? Math.max(0.05, KBConfig.num('flight.speed', 1)) : 1;
     var mv = moverFor(part, target.want);
     var end = toParentLocal(mv.node, mv.want);
     var start = mv.node.position.clone();
@@ -386,7 +386,7 @@
   function apply() {
     if (level !== 2) clearGuide();
     // 三级:方向键一次转 15°,放下时离正确位姿够近(10 mm / 25°)就自动吸到位 —— 不用一度一度地对
-    if (window.KBCheck && KBCheck.autoSnap) KBCheck.autoSnap(level === 3);
+    if (window.KBCheck && KBCheck.autoSnap) KBCheck.autoSnap(level === 3 && !(window.KBConfig && KBConfig.get('level3.autoSnap') === false));
     if (window.KBMate) {
       KBMate.setEnabled(level !== 1);
       KBMate.setResolver(resolve);
@@ -413,6 +413,16 @@
 
   window.KBLevel = { get: function () { return level; }, set: set, tips: TIPS, busy: function () { return busy; },
                      place: placeByClick };   // demo mode: fly a part into place the Level 1 way
+  // kitbash-config.json: level.start (a fixed start level) and level3.autoSnap
+  var fromUrl = !!clamp(new URLSearchParams(location.search).get('level'));
+  KB.on('config', function (e) {
+    var start = window.KBConfig && KBConfig.get('level.start');
+    if (e && e.source !== 'defaults' && !fromUrl && !tutorialOn() && !(window.KBDemo && KBDemo.active())) {
+      if (start === 'demo') { if (window.KBDemo) setTimeout(function () { KBDemo.start(); }, 800); }
+      else if (clamp(start) && clamp(start) !== level) { set(start, true); return; }
+    }
+    if (window.KBMate) apply();
+  });
   // mate.js 在本文件之后加载,等它就绪再接上开关
   (function hook() { if (window.KBMate) apply(); else setTimeout(hook, 50); })();
 })();

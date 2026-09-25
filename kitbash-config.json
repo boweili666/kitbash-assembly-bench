@@ -1,0 +1,82 @@
+{
+  "_help": "Kitbash settings. Edit, save, reload the page. Delete a key (or the whole file) to get the built-in default back. Keys starting with _ are notes and are ignored.",
+
+  "level": {
+    "_help": "start: null = the level the user picked last time; 1, 2, 3 or \"demo\" = always start there (a ?level= in the URL still wins).",
+    "start": null
+  },
+
+  "errors": {
+    "_help": "enabled: null = keep the toolbar Errors switch as the user left it; false = no wrong-part / wrong-hole / not-aligned messages, toasts or events (Level 3 no longer undoes such moves); true = force them on.",
+    "enabled": null
+  },
+
+  "level3": {
+    "_help": "Arrow keys once a part is mated on a hole, and snapping into place.",
+    "rotateStepDeg": 15,
+    "rotateFineDeg": 1,
+    "slideStepMm": 0.25,
+    "slideFineMm": 0.05,
+    "autoSnap": true,
+    "snapPosMm": 10,
+    "snapAngDeg": 25
+  },
+
+  "flight": {
+    "_help": "speed: Level 1 / 2 'moves into place by itself' flight speed (2 = twice as fast).",
+    "speed": 1
+  },
+
+  "checks": {
+    "_help": "A part counts as in place within posTolMm and angTolDeg of its reference pose.",
+    "posTolMm": 3.2,
+    "angTolDeg": 12
+  },
+
+  "collision": {
+    "_help": "depthTolMm: interpenetration deeper than this is reported as a collision.",
+    "depthTolMm": 1.0
+  },
+
+  "camera": {
+    "_help": "autoView: Level 1 / 2 camera turns to the next part by itself.",
+    "autoView": true
+  },
+
+  "ui": {
+    "_help": "true = shown, false = hidden.",
+    "guideCard": true,
+    "celebration": true,
+    "levelButtons": true,
+    "demoButton": true,
+    "tutorialButton": true,
+    "helpButton": true,
+    "viewButton": true,
+    "newButton": true,
+    "trayButton": true,
+    "errorsButton": true,
+    "checksButton": false,
+    "hintsBar": false,
+    "answerBar": false
+  },
+
+  "demo": {
+    "_help": "Demo mode defaults. autoplay: false = wait for Next at every unit. by: part | substep | step (what one Next plays). speed: multiplier. gap / substepGap / stepGap: pauses in ms. trajectory: approach | direct | answer (recorded path). camera: follow | fixed. from / to: step numbers (1-based) or step ids, null = whole build. steps: e.g. [1, 3, 5] or null. fresh: start from a full kit. loop: start over when done. restore: put the scene back on exit. hideTray: hide the tray. bar: show the playback bar.",
+    "autoplay": true,
+    "by": "substep",
+    "speed": 1,
+    "gap": 450,
+    "substepGap": 700,
+    "stepGap": 1000,
+    "trajectory": "approach",
+    "camera": "follow",
+    "from": null,
+    "to": null,
+    "steps": null,
+    "fresh": true,
+    "loop": false,
+    "restore": true,
+    "hideTray": true,
+    "bar": true
+  }
+}

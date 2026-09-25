@@ -1,0 +1,135 @@
+/* ============================================================
+ * Settings file - kitbash-config.json next to the page
+ *
+ * Every tunable in one place. The file is read at start-up (no cache); edit it and reload.
+ * A missing file or a missing key keeps the built-in default below. Keys starting with "_"
+ * are comments. Other sources, later ones win:
+ *   built-in defaults  <  kitbash-config.json (or ?config=<url>)  <  host kb:init options.config / kb:config
+ * Modules read values when they need them (KBConfig.get('level3.rotateStepDeg')) and listen to
+ * KB 'config' for the ones they apply once (UI visibility, error switch, start level).
+ * ============================================================ */
+(function () {
+  'use strict';
+
+  var KB = window.KB;
+  var DEFAULTS = {
+    level: {
+      start: null                 // null = the level the user picked last time; 1 | 2 | 3 | "demo" = always start there
+    },
+    errors: {
+      enabled: null               // null = keep the user's toolbar choice; true / false = force it on load
+    },
+    level3: {
+      rotateStepDeg: 15,          // left / right arrow: turn around the hole axis
+      rotateFineDeg: 1,           // with Shift
+      slideStepMm: 0.25,          // up / down arrow: slide along the hole axis
+      slideFineMm: 0.05,          // with Shift
+      autoSnap: true,             // snap into place when close enough
+      snapPosMm: 10,              // ... within this distance
+      snapAngDeg: 25              // ... and this angle
+    },
+    flight: {
+      speed: 1                    // Level 1 / 2 "moves into place by itself" flight speed multiplier
+    },
+    checks: {
+      posTolMm: 3.2,              // a part counts as in place within this distance
+      angTolDeg: 12               // ... and this angle
+    },
+    collision: {
+      depthTolMm: 1.0             // interpenetration deeper than this is reported as a collision
+    },
+    camera: {
+      autoView: true              // Level 1 / 2: the camera turns to the next part by itself
+    },
+    ui: {
+      guideCard: true,            // step card at the top left
+      celebration: true,          // "Drone assembled!" screen at the end
+      levelButtons: true,         // Level 1 / 2 / 3 / Demo in the toolbar
+      demoButton: true,
+      tutorialButton: true,
+      helpButton: true,
+      viewButton: true,
+      newButton: true,            // "New": all the parts back in the tray
+      trayButton: true,           // jump between workspace and tray
+      errorsButton: true,         // dev toolbar error switch (never shown on the public site)
+      checksButton: false,        // the old Checks shield
+      hintsBar: false,            // the old bottom hints bar
+      answerBar: false            // the old bottom ghost playback bar
+    },
+    demo: {                       // see src/demo.js for what each one does
+      autoplay: true, by: 'substep', speed: 1, gap: 450, substepGap: 700, stepGap: 1000,
+      trajectory: 'approach', camera: 'follow', from: null, to: null, steps: null,
+      fresh: true, loop: false, restore: true, hideTray: true, bar: true
+    }
+  };
+  var UI = {
+    guideCard: '#nextGuide', levelButtons: '#levelSeg', demoButton: '#levelSeg button[data-demo]',
+    tutorialButton: '#btnTutorial', helpButton: '#btnHelp, #helpPop', viewButton: '#btnView', newButton: '#btnDemo',
+    trayButton: '#btnArea', errorsButton: '#btnErrors', checksButton: '#btnCheck, #checkNotice',
+    hintsBar: '#hints', answerBar: '#answerBar'
+  };
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function merge(dst, src) {
+    Object.keys(src || {}).forEach(function (k) {
+      if (k.charAt(0) === '_') return;
+      var v = src[k];
+      if (v && typeof v === 'object' && !Array.isArray(v) && dst[k] && typeof dst[k] === 'object' && !Array.isArray(dst[k])) merge(dst[k], v);
+      else dst[k] = v;
+    });
+    return dst;
+  }
+  var cfg = clone(DEFAULTS), version = 0, loaded = false;
+
+  function get(path) {
+    var v = cfg;
+    String(path).split('.').forEach(function (k) { v = v === undefined || v === null ? undefined : v[k]; });
+    return v && typeof v === 'object' ? clone(v) : v;
+  }
+  function num(path, fallback) { var v = +get(path); return isFinite(v) ? v : fallback; }
+
+  var style = document.createElement('style');
+  style.id = 'kbConfigStyle';
+  document.head.appendChild(style);
+  function applyUi() {
+    var off = Object.keys(UI).filter(function (k) { return cfg.ui[k] === false; }).map(function (k) { return UI[k]; });
+    style.textContent = off.length ? off.join(', ') + ' { display: none !important; }' : '';
+  }
+  function set(partial, source) {
+    merge(cfg, partial);
+    version++;
+    applyUi();
+    KB.emit('config', { source: source || 'api', config: clone(cfg) });
+    return clone(cfg);
+  }
+  applyUi();
+
+  // kitbash-config.json next to the page, or ?config=<url>
+  var url = new URLSearchParams(location.search).get('config') || 'kitbash-config.json';
+  if (location.protocol !== 'file:' && window.fetch) {
+    fetch(url, { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw { missing: true };
+      return r.text();
+    }).then(function (text) {
+      var data;
+      try { data = JSON.parse(text); } catch (e) {
+        console.warn('[Kitbash] ' + url + ' is not valid JSON: ' + e.message);
+        KB.toast('Settings file has an error — using the defaults');
+        throw { handled: true };
+      }
+      loaded = true;
+      set(data, 'file');
+    }).catch(function (e) {
+      if (!e || (!e.missing && !e.handled)) console.warn('[Kitbash] could not read ' + url, e);
+      KB.emit('config', { source: 'defaults', config: clone(cfg) });
+    });
+  }
+
+  window.KBConfig = {
+    get: get, num: num, set: set,
+    all: function () { return clone(cfg); },
+    defaults: function () { return clone(DEFAULTS); },
+    version: function () { return version; },
+    loaded: function () { return loaded; }
+  };
+})();

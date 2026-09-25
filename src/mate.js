@@ -27,7 +27,8 @@
   var OPACITY_DIMMED = 0.22;   // 有孔被点亮(教程 / 二级引导)时,其余圆片压暗,让该点的那个跳出来
   var RIM_COLOR = 0x07080b;     // 每个圆片外面一圈深色描边:贴在白螺丝上也有清楚的边
   var STEP_DEG = 15, STEP_FINE_DEG = 1;               // ←→ 绕孔轴一次 15°(Shift = 1° 微调);离正确角度够近会自动吸过去
-  var STEP_SLIDE_MM = 0.25, STEP_SLIDE_FINE_MM = 0.05; // ↑↓ 沿孔轴
+  var STEP_SLIDE_MM = 0.25, STEP_SLIDE_FINE_MM = 0.05;
+  function cfgNum(path, fallback) { return window.KBConfig ? KBConfig.num(path, fallback) : fallback; }   // kitbash-config.json // ↑↓ 沿孔轴
   // 编辑器单位 ↔ 毫米:1 单位 ≈ 40 mm(unitScale 是「1 mm 折多少单位」的倒数的一千倍)
   function unitsPerMm() { return (window.KBParts ? KBParts.unitScale() : 24.77) / 1000; }
 
@@ -645,12 +646,12 @@
       e.stopImmediatePropagation();
       var q, t;
       if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
-        var dist = (e.shiftKey ? STEP_SLIDE_FINE_MM : STEP_SLIDE_MM) * unitsPerMm() * (e.code === 'ArrowUp' ? 1 : -1);
+        var dist = (e.shiftKey ? cfgNum('level3.slideFineMm', STEP_SLIDE_FINE_MM) : cfgNum('level3.slideStepMm', STEP_SLIDE_MM)) * unitsPerMm() * (e.code === 'ArrowUp' ? 1 : -1);
         q = new THREE.Quaternion();
         t = lastMate.dir.clone().multiplyScalar(dist);
         lastMate.point.add(t);
       } else {
-        var deg = (e.shiftKey ? STEP_FINE_DEG : STEP_DEG) * (e.code === 'ArrowLeft' ? 1 : -1);
+        var deg = (e.shiftKey ? cfgNum('level3.rotateFineDeg', STEP_FINE_DEG) : cfgNum('level3.rotateStepDeg', STEP_DEG)) * (e.code === 'ArrowLeft' ? 1 : -1);
         q = new THREE.Quaternion().setFromAxisAngle(lastMate.dir, THREE.MathUtils.degToRad(deg));
         t = lastMate.point.clone().sub(lastMate.point.clone().applyQuaternion(q));
       }
