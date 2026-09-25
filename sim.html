@@ -1174,6 +1174,9 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 .cb-btns button:hover { filter: brightness(1.1); }
 @media (max-width: 520px) { .cb-stats { grid-template-columns: repeat(3, 1fr); } }
 
+
+#answerBar, #hints { display: none !important; }
+
 </style>
 </head>
 <body>
@@ -1505,7 +1508,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-25 07:49';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-25 13:40';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -14169,10 +14172,10 @@ KBWorkspace.overview();
                         var held = window.KBMate && KBMate.hingeFor(parts.arm);
                         if (!held)
                             return 'Click the arm once to take hold of it again, then press \u2190 or \u2192.';
-                        return 'Turned ' + Math.round(turnedDeg()) + '\u00b0 of ' + TURN_GOAL + '\u00b0 \u2014 hold \u2190 or \u2192 (Shift = 90\u00b0).';
+                        return 'Turned ' + Math.round(turnedDeg()) + '\u00b0 of ' + TURN_GOAL + '\u00b0 \u2014 press \u2190 or \u2192 (15\u00b0 a press, Shift = 1\u00b0).';
                     },
-                    lesson: { title: 'Turn it on the hole', hint: 'The arm is locked on that hole. \u2190 / \u2192 turn it around the hole, 1\u00b0 a press (Shift = 90\u00b0). Turn it at least 10\u00b0.',
-                        demo: 'adjust', label: 'Turn \u2190 \u2192', target: 'Arm', actions: ['Hold \u2190 or \u2192 (1\u00b0 a press, Shift = 90\u00b0)', 'Watch the arm swing around the hole'] } }
+                    lesson: { title: 'Turn it on the hole', hint: 'The arm is locked on that hole. \u2190 / \u2192 turn it around the hole, 15\u00b0 a press (Shift = 1\u00b0 fine steps). In the real build, once it is close to the right angle it snaps into place by itself.',
+                        demo: 'adjust', label: 'Turn \u2190 \u2192', target: 'Arm', actions: ['Press \u2190 or \u2192 (15\u00b0 a press, Shift = 1\u00b0)', 'Watch the arm swing around the hole'] } }
             ]
         },
         {
@@ -14864,7 +14867,7 @@ KBWorkspace.overview();
         flags.placed = node;
         if (at('turn') && node === parts.arm && activeArrow && /Left|Right/.test(activeArrow)) {
             flags.turn = true;
-            flags.turned = (flags.turned || 0) + (activeArrow === 'ArrowLeft' ? 1 : -1) * (lastShift ? 90 : 1);
+            flags.turned = (flags.turned || 0) + (activeArrow === 'ArrowLeft' ? 1 : -1) * (lastShift ? 1 : 15);
         }
         if (at('slide') && node === parts.screw && activeArrow && /Up|Down/.test(activeArrow))
             flags.slide = true;
@@ -14988,7 +14991,7 @@ KBWorkspace.overview();
     var OPACITY_IDLE = 0.55, OPACITY_HOVER = 1, OPACITY_ARMED = 1;
     var OPACITY_DIMMED = 0.22;
     var RIM_COLOR = 0x07080b;
-    var STEP_DEG = 1, STEP_BIG_DEG = 90;
+    var STEP_DEG = 15, STEP_FINE_DEG = 1;
     var STEP_SLIDE_MM = 0.25, STEP_SLIDE_FINE_MM = 0.05;
     function unitsPerMm() { return (window.KBParts ? KBParts.unitScale() : 24.77) / 1000; }
     var root = new THREE.Group();
@@ -15647,7 +15650,7 @@ KBWorkspace.overview();
                 lastMate.point.add(t);
             }
             else {
-                var deg = (e.shiftKey ? STEP_BIG_DEG : STEP_DEG) * (e.code === 'ArrowLeft' ? 1 : -1);
+                var deg = (e.shiftKey ? STEP_FINE_DEG : STEP_DEG) * (e.code === 'ArrowLeft' ? 1 : -1);
                 q = new THREE.Quaternion().setFromAxisAngle(lastMate.dir, THREE.MathUtils.degToRad(deg));
                 t = lastMate.point.clone().sub(lastMate.point.clone().applyQuaternion(q));
             }
@@ -18323,8 +18326,10 @@ KBWorkspace.overview();
         return applySnaps(list, list.length + ' part' + (list.length > 1 ? 's' : '') + ' snapped into place');
     }
     var evalTimer = 0;
-    KB.on('place', function (node) { if (autoSnap)
-        setTimeout(function () { snapIntoPlace(node); }, 0); });
+    KB.on('place', function (node) {
+        if (autoSnap && !(window.KBTutorial && KBTutorial.active()))
+            setTimeout(function () { snapIntoPlace(node); }, 0);
+    });
     var selection = [];
     KB.onSelection(function (sel) { selection = sel.slice(); });
     window.addEventListener('keydown', function (e) {
@@ -19439,6 +19444,8 @@ KBWorkspace.overview();
     function apply() {
         if (level !== 2)
             clearGuide();
+        if (window.KBCheck && KBCheck.autoSnap)
+            KBCheck.autoSnap(level === 3);
         if (window.KBMate) {
             KBMate.setEnabled(level !== 1);
             KBMate.setResolver(resolve);
