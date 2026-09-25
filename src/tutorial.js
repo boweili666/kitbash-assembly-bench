@@ -154,10 +154,10 @@
             if (turnedDeg() >= TURN_GOAL) return '';
             var held = window.KBMate && KBMate.hingeFor(parts.arm);
             if (!held) return 'Click the arm once to take hold of it again, then press \u2190 or \u2192.';
-            return 'Turned ' + Math.round(turnedDeg()) + '\u00b0 of ' + TURN_GOAL + '\u00b0 \u2014 hold \u2190 or \u2192 (Shift = 90\u00b0).';
+            return 'Turned ' + Math.round(turnedDeg()) + '\u00b0 of ' + TURN_GOAL + '\u00b0 \u2014 press \u2190 or \u2192 (15\u00b0 a press, Shift = 1\u00b0).';
           },
-          lesson: { title: 'Turn it on the hole', hint: 'The arm is locked on that hole. \u2190 / \u2192 turn it around the hole, 1\u00b0 a press (Shift = 90\u00b0). Turn it at least 10\u00b0.',
-            demo: 'adjust', label: 'Turn \u2190 \u2192', target: 'Arm', actions: ['Hold \u2190 or \u2192 (1\u00b0 a press, Shift = 90\u00b0)', 'Watch the arm swing around the hole'] } }
+          lesson: { title: 'Turn it on the hole', hint: 'The arm is locked on that hole. \u2190 / \u2192 turn it around the hole, 15\u00b0 a press (Shift = 1\u00b0 fine steps). In the real build, once it is close to the right angle it snaps into place by itself.',
+            demo: 'adjust', label: 'Turn \u2190 \u2192', target: 'Arm', actions: ['Press \u2190 or \u2192 (15\u00b0 a press, Shift = 1\u00b0)', 'Watch the arm swing around the hole'] } }
       ]
     }
     ,
@@ -771,7 +771,7 @@
     flags.placed = node;
     if (at('turn') && node === parts.arm && activeArrow && /Left|Right/.test(activeArrow)) {
       flags.turn = true;
-      flags.turned = (flags.turned || 0) + (activeArrow === 'ArrowLeft' ? 1 : -1) * (lastShift ? 90 : 1);
+      flags.turned = (flags.turned || 0) + (activeArrow === 'ArrowLeft' ? 1 : -1) * (lastShift ? 1 : 15);
     }
     if (at('slide') && node === parts.screw && activeArrow && /Up|Down/.test(activeArrow)) flags.slide = true;
   });

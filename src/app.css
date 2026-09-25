@@ -1165,3 +1165,6 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 .cb-btns .cb-home, .cb-btns .cb-look:only-child { border-color: #d7a74a; background: #e9b756; color: #1b1a17; }
 .cb-btns button:hover { filter: brightness(1.1); }
 @media (max-width: 520px) { .cb-stats { grid-template-columns: repeat(3, 1fr); } }
+
+/* 底部的虚影进度条和快捷键说明栏不要了(虚影照常循环播放) */
+#answerBar, #hints { display: none !important; }

@@ -355,6 +355,8 @@
   }
   function apply() {
     if (level !== 2) clearGuide();
+    // 三级:方向键一次转 15°,放下时离正确位姿够近(10 mm / 25°)就自动吸到位 —— 不用一度一度地对
+    if (window.KBCheck && KBCheck.autoSnap) KBCheck.autoSnap(level === 3);
     if (window.KBMate) {
       KBMate.setEnabled(level !== 1);
       KBMate.setResolver(resolve);

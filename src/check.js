@@ -1126,7 +1126,10 @@
   }
 
   var evalTimer = 0;
-  KB.on('place', function (node) { if (autoSnap) setTimeout(function () { snapIntoPlace(node); }, 0); });
+  // 放下即吸:离正确位姿 10 mm / 25° 以内就吸过去(比"判到位"的 3.2 mm / 12° 宽)。教程练习的零件不在答案里,不吸
+  KB.on('place', function (node) {
+    if (autoSnap && !(window.KBTutorial && KBTutorial.active())) setTimeout(function () { snapIntoPlace(node); }, 0);
+  });
   /* S:把选中的零件归位(离正确位置够近才吸,够不着就说一声) */
   var selection = [];
   KB.onSelection(function (sel) { selection = sel.slice(); });
