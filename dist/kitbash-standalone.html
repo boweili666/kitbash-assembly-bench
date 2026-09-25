@@ -1169,7 +1169,8 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 .cb-btns { display: flex; gap: 8px; justify-content: center; }
 .cb-btns button { flex: 1; padding: 10px 12px; border-radius: 9px; border: 1px solid #7f97aa66; background: #1c2d3f;
   color: #e0e9ef; font: 600 13px system-ui, sans-serif; cursor: pointer; }
-.cb-btns .cb-look { border-color: #d7a74a; background: #e9b756; color: #1b1a17; }
+
+.cb-btns .cb-home, .cb-btns .cb-look:only-child { border-color: #d7a74a; background: #e9b756; color: #1b1a17; }
 .cb-btns button:hover { filter: brightness(1.1); }
 @media (max-width: 520px) { .cb-stats { grid-template-columns: repeat(3, 1fr); } }
 
@@ -1504,7 +1505,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-25 07:37';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-25 07:49';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -20505,9 +20506,8 @@ KBWorkspace.overview();
         '<h2>Drone assembled!</h2>' +
         '<p class="cb-lede">Every part is in place. Nice work.</p>' +
         '<div class="cb-stats"></div>' +
-        '<div class="cb-btns"><button class="cb-look">Look around</button>' +
-        (publicSite ? '<button class="cb-again">Build again</button><button class="cb-home">Home</button>' : '') +
-        '</div></div>';
+        '<div class="cb-btns">' + (publicSite ? '<button class="cb-home">Home</button>' : '') +
+        '<button class="cb-look">Look around</button></div></div>';
     document.body.appendChild(el);
     function stat(label, value) { return '<div><b>' + value + '</b><span>' + label + '</span></div>'; }
     function fmtTime(ms) {
@@ -20579,11 +20579,7 @@ KBWorkspace.overview();
     }
     function close() { el.hidden = true; cancelAnimationFrame(raf); orbit(false); }
     el.querySelector('.cb-look').addEventListener('click', close);
-    var again = el.querySelector('.cb-again'), home = el.querySelector('.cb-home');
-    if (again)
-        again.addEventListener('click', function () {
-            location.href = 'sim.html?start=assembly&level=' + (window.KBLevel ? KBLevel.get() : 3);
-        });
+    var home = el.querySelector('.cb-home');
     if (home)
         home.addEventListener('click', function () { location.href = './'; });
     ['pointerdown', 'wheel', 'keydown'].forEach(function (ev) {
