@@ -281,6 +281,17 @@
   }
   setInterval(ensureGuide, 1500);
 
+  /* 公开网站(GitHub Pages)的模拟器页 sim.html:工具栏多一个 Home,回到封面(index.html) —— 选难度、重新开始 */
+  var home = document.getElementById('btnHome');
+  if (home && /\/sim\.html$/.test(location.pathname) && !document.body.classList.contains('embed')) {
+    home.hidden = false;
+    home.addEventListener('click', function () {
+      var busy = KB.objectsRoot && KB.objectsRoot.children.length;
+      if (busy && !confirm('Back to the start screen? Your current build will be lost.')) return;
+      location.href = './';
+    });
+  }
+
   window.KBHelp = { open: open, close: close, isOpen: function () { return !pop.hidden; },
     seek: function (frac) { if (mini) mini.seek(frac); } };   // 调试 / 截图用
 })();
