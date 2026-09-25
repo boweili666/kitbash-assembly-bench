@@ -76,8 +76,8 @@
   </div>
   <div>
     <p class="kicker" style="margin-bottom:4px">CHOOSE YOUR DIFFICULTY</p>
-    <h2>How do you want to build?</h2>
-    <p class="lede" style="max-width:620px;margin-top:4px;font-size:13px">A short practice for the level you pick comes first. You can change the level any time from the toolbar.</p>
+    <h2 id="lvTitle">How do you want to build?</h2>
+    <p class="lede" id="lvLede" style="max-width:620px;margin-top:4px;font-size:13px"></p>
   </div>
   <div class="grid" id="grid"></div>
 </section>
@@ -98,23 +98,36 @@ __ANIM__
       body: 'Mate hole to hole yourself and fine-tune the fit with the arrow keys.',
       steps: ['Click a hole, then a hole', 'Slide and turn with the arrow keys', 'Line it up exactly'] }
   ];
+  // 两种进来的方式共用这一页:第一次(先练习再装) / 装过(选完直接装)
+  var MODES = {
+    practice: { title: 'How do you want to build?', lede: 'A short practice for the level you pick comes first. You can change the level any time from the toolbar.',
+                rec: 1, tag: 'Recommended for a first build', go: 'Start', start: 'tutorial' },
+    assembly: { title: 'Pick your level and start building', lede: 'No practice \u2014 you go straight to the build. You can change the level any time from the toolbar.',
+                rec: 3, tag: 'For experienced builders', go: 'Build', start: 'assembly' }
+  };
   var grid = document.getElementById('grid');
-  LEVELS.forEach(function (l) {
-    var c = document.createElement('article');
-    c.className = 'card' + (l.level === 1 ? ' rec' : '');
-    c.innerHTML = '<div class="anim">' + anim(l.level) + '</div>' +
-      '<div class="lv">LEVEL ' + l.level + (l.tag ? '<em>&middot; ' + l.tag + '</em>' : '') + '</div>' +
-      '<h3>' + l.name + '</h3><p>' + l.body + '</p>' +
-      '<ol>' + l.steps.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol>' +
-      '<button class="go ' + (l.level === 1 ? 'primary' : 'secondary') + '" style="justify-content:center;text-align:center">Start &rarr;</button>';
-    c.querySelector('.go').setAttribute('aria-label', 'Start Level ' + l.level + ' practice');
-    c.querySelector('.go').onclick = function () { location.href = 'sim.html?start=tutorial&level=' + l.level; };
-    grid.appendChild(c);
-  });
+  function render(mode) {
+    var m = MODES[mode];
+    document.getElementById('lvTitle').textContent = m.title;
+    document.getElementById('lvLede').textContent = m.lede;
+    grid.replaceChildren();
+    LEVELS.forEach(function (l) {
+      var rec = l.level === m.rec, c = document.createElement('article');
+      c.className = 'card' + (rec ? ' rec' : '');
+      c.innerHTML = '<div class="anim">' + anim(l.level) + '</div>' +
+        '<div class="lv">LEVEL ' + l.level + (rec ? '<em>&middot; ' + m.tag + '</em>' : '') + '</div>' +
+        '<h3>' + l.name + '</h3><p>' + l.body + '</p>' +
+        '<ol>' + l.steps.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol>' +
+        '<button class="go ' + (rec ? 'primary' : 'secondary') + '" style="justify-content:center;text-align:center">' + m.go + ' &rarr;</button>';
+      c.querySelector('.go').setAttribute('aria-label', m.go + ' Level ' + l.level);
+      c.querySelector('.go').onclick = function () { location.href = 'sim.html?start=' + m.start + '&level=' + l.level; };
+      grid.appendChild(c);
+    });
+  }
   var levels = document.getElementById('levels');
-  document.getElementById('first').onclick = function () { levels.classList.add('show'); };
+  document.getElementById('first').onclick = function () { render('practice'); levels.classList.add('show'); };
+  document.getElementById('again').onclick = function () { render('assembly'); levels.classList.add('show'); };
   document.getElementById('back').onclick = function () { levels.classList.remove('show'); };
-  document.getElementById('again').onclick = function () { location.href = 'sim.html?start=assembly&level=3'; };
   // 背景动画的播放 / 暂停(和 ARISTOS 欢迎页同一个消息)
   var intro = document.getElementById('intro'), btn = document.getElementById('motion');
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches, playing = !reduce;

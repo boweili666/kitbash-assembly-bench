@@ -284,6 +284,7 @@
   /* 公开网站(GitHub Pages)的模拟器页 sim.html:工具栏多一个 Home,回到封面(index.html) —— 选难度、重新开始 */
   var home = document.getElementById('btnHome');
   if (home && /\/sim\.html$/.test(location.pathname) && !document.body.classList.contains('embed')) {
+    document.body.classList.add('public');       // 公开网站:只留装配要用的按钮(见 app.css)
     home.hidden = false;
     home.addEventListener('click', function () {
       var busy = KB.objectsRoot && KB.objectsRoot.children.length;
