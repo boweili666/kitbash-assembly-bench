@@ -1161,6 +1161,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 .cb-btns { display: flex; gap: 8px; justify-content: center; }
 .cb-btns button { flex: 1; padding: 10px 12px; border-radius: 9px; border: 1px solid #7f97aa66; background: #1c2d3f;
   color: #e0e9ef; font: 600 13px system-ui, sans-serif; cursor: pointer; }
-.cb-btns .cb-look { border-color: #d7a74a; background: #e9b756; color: #1b1a17; }
+/* 主按钮:公开网站是 Home;只有 Look around 时(嵌在 ARISTOS)就是它 */
+.cb-btns .cb-home, .cb-btns .cb-look:only-child { border-color: #d7a74a; background: #e9b756; color: #1b1a17; }
 .cb-btns button:hover { filter: brightness(1.1); }
 @media (max-width: 520px) { .cb-stats { grid-template-columns: repeat(3, 1fr); } }

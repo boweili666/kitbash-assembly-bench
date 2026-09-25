@@ -1,5 +1,5 @@
 /* 装完整机:庆祝页 —— 纸屑、用时 / 步数 / 零件 / 难度 / 出错次数,镜头绕着成品慢慢转。
-   一台只弹一次;教程练习里不弹。公开网站多两个按钮(再来一台 / 回封面),嵌在 ARISTOS 里只留"看看" */
+   一台只弹一次;教程练习里不弹。公开网站:回封面(高亮)+ 看看;嵌在 ARISTOS 里只留"看看" */
 (function () {
   'use strict';
   var KB = window.KB;
@@ -27,9 +27,8 @@
     '<h2>Drone assembled!</h2>' +
     '<p class="cb-lede">Every part is in place. Nice work.</p>' +
     '<div class="cb-stats"></div>' +
-    '<div class="cb-btns"><button class="cb-look">Look around</button>' +
-    (publicSite ? '<button class="cb-again">Build again</button><button class="cb-home">Home</button>' : '') +
-    '</div></div>';
+    '<div class="cb-btns">' + (publicSite ? '<button class="cb-home">Home</button>' : '') +
+    '<button class="cb-look">Look around</button></div></div>';
   document.body.appendChild(el);
 
   function stat(label, value) { return '<div><b>' + value + '</b><span>' + label + '</span></div>'; }
@@ -91,10 +90,7 @@
   }
   function close() { el.hidden = true; cancelAnimationFrame(raf); orbit(false); }
   el.querySelector('.cb-look').addEventListener('click', close);
-  var again = el.querySelector('.cb-again'), home = el.querySelector('.cb-home');
-  if (again) again.addEventListener('click', function () {
-    location.href = 'sim.html?start=assembly&level=' + (window.KBLevel ? KBLevel.get() : 3);
-  });
+  var home = el.querySelector('.cb-home');
   if (home) home.addEventListener('click', function () { location.href = './'; });
   // 用户一动鼠标 / 键盘就停掉自动旋转(关着页面时)
   ['pointerdown', 'wheel', 'keydown'].forEach(function (ev) {
