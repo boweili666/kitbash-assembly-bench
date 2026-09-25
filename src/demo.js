@@ -231,10 +231,7 @@
     // steps outside the selection: assembled instantly (before it), or the demo ends (after it)
     if (!inPlay(st.i)) {
       if (st.i > lastInPlay()) { finish('done'); return; }
-      for (var j = 0; j < nodes.length; j++) {
-        reveal(nodes[j]);
-        if (KBLevel.place(nodes[j], false, function () { stuck = 0; later(0); }, { instant: true })) return;
-      }
+      if (skipAhead()) { later(0); return; }
       return giveUp(st);
     }
 
@@ -275,6 +272,26 @@
     }
     giveUp(st);
   }
+  /* Steps before the selection (from / steps): assembled in one go, in a single frame, so the
+     demo opens right on the first selected step. Returns how many parts were placed. */
+  function skipAhead() {
+    var n = 0, lastStep = -1;
+    for (var guard = 0; guard < 400; guard++) {
+      KBCheck.evaluate();
+      var st = KBCheck.next();
+      if (!st || inPlay(st.i) || st.i > lastInPlay()) break;
+      if (st.i !== lastStep) { if (lastStep >= 0) KBCheck.groupReadySteps(); lastStep = st.i; }   // finished steps move as one later
+      var nodes = window.KBFocus ? KBFocus.partsToMove(st) : [], placed = false;
+      for (var j = 0; j < nodes.length && !placed; j++) {
+        reveal(nodes[j]);
+        placed = KBLevel.place(nodes[j], false, null, { instant: true, quiet: true });
+      }
+      if (!placed) break;
+      n++;
+    }
+    if (n) { KB.pushSnapshot(); stuck = 0; }
+    return n;
+  }
   // nothing in this step can be placed: wait a little (grouping / checks catching up), then stop instead of spinning
   function giveUp(st) {
     if (++stuck > 8) { finish('stuck', st); return; }
@@ -288,6 +305,15 @@
     KB.emit('demoEnd', { reason: reason, step: st ? st.i + 1 : null });
     clearTimeout(loopTimer);
     if (opt.loop && reason === 'done') loopTimer = setTimeout(function () { if (on && finished) replay(); }, 2500);
+  }
+
+  // skip to the first selected step at once, then frame what is built and show where it starts
+  function jumpToStart() {
+    if (opt.from !== null && opt.from !== undefined && opt.from !== '' || opt.steps) skipAhead();
+    frameWorkspace(false);
+    KBCheck.evaluate();
+    var st = KBCheck.next();
+    if (st) { cur = { step: st.i, plan: planOf(st) }; progress(st, 0); }
   }
 
   /* ---------- Enter / leave ---------- */
@@ -313,7 +339,7 @@
     if (opt.fresh) loadStart();
     paint();
     hideTray();
-    frameWorkspace(false);
+    jumpToStart();
     KB.emit('demo', { on: true, options: Object.assign({}, opt) });
     later(1000);
   }
@@ -348,7 +374,7 @@
     reset();
     paint();
     hideTray();
-    frameWorkspace(false);
+    jumpToStart();
     later(800);
   }
   // change options while running; a new range (from / to / steps) starts over

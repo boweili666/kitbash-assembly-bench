@@ -51,7 +51,8 @@
     var delta = new THREE.Matrix4().multiplyMatrices(want, new THREE.Matrix4().copy(node.matrixWorld).invert());
     return { node: top, want: delta.multiply(top.matrixWorld.clone()) };
   }
-  /* opts (demo mode): speed - flight speed multiplier; instant - jump straight to the pose.
+  /* opts (demo mode): speed - flight speed multiplier; instant - jump straight to the pose;
+     quiet - no undo snapshot (a batch of instant placements takes one at the end).
      target.via - waypoint world poses of the part (a recorded trajectory); otherwise target.approach */
   function fly(part, target, then, opts) {
     opts = opts || {};
@@ -70,7 +71,7 @@
       busy = false;
       if (interrupted) return;
       KB.emit('place', mv.node);
-      KB.pushSnapshot();
+      if (!opts.quiet) KB.pushSnapshot();          // quiet: the caller takes one snapshot for a whole batch
       then && then(mv.node);
     }
     if (opts.instant) {
@@ -157,7 +158,7 @@
       KBCheck.evaluate();
       if (queued) { var q = queued; queued = null; placeByClick(q); }
       then && then(node);
-    });
+    }, opts);
     return true;
   }
   /* The captured trajectory of this slot's part (answer path, reference frame) moved so that its
