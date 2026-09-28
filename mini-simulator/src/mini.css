@@ -1,0 +1,13 @@
+/* 只有一块画布。没有工具栏、没有面板、没有播放条、没有 toast。 */
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #1a1e24;
+}
+#viewport {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;   /* 转镜头时不要触发页面滚动 */
+}
