@@ -3,12 +3,12 @@
 ## Where this code came from
 
 Upstream: **https://github.com/boweili666/kitbash-assembly-bench.git**
-(bowei's own repository; 64 of the commits in this history are his.)
+(bowei's own repository.)
 
 | | |
 |---|---|
 | Last commit that is his | **`ca69f1e`** — "Rebuild the bundles", boweili666, 2026-09-25 |
-| First commit that is ours | **`eae559c`** — "Steps list: a jump changes the build, so the host is told" |
+| First commit that is ours | **`44a319f`** — "Steps list: a jump changes the build, so the host is told" (was `eae559c` before the history was re-rooted) |
 
 His history is **not** carried on this branch. The first commit here is his
 tree at `ca69f1e` with no parent; fetch his repository at that id if you ever
