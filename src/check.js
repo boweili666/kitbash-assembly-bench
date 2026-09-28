@@ -569,17 +569,21 @@
         // ("raise the Right Arm Wedge" about the left one). The slot's name is
         // still right for the place; only the thing being moved is the object.
         var whose = (t.part && t.part.node && t.part.node.name) || t.ref.name;
+        // offMm:当前偏差,主机端据此去重 —— 同一件同一孔、距离变了就是新情况,
+        // 不是同一条提示的重复。
+        var off = Math.round(e.d * 10) / 10;
         if (e.reversed) {
           issues.push({ severity: 'error', kind: 'hole', node: t.part.node, slot: t.ref,
-            host: hostNode, features: feats,
-            msg: whose + ' is inserted backwards into ' + mate.name + ' — the head faces the wrong way' });
+            host: hostNode, features: feats, offMm: off,
+            msg: whose + ' is inserted backwards into ' + mate.name + ' — the head faces the wrong way, ' +
+              mm(e.d) + ' mm from where it belongs' });
         } else if (e.d >= POS_TOL) {
           issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref, want: e.want,
-            host: hostNode, features: feats,
+            host: hostNode, features: feats, offMm: off,
             msg: whose + ' is ' + mm(e.d) + ' mm off its place on ' + mate.name + which(t.part.node, e.want) });
         } else {
           issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref,
-            host: hostNode, features: feats,
+            host: hostNode, features: feats, offMm: off,
             msg: whose + ' is tilted ' + e.ang.toFixed(0) + '° on ' + mate.name });
         }
         return;
@@ -692,7 +696,8 @@
         }
       }
       issues.push({ severity: it.severity, kind: it.kind, node: it.node, slot: it.slot, msg: it.msg,
-                    host: it.host, features: it.features });
+                    host: it.host, features: it.features,
+                    offMm: it.d != null ? Math.round(it.d * 10) / 10 : null });
     });
 
     if (lastPick) {
@@ -746,7 +751,11 @@
           var source = slots[ref.byId[id].i];
           var e = source.part && baseSlot.part ? relError(source.ref, source.part, baseSlot.ref, baseSlot.part) : null;
           var inside = source.part && baseSlot.part && (!window.KBWorkspace || (KBWorkspace.contains(source.part.node) && KBWorkspace.contains(baseSlot.part.node)));
-          var link = e ? { m: { slot: baseSlot.ref, kind: 'feature' }, ms: baseSlot, e: e } : null;
+          // 这一对配合的 feature id:没有它,"装错孔了"只能说出哪件错、说不出哪个孔。
+          // 其余分支从 mates 里拿,这里以前直接造了个没有 features 的 m。
+          var pair = (source.ref.mates || []).filter(function (m) { return m.slot === baseSlot.ref; })[0];
+          var link = e ? { m: { slot: baseSlot.ref, kind: 'feature',
+            features: (pair && pair.features) || null }, ms: baseSlot, e: e } : null;
           return { ref: source.ref, part: source.part, near: link && e.d < NEAR * 2 ? [link] : [],
             ok: !!(source.ok && inside && e && isOk(e)), err: link };
         });
@@ -754,13 +763,21 @@
           if (t.ok || !t.part) return;
           var msg = !baseSlot.part ? 'Bring the X-Lock into the workspace first.' :
             !t.near.length ? 'Attach ' + t.ref.name + ' to its side of the X-Lock.' :
-            t.err.e.reversed ? t.ref.name + ' is facing the wrong direction on the X-Lock.' :
+            // 装反时也要报当前偏差:方向说法把距离盖掉了,学员看不到自己差多少,
+            // 追问第二次得到的还是同一句话。
+            t.err.e.reversed ? t.ref.name + ' is facing the wrong direction on the X-Lock — ' +
+              mm(t.err.e.d) + ' mm from where it belongs' :
             t.err.e.d >= POS_TOL ? t.ref.name + ' is ' + mm(t.err.e.d) + ' mm off its place on the X-Lock.' :
             t.err.e.ang >= ANG_TOL ? t.ref.name + ' is tilted ' + t.err.e.ang.toFixed(0) + '° on the X-Lock.' :
             'Finish preparing ' + t.ref.name + ' and keep it fully inside the workspace.';
           issues.push({ severity: (!baseSlot.part || !t.near.length) ? 'hint' : 'error',
             kind: (!baseSlot.part || !t.near.length) ? 'hint' : t.err.e.reversed ? 'hole' : 'align',
-            hint: !t.near.length, node: t.part.node, step: st, msg: msg });
+            hint: !t.near.length, node: t.part.node, step: st, msg: msg,
+            // 接收件和 feature 对:主机端靠这两个才能把孔标绿。
+            host: baseSlot.part ? baseSlot.part.node : null,
+            features: (t.err && t.err.m.features) || null,
+            // 当前偏差,给主机端做去重用:同一件同一孔、距离变了就是新情况。
+            offMm: t.err ? Math.round(t.err.e.d * 10) / 10 : null });
         });
       }
       var okN = ss.filter(function (x) { return x.ok; }).length;
@@ -854,6 +871,9 @@
           // 接收件和期望的特征配对:没有这两个, "装错孔了"只能说出哪件错, 说不出哪个孔
           hostId: (i.host && i.host.userData.kbId) || null,
           features: i.features || null,
+          // 当前偏差(mm,一位小数)。主机端只按件/步/种类去重时,同一条 align 距离
+          // 从 25 mm 变到 6 mm 不会再提示 —— 学员动了,诊断却没跟着动。
+          offMm: i.offMm != null ? i.offMm : null,
           step: i.step ? i.step.id : (i.slot ? stepId(i.slot.step) : null) };
       }),
       next: (function () { var n = next(); return n ? n.id : null; })(),
