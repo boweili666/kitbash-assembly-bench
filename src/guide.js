@@ -2,6 +2,14 @@
 (function () {
   'use strict';
   var KB = window.KB, step = null, phase = '', signature = '', attempt = null;
+  /* patch 13:嵌在 ARISTOS 里时这张卡只静音**消息** —— 错的(warn 和 error 都算)由 tutor
+     在 chat box 里说,模拟器再说一遍就是重复; 而**步骤进度**(Step N / M、进度条、逐件
+     ✓ / Align / To place)是台子独有的、chat 里没有的东西,静音时照常显示。
+     静音靠 .ng-quiet 这个 class(样式在 app.css), 不动 card.hidden —— hidden 是关闭按钮和
+     "没有步骤"时的正当隐藏, 两者不能共用一个开关。
+     KB.emit('guide', ...) 照常发,宿主照常收得到。
+     开:URL ?showGuide=1,或 KBGuide.mute(false)。 */
+  var MUTED = new URLSearchParams(location.search).get('showGuide') !== '1';
   var card = document.createElement('section'); card.id = 'nextGuide'; card.hidden = true;
   card.setAttribute('aria-label', 'Assembly guidance');
   card.innerHTML = '<button class="ng-pill" aria-label="Show assembly guide" title="Show assembly guide"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg><b class="ng-pstep"></b><span class="ng-pbar"><i></i></span><em class="ng-pdot"></em></button>'
@@ -41,7 +49,10 @@
     var okN = st.slots.filter(seated).length;
     var key = JSON.stringify([st.i, st.name, state, message, st.slots.map(function (t) { return [t.ref.name, seated(t), !!t.part, t.near.length, t.statusText, t.now]; }), res && res.stepsSettled, rows]);
     if (key === signature) return;
-    signature = key; card.hidden = false; card.dataset.state = state;
+    signature = key; card.hidden = false;
+    card.classList.toggle('ng-quiet', MUTED);
+    // 静音时 state / tone 固定成中性值: 红边框和红圆点是**消息**信号, 不该挂在进度胶囊上
+    card.dataset.state = MUTED ? 'progress' : state;
     el('.ng-status').textContent = { workspace: '01 · Move into workspace', progress: '02 · Assembly in progress', error: '! · Needs attention', warn: '~ · Not aligned yet', success: '✓ · Step complete', waiting: 'Next step ready' }[state];
     el('h2').textContent = st.name;
     el('.ng-progress i').style.width = (st.total ? okN / st.total * 100 : 0) + '%';
@@ -60,9 +71,10 @@
     rows.forEach(function (r) { var li = document.createElement('li'); li.className = r.c; li.textContent = (r.c === 'green' ? '\u2713 ' : r.c === 'red' ? '! ' : '') + r.msg; il.appendChild(li); });
     // 新错误:卡片收着就自己打开,别让人看不到
     var errKey = rows.filter(function (r) { return r.c === 'red'; }).map(function (r) { return r.msg; }).join('|') || (state === 'error' ? message : '');
-    if (errKey && errKey !== seenErr && !open && !demoing) setOpen(true);
+    if (errKey && errKey !== seenErr && !open && !demoing && !MUTED) setOpen(true);
     seenErr = errKey;
-    card.dataset.tone = state === 'error' || rows.some(function (r) { return r.c === 'red'; }) ? 'red'
+    card.dataset.tone = MUTED ? 'blue'
+      : state === 'error' || rows.some(function (r) { return r.c === 'red'; }) ? 'red'
       : state === 'success' || rows.some(function (r) { return r.c === 'green'; }) ? 'green' : 'blue';
     var done = res ? res.stepsSettled : 0, all = res ? res.steps.length : 0;
     el('.ng-pstep').textContent = all ? 'Step ' + Math.min(done + 1, all) + ' / ' + all : st.name;
@@ -130,6 +142,9 @@
   });
   window.KBGuide = { update: update, hide: hide,
     setOpen: setOpen,
+    /* patch 13:消息静音开关。KBGuide.mute(false) 把消息行放出来(单独 debug 用);
+       两个方向都只切 .ng-quiet 并重画, 不动 card.hidden —— 进度永远在 */
+    mute: function (on) { if (on !== undefined) { MUTED = !!on; card.classList.toggle('ng-quiet', MUTED); signature = ''; if (lastArgs) draw.apply(null, lastArgs); } return MUTED; },
     /* 教程演示:摆一张示范步骤卡(两件零件,一件已放好),教人认得左上角这个悬浮窗 */
     /* 教程演示:摆一张"这一步"的卡片,由教程按用户的操作改状态 ——
        d = { name, parts: [{ name, ok }], state: 'progress'|'error'|'success', message };null 收起 */

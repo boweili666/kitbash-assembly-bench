@@ -982,6 +982,11 @@ body.help-open #viewTip { visibility: hidden; }
 .ng-parts li[data-now="true"] { color:#f2f6f9; }
 .ng-parts li[data-now="true"] span:last-child { color:#8fd3f5; font-weight:600; }
 .ng-feedback { margin-top:12px; padding:12px; border-radius:9px; background:#25405466; color:#c4ddea; }
+/* patch 13:静音只吃掉三样**消息**元素(状态行 / 反馈框 / 问题清单), 步骤进度全留 —— 嵌在
+   ARISTOS 里时错误由 tutor 在 chat box 里说, 而进度条是 chat 里没有的东西 */
+#nextGuide.ng-quiet .ng-status,
+#nextGuide.ng-quiet .ng-feedback,
+#nextGuide.ng-quiet .ng-issues { display:none; }
 #nextGuide[data-state="error"] { border-color:#af7055; }
 #nextGuide[data-state="error"] .ng-status { color:#ffb58f; }
 #nextGuide[data-state="error"] .ng-feedback { background:#713c293d; color:#ffcfb7; }

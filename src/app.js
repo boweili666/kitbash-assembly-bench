@@ -1169,7 +1169,12 @@
   /* ---------- 提示 / 模态 ---------- */
   var toastEl = document.getElementById('toast');
   var toastTimer = null;
+  /* patch 13:嵌在 ARISTOS 里时,浮层提示一概不出面 —— 对的不必汇报,错的由 tutor
+     在 chat box 里说。关掉的只是显示,KB.emit 照常发。
+     开:URL ?showToasts=1,或 KB.muteToasts(false)。 */
+  var toastsMuted = new URLSearchParams(location.search).get('showToasts') !== '1';
   function toast(msg) {
+    if (toastsMuted) return;
     toastEl.textContent = msg;
     toastEl.classList.add('show');
     clearTimeout(toastTimer);
@@ -1458,6 +1463,8 @@
     },
     syncInspector: syncInspectorFromSelection,
     toast: toast,
+    /* patch 13:浮层提示的显示开关。KB.muteToasts(false) 放出来(单独 debug 用) */
+    muteToasts: function (on) { if (on !== undefined) toastsMuted = !!on; return toastsMuted; },
     isSnap: function () { return snapOn; },
     isPart: isPartNode,
     rebuildAttachment: rebuildAttachment,

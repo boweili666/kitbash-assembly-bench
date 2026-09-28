@@ -74,6 +74,12 @@
   var bar = document.getElementById('answerBar');
   if (!bar) return;   // Answer 按钮已从工具栏拿掉,但 Next 仍然靠这个模块,不能因为按钮不在就整个退出
 
+  /* patch 16:黄条(46 点可拖的播放条)是台子自己的调试控件,嵌在 ARISTOS 里不出面。
+     关掉的只是显示 —— 播放逻辑、Next 逻辑、宿主的 kb:showStep 都照旧走。
+     开:URL ?showAnswerBar=1,或 KBAnswer.showBar(true)。 */
+  var BAR_HIDDEN = new URLSearchParams(location.search).get('showAnswerBar') !== '1';
+  function showBar(on) { bar.style.display = (on && !BAR_HIDDEN) ? 'flex' : 'none'; }
+
   var HOVER = 1.35;                          // 虚影悬浮高度
   var DUR = 1.15, GAP = 0.2, STEP_GAP = 0.5, OP = 0.32;
   var SPEEDS = [0.5, 1, 1.5, 2];
@@ -245,7 +251,7 @@
       });
       nodesEl.appendChild(dot);
     });
-    bar.style.display = 'flex';
+    showBar(true);
     setPlaying(true);
   }
 
@@ -348,11 +354,31 @@
     focus = { step: step, phase: 'workspace', base: node.userData.kbId || node.uuid, lit: [node],
       why: 'First: move ' + node.name + ' into the workspace. Select it, then click inside the green boundary.' };
     KB.highlight(node, 0xe8a33d);
-    nodesEl.innerHTML = ''; fill.style.width = '0%'; bar.style.display = 'flex';
+    nodesEl.innerHTML = ''; fill.style.width = '0%'; showBar(true);
     if (nextBtn) nextBtn.classList.add('on');
     t = 0; lastNow = 0; setPlaying(true); render();
     rafId = requestAnimationFrame(tick); return true;
   }
+  /* 这一步要挪的是哪几件 —— 虚影和黄箭头共用的唯一一份答案。
+   *
+   * 原先 focus.js 另有一套(partsToMove): 它在挑完之后还会按零件种类截断,
+   * 只留最前面同一种的那一串, 于是一步里有楔块和螺丝时只指楔块, 要等楔块
+   * 判定到位才轮到螺丝 —— 而手动拖进来的件判不了到位, 箭头就停住了。
+   * 虚影从来没有那道截断, 所以虚影一直是对的。两套判据合成一套, 以虚影为准。
+   *
+   * 返回 { <槽位 i>: user }, user 是 res.users 里的一项(带 node / M / ckey)。 */
+  function candidatesFor(res, step) {
+    var free = res.users.filter(function (u) { return !u.slot; }), taken = [], cand = {};
+    step.slots.forEach(function (tt) {
+      if (tt.ok) return;
+      if (step.assembly && tt.part) { cand[tt.ref.i] = tt.part; return; }
+      var c = free.filter(function (u) { return u.ckey === tt.ref.ckey && taken.indexOf(u) < 0; })
+                  .sort(function (a, b) { return Number(KBWorkspace.contains(b.node)) - Number(KBWorkspace.contains(a.node)); })[0];
+      if (c) { cand[tt.ref.i] = c; taken.push(c); }
+    });
+    return cand;
+  }
+
   function showStep(i) {
     if (!(window.KBParts && KBParts.ready() && window.KBCheck)) return false;
     var res = KBCheck.evaluate();
@@ -372,13 +398,7 @@
       });
     });
     // 该拿的零件:每个未到位槽位配一个桌上空闲的同类零件
-    var free = res.users.filter(function (u) { return !u.slot; }), taken = [], cand = {};
-    step.slots.forEach(function (tt) {
-      if (tt.ok) return;
-      if (step.assembly && tt.part) { cand[tt.ref.i] = tt.part; return; }
-      var c = free.filter(function (u) { return u.ckey === tt.ref.ckey && taken.indexOf(u) < 0; }).sort(function (a, b) { return Number(KBWorkspace.contains(b.node)) - Number(KBWorkspace.contains(a.node)); })[0];
-      if (c) { cand[tt.ref.i] = c; taken.push(c); }
-    });
+    var cand = candidatesFor(res, step);
     if (!anchor) {
       var t0 = step.slots.filter(function (tt) { return cand[tt.ref.i]; })[0];
       if (t0) { candAnchor = t0.ref; anchor = { ref: t0.ref, M: cand[t0.ref.i].M, node: cand[t0.ref.i].node }; }
@@ -472,7 +492,7 @@
     Object.keys(cand).forEach(function (k) { var nd = cand[k].node; KB.highlight(nd, 0xe8a33d); focus.lit.push(nd); });
     nodesEl.innerHTML = '';
     fill.style.width = '0%';
-    bar.style.display = 'flex';
+    showBar(true);
     if (nextBtn) nextBtn.classList.add('on');
     t = 0; lastNow = 0;
     setPlaying(true);
@@ -584,6 +604,8 @@
 
   window.KBAnswer = {
     play: play,
+    /* patch 16:黄条的显示开关。KBAnswer.showBar(true) 放出来(单独 debug 用) */
+    showBar: function (on) { if (on !== undefined) { BAR_HIDDEN = !on; showBar(!!on); } return !BAR_HIDDEN; },
     frameGhost: frameGhost,
     playing: function () { return !!root; },
     showStep: showStep,
@@ -602,6 +624,37 @@
     /* 任务图里步骤 i 的前置步骤(答案步骤下标),供 Checks 判装配顺序;无数据时 null */
     requires: function (i) { loadData(); return DATA.source && DATA.steps[i] ? DATA.steps[i].requires : null; },
     seekStep: function (i) { t = stepEnd[i]; setPlaying(false); render(); },
+    /* 这一步虚影会挪的那几件, 按槽位顺序。黄箭头照这个指, 两者从此同源。 */
+    movesFor: function (step) {
+      if (!(window.KBCheck && window.KBParts && KBParts.ready())) return [];
+      var res = KBCheck.results && KBCheck.results();
+      if (!res || !res.ready || !step) return [];
+      var cand = candidatesFor(res, step), out = [];
+      // 组件装配步("把两个楔块组件装到 X-Lock 上"): 学员下一步要动的是**基座**,
+      // 而 candidatesFor 给的是那几个已经装好、要被挪过去的组件 —— 那份是给
+      // 虚影用的(它要演示组件怎么飞过去), 拿来指箭头就会指在已经躺在装配区里的
+      // 件上, 而真正要从料盘里拿的 X-Lock 反倒没有箭头。老的 partsToMove 有专门
+      // 一行把 base 插到最前面, 换成这条路径时我把它丢了, 这里补回来。
+      if (step.assembly && step.base && !step.base.ok) {
+        var bn = step.base.part && step.base.part.node;
+        if (!bn) {
+          var want = step.base.ref.ckey;
+          res.users.forEach(function (u) {
+            if (!bn && !u.slot && u.ckey === want) bn = u.node;
+          });
+        }
+        if (bn) out.push(bn);
+      }
+      step.slots.forEach(function (tt) {
+        var c = cand[tt.ref.i];
+        if (!c || !c.node || out.indexOf(c.node) >= 0) return;
+        // 已经在装配区里的件不是"要去拿的那件"。虚影照样演示它们怎么移动,
+        // 但箭头是给"下一步动哪个"用的, 躺在台面上的不算。
+        if (step.assembly && window.KBWorkspace && KBWorkspace.contains(c.node)) return;
+        out.push(c.node);
+      });
+      return out;
+    },
     /* 调试:每个虚影现在在哪 */
     ghosts: function () {
       return items.map(function (it) { return { name: it.name, visible: it.g.visible, travel: !!it.dur,

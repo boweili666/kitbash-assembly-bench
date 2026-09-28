@@ -18,6 +18,7 @@
   var LABEL_H = 0.42;      // 标签占的高度
 
   var used = null;   // 这次布局实际占用的范围,取景用
+  var laid = null;   // 这次排出来的格子(id / 最早步号 / 矩形),验收和调试用
   var group = new THREE.Group();
   group.name = 'Parts tray';
   group.userData.kbOverlay = true;   // 抓帧时和其他辅助图形一样处理
@@ -29,19 +30,62 @@
     spec.pegs.forEach(function (p) { longest = Math.max(longest, p.depth * mm); });
     return Math.round(longest);
   }
-  // 大件在前、细碎在后;同类里螺丝按长度升序
+  // 大件在前、细碎在后;同类里螺丝按长度升序。
+  // 按零件类型排的旧口径 —— 现在只在参考装配读不到时兜底(见 BY_STEP)
   var RANK = { split_rear_plate: 0, split_front_plate: 0, top_plate: 0, esc_4in1: 1,
     aluminum_x_lock: 2, arm_5in: 2, aluminum_arm_wedge_5mm: 3, camera_plate_left: 3, camera_plate_right: 3,
     motor_2207: 4, propeller_cw: 5, propeller_ccw: 5,
     knurled_standoff: 6, motor_nut_m5: 7, damper_m2: 7 };
+
+  /* ---------- 按装配顺序排格:越早用到的越靠近装配区 ---------- */
+  // KBTray.byStep(false) 换回上面按类型排的原口径
+  var BY_STEP = true;
+  var SPARE_ORDER = 999;   // 参考装配里没出现的件(备件):排在最后
+  // 每格一个 order,算一次就缓存。缓存钉在参考装配对象本身上(和 check.js buildRef 同口径),
+  // 换了一套答案数据就自动重算,不会拿旧步号排新 kit
+  var stepCache = null;    // { source, zone: {格子 id -> 最早用到它的步号} }
+  function zoneOrders() {
+    var a = window.KBParts && KBParts.answer && KBParts.answer();
+    if (!a || !a.parts) return null;   // 读不到就让调用方退回 RANK,不猜
+    if (stepCache && stepCache.source === a) return stepCache.zone;
+    var byKey = {};
+    a.parts.forEach(function (p) {
+      if (byKey[p.key] === undefined || p.step < byKey[p.key]) byKey[p.key] = p.step;
+    });
+    // 一格里可能装着分属好几步的同种件(M3×6 十三颗横跨到第 40 步):整格取最早那一步
+    var zone = {};
+    KBParts.keys().forEach(function (k) {
+      if (byKey[k] === undefined) return;
+      var id = zoneIdOf(k);
+      if (zone[id] === undefined || byKey[k] < zone[id]) zone[id] = byKey[k];
+    });
+    stepCache = { source: a, zone: zone };
+    return zone;
+  }
   function zoneOf(key) {
     var spec = KBParts.spec(key);
     if (!spec) return { id: key, label: key, order: 99 };
+    var byZone = BY_STEP ? zoneOrders() : null;
+    var id, label;
     if (key.indexOf('screw_') === 0) {
       var len = screwLengthMm(spec);
-      return { id: 'screw_' + len, label: 'M3 × ' + len + ' mm', order: 20 + len / 100 };
+      id = 'screw_' + len;
+      label = 'M3 × ' + len + ' mm';
+    } else {
+      id = key;
+      label = spec.label;
     }
-    return { id: key, label: spec.label, order: RANK[key] !== undefined ? RANK[key] : 9 };
+    if (byZone) return { id: id, label: label,
+      order: byZone[id] !== undefined ? byZone[id] : SPARE_ORDER };
+    return { id: id, label: label,
+      order: key.indexOf('screw_') === 0 ? 20 + screwLengthMm(spec) / 100
+                                         : (RANK[key] !== undefined ? RANK[key] : 9) };
+  }
+  // 只算格子 id,不算 order —— zoneOf 求"整格最早步"时要用,不能递归调自己
+  function zoneIdOf(key) {
+    var spec = KBParts.spec(key);
+    if (!spec) return key;
+    return key.indexOf('screw_') === 0 ? 'screw_' + screwLengthMm(spec) : key;
   }
   // 零件在桌面上的占地(场景单位):把包围盒按零件自己的朝向转过去再取 x / z 跨度 ——
   // 机臂躺着时长边在 z 上,拿"最长边当宽"会让它们在格子里叠在一起
@@ -130,6 +174,10 @@
       rowDepth = Math.max(rowDepth, z.d);
     });
     used = { minX: bounds.minX, maxX: usedX, minZ: zTop - rowDepth, maxZ: bounds.maxZ };
+    laid = order.map(function (z) {
+      return { id: z.id, label: z.label, order: z.order, n: z.items.length,
+               x0: z.x0, x1: z.x1, z0: z.z0, z1: z.z1 };
+    });
 
     clear();
     order.forEach(function (z) {
@@ -144,7 +192,68 @@
     return objects;
   }
 
+  /* ---------- 换步时收拢空格 ----------
+   * 空掉的格子让出位置,后面的格往装配区方向前移。只在"当前该做哪一步"变了的
+   * 那一刻重排 —— 挂在已有的 KB.onChange 上,不新增刷新周期;学员在同一步里
+   * 摆弄零件时格子不动(盯着的零件突然位移比空格更难受)。
+   */
+  var lastStep = null;
+  function trayNodes() {
+    // 顶层的单个零件里,还没进装配区的那些。装好的子装配体是 Group,不参与
+    return KB.objectsRoot.children.filter(function (n) {
+      if (!KB.isPart(n)) return false;
+      return !(window.KBWorkspace && KBWorkspace.contains(n));
+    });
+  }
+  function repack() {
+    var nodes = trayNodes();
+    if (!nodes.length) { clear(); return; }
+    var descs = nodes.map(function (n) {
+      return { type: n.userData.kbType, p: [n.position.x, n.position.y, n.position.z],
+               r: [n.rotation.x, n.rotation.y, n.rotation.z], node: n };
+    });
+    arrange(descs);
+    descs.forEach(function (d) { d.node.position.set(d.p[0], d.p[1], d.p[2]); });
+  }
+  /* 只在"一步做完、切到下一步"那一刻动料盘。步内(黄箭头一件一件往下指的时候)
+   * 什么都不做 —— 既不重排,也不做任何判定:
+   *   1) 不调 KBCheck.evaluate()。tray.js 的 onChange 挂得比 check.js 早(index.html
+   *      356 vs 371),在派发里同步催判定,等于把判定提前到零件刚落、状态还没稳的时刻,
+   *      顺带扰动 check.js 自己那套去抖。这里只读 check.js 已经算好的结果。
+   *   2) 不在派发里立刻读。check.js 的 onChange 是 setTimeout(evaluate, 300),
+   *      所以晚它一步再看,读到的才是这次变化之后的判定。
+   */
+  var watch = 0;
+  if (KB.onChange) {
+    KB.onChange(function () {
+      clearTimeout(watch);
+      watch = setTimeout(afterSettle, 520);     // > check.js 的 300ms 去抖
+    });
+  }
+  function afterSettle() {
+    if (!(window.KBCheck && window.KBParts && KBParts.ready())) return;
+    var res = KBCheck.results();
+    // 换了场面(bridge 的 setScene 会 invalidate):判定清空了,这一局重新开始数步号。
+    // 不重排 —— 开局的布局是 setScene / loadKit 刚排好的
+    if (!res || !res.ready) { lastStep = null; return; }
+    var nx = KBCheck.next();                    // 只读,不催
+    var i = nx ? nx.i : -1;
+    if (i === lastStep) return;                 // 还在同一步:一动不动
+    // 第一次只记下步号:开局的布局是 setScene / loadKit 排的,这里不能再排一次
+    if (lastStep === null) { lastStep = i; return; }
+    // 零件还在飞:这次换步先不认,等它落地后的下一次变化再排
+    // (KB.isTweening 要传节点,无参恒为 false —— 用 KB.tweening())
+    if (KB.tweening && KB.tweening()) { watch = setTimeout(afterSettle, 300); return; }
+    lastStep = i;
+    repack();
+  }
+
   window.KBTray = { arrange: arrange, bounds: bounds, clear: clear,
     extent: function () { return used || bounds; },
-    zones: function () { return group.children.length; } };
+    zones: function () { return group.children.length; },
+    /* 这次排出来的格子:排布顺序(靠装配区的在前)、最早用到的步号、矩形 —— 验收与调试 */
+    layout: function () { return laid ? laid.slice() : []; },
+    /* 按装配顺序排(默认) / 换回按零件类型排的原口径 */
+    byStep: function (on) { if (on !== undefined) { BY_STEP = !!on; stepCache = null; } return BY_STEP; },
+    repack: repack };
 })();

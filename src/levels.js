@@ -178,7 +178,7 @@
     var lit = window.KBFocus ? KBFocus.lit() : [];
     if (lit.indexOf(node) < 0) return;                       // 只管亮着的那个(该拿的零件)
     var b = KBCheck.level2Base(node);
-    if (b && b.isBase) KB.toast('Now click inside the green workspace to move ' + node.name + ' there');
+    if (b && b.isBase) KBErrors.toast('Now click inside the green workspace to move ' + node.name + ' there');
   });
   KB.onSelection(function (sel) {
     if (level !== 2 || tutorialOn() || !window.KBCheck) return;
@@ -199,7 +199,7 @@
       var clicked = performance.now() - clickAt < 450;
       // 二级里基座放进装配区后镜头一定跟过去:接下来要点的孔就在那儿
       if (b && b.isBase) { if (clicked) placeByClick(node, true); }
-      else if (b && b.baseName) KB.toast('Place ' + b.baseName + ' first \u2014 this part goes into it');
+      else if (b && b.baseName) KBErrors.toast('Place ' + b.baseName + ' first \u2014 this part goes into it');
       else if (clicked) placeByClick(node, true);          // 只贴合、没有孔可点的零件:和一级一样直接到位
       return;
     }
@@ -268,7 +268,23 @@
      配合前先问答案:零件不属于这一步、或这两个孔根本对不上 -> 直接拒绝,零件不动;
      放行的,配合完再看一眼:这个零件报了错(比如装反了)-> 退回原位,错误挂在指引卡片上(红) */
   var pendingCheck = null;
+  /* patch 14:三级不再拦操作。原来是"会报错的装配不执行" —— 点了不属于这一步的孔、
+     或两个孔对不上,配合直接被拒,零件一动不动,学员看不到自己插成了什么样。
+     既然错误已经作为 warning / error 汇报到 chat box 了,就不该再限制操作:
+     任意孔都放行(返回 null,几何交给 mate.js 自己算),插完再判、再报,**不撤销**。
+     KBLevel.freeInsert(false) 换回 bowei 的"拦 + 撤销"。 */
+  var FREE_INSERT = true;
+  function stageCheck(src, dst) {
+    var top = src.node; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
+    pendingCheck = { node: src.node, src: src, dst: dst, top: top,
+                     p: top.position.clone(), q: top.quaternion.clone(), at: performance.now() };
+  }
   function guard3(src, dst) {
+    if (FREE_INSERT) {
+      KBCheck.noteHole(null);        // 上一次点错留下的那条先清掉,免得配合完被它误判
+      stageCheck(src, dst);
+      return null;                   // 一律放行:插哪算哪
+    }
     var r = KBCheck.levelMateTarget(src.node, src.id, dst.node, dst.id);
     if (r.reason) {
       var back = KBCheck.levelMateTarget(dst.node, dst.id, src.node, src.id);
@@ -302,11 +318,18 @@
       var mine = {}; pc.top.traverse(function (x) { if (KB.isPart(x)) mine[x.uuid] = true; });
       var bad = res.issues.filter(function (i) { return i.severity === 'error' && i.key !== 'hole' && i.node && mine[i.node.uuid]; })[0];
       if (!bad) { KBCheck.noteHole(null); return; }
+      if (FREE_INSERT) {
+        // patch 14:插完了才报,零件留在学员插的那个位置上。宿主照常收到 issue,
+        // 由 tutor 在 chat box 里说哪里不对 —— 台子自己不弹字(KBErrors 默认关)
+        KBCheck.noteHole(pc.node, bad.msg);
+        KBErrors.toast('Not like that — ' + bad.msg);
+        return;
+      }
       if (window.KBMate && KBMate.release) KBMate.release(pc.node);
       // 配合当时报了成功,检查判错后撤销:再补一条失败的 handleMatch
       KB.emit('handleMatch', { a: pc.src, b: pc.dst, success: false, error: bad.msg + ' (undone)' });
       KB.tween(pc.top, pc.p, pc.q, { duration: 0.45, onDone: function () { KB.pushSnapshot(); KBCheck.noteHole(pc.node, bad.msg + ' \u2014 undone, try again'); } });
-      KB.toast('Not like that \u2014 ' + bad.msg);
+      KBErrors.toast('Not like that \u2014 ' + bad.msg);
     })(0);
   });
 
@@ -368,7 +391,7 @@
     level = n;
     try { localStorage.setItem(KEY, String(n)); } catch (e) { /* 隐私模式 */ }
     apply();
-    if (!quiet) KB.toast(TIPS[n]);
+    if (!quiet) KBErrors.toast(TIPS[n]);
     KB.emit('levelChange', n);
     if (window.KBCheck) KBCheck.evaluate();
     return level;
@@ -379,7 +402,9 @@
     if (b) set(b.dataset.level);
   });
 
-  window.KBLevel = { get: function () { return level; }, set: set, tips: TIPS, busy: function () { return busy; } };
+  window.KBLevel = { get: function () { return level; }, set: set, tips: TIPS, busy: function () { return busy; },
+    /* patch 14:三级放行开关。KBLevel.freeInsert(false) 换回 bowei 的拦 + 撤销 */
+    freeInsert: function (on) { if (on !== undefined) FREE_INSERT = !!on; return FREE_INSERT; } };
   // mate.js 在本文件之后加载,等它就绪再接上开关
   (function hook() { if (window.KBMate) apply(); else setTimeout(hook, 50); })();
 })();

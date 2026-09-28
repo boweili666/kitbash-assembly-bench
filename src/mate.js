@@ -369,7 +369,7 @@
     if (topOf(dst.node) === top) return false;
     if (window.KBWorkspace && !KBWorkspace.contains(topOf(dst.node))) {
       report(a, b, false, 'receiving part outside workspace');
-      KB.toast(KBWorkspace.message(dst.node));
+      KBErrors.toast(KBWorkspace.message(dst.node));
       return false;
     }
 
@@ -383,7 +383,7 @@
     if (reason) {
       report(a, b, false, reason);
       flash(dst, COLOR_BAD);
-      KB.toast(reason === 'peg-on-peg' ? 'Cannot mate a peg to a peg' : 'The peg is wider than that hole');
+      KBErrors.toast(reason === 'peg-on-peg' ? 'Cannot mate a peg to a peg' : 'The peg is wider than that hole');
       return false;
     }
 
@@ -455,7 +455,7 @@
     if (window.KBWorkspace && !KBWorkspace.contains(top)) {
       top.position.copy(p0); top.quaternion.copy(q0); top.updateMatrixWorld(true);
       report(a, b, false, 'assembly would cross workspace boundary');
-      KB.toast('Move the receiving part further inside the workspace before connecting.');
+      KBErrors.toast('Move the receiving part further inside the workspace before connecting.');
       return false;
     }
     var p1 = top.position.clone(), q1 = top.quaternion.clone();
@@ -542,7 +542,7 @@
   function reject(m, reason) {
     flash(m, COLOR_BAD);
     var msg = typeof reason === 'string' ? reason : 'Not that one \u2014 try again';
-    KB.toast(msg);
+    KBErrors.toast(msg);
     KB.emit('mateRejected', { node: m.node, id: m.f.id, end: m.end, reason: msg });
   }
 
@@ -712,6 +712,8 @@
   window.KBMate = {
     locked: locked,
     release: release,
+    /* 特征(孔 / 销)的世界坐标 —— marks.js 的 AI 指点圆片要用同一套算法, 不能各算一份 */
+    worldFeature: worldFeature,
     /* 教程:聚光要点的孔口 [{node, id, end?}];点击守卫 {arm, mate},返回 true 放行、字符串为拒绝原因 */
     spotlight: function (list) { spot = list || []; rebuildMarkers(); },
     setGuard: function (g) { guard = g || null; },
