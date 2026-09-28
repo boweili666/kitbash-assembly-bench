@@ -991,6 +991,10 @@ body.help-open #viewTip { visibility: hidden; }
 .ng-parts li[data-now="true"] { color:#f2f6f9; }
 .ng-parts li[data-now="true"] span:last-child { color:#8fd3f5; font-weight:600; }
 .ng-feedback { margin-top:12px; padding:12px; border-radius:9px; background:#25405466; color:#c4ddea; }
+
+#nextGuide.ng-quiet .ng-status,
+#nextGuide.ng-quiet .ng-feedback,
+#nextGuide.ng-quiet .ng-issues { display:none; }
 #nextGuide[data-state="error"] { border-color:#af7055; }
 #nextGuide[data-state="error"] .ng-status { color:#ffb58f; }
 #nextGuide[data-state="error"] .ng-feedback { background:#713c293d; color:#ffcfb7; }
@@ -1504,7 +1508,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-25 07:37';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-27 22:53';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -11352,7 +11356,10 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
     }
     var toastEl = document.getElementById('toast');
     var toastTimer = null;
+    var toastsMuted = new URLSearchParams(location.search).get('showToasts') !== '1';
     function toast(msg) {
+        if (toastsMuted)
+            return;
         toastEl.textContent = msg;
         toastEl.classList.add('show');
         clearTimeout(toastTimer);
@@ -11690,6 +11697,8 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
         },
         syncInspector: syncInspectorFromSelection,
         toast: toast,
+        muteToasts: function (on) { if (on !== undefined)
+            toastsMuted = !!on; return toastsMuted; },
         isSnap: function () { return snapOn; },
         isPart: isPartNode,
         rebuildAttachment: rebuildAttachment,
@@ -11878,6 +11887,7 @@ KBWorkspace.overview();
     var ZONE_GAP = 0.3;
     var LABEL_H = 0.42;
     var used = null;
+    var laid = null;
     var group = new THREE.Group();
     group.name = 'Parts tray';
     group.userData.kbOverlay = true;
@@ -11891,15 +11901,58 @@ KBWorkspace.overview();
         aluminum_x_lock: 2, arm_5in: 2, aluminum_arm_wedge_5mm: 3, camera_plate_left: 3, camera_plate_right: 3,
         motor_2207: 4, propeller_cw: 5, propeller_ccw: 5,
         knurled_standoff: 6, motor_nut_m5: 7, damper_m2: 7 };
+    var BY_STEP = true;
+    var SPARE_ORDER = 999;
+    var stepCache = null;
+    function zoneOrders() {
+        var a = window.KBParts && KBParts.answer && KBParts.answer();
+        if (!a || !a.parts)
+            return null;
+        if (stepCache && stepCache.source === a)
+            return stepCache.zone;
+        var byKey = {};
+        a.parts.forEach(function (p) {
+            if (byKey[p.key] === undefined || p.step < byKey[p.key])
+                byKey[p.key] = p.step;
+        });
+        var zone = {};
+        KBParts.keys().forEach(function (k) {
+            if (byKey[k] === undefined)
+                return;
+            var id = zoneIdOf(k);
+            if (zone[id] === undefined || byKey[k] < zone[id])
+                zone[id] = byKey[k];
+        });
+        stepCache = { source: a, zone: zone };
+        return zone;
+    }
     function zoneOf(key) {
         var spec = KBParts.spec(key);
         if (!spec)
             return { id: key, label: key, order: 99 };
+        var byZone = BY_STEP ? zoneOrders() : null;
+        var id, label;
         if (key.indexOf('screw_') === 0) {
             var len = screwLengthMm(spec);
-            return { id: 'screw_' + len, label: 'M3 × ' + len + ' mm', order: 20 + len / 100 };
+            id = 'screw_' + len;
+            label = 'M3 × ' + len + ' mm';
         }
-        return { id: key, label: spec.label, order: RANK[key] !== undefined ? RANK[key] : 9 };
+        else {
+            id = key;
+            label = spec.label;
+        }
+        if (byZone)
+            return { id: id, label: label,
+                order: byZone[id] !== undefined ? byZone[id] : SPARE_ORDER };
+        return { id: id, label: label,
+            order: key.indexOf('screw_') === 0 ? 20 + screwLengthMm(spec) / 100
+                : (RANK[key] !== undefined ? RANK[key] : 9) };
+    }
+    function zoneIdOf(key) {
+        var spec = KBParts.spec(key);
+        if (!spec)
+            return key;
+        return key.indexOf('screw_') === 0 ? 'screw_' + screwLengthMm(spec) : key;
     }
     var _box = new THREE.Box3(), _m = new THREE.Matrix4(), _e = new THREE.Euler(), _sz = new THREE.Vector3();
     function footprint(key, r) {
@@ -11996,6 +12049,10 @@ KBWorkspace.overview();
             rowDepth = Math.max(rowDepth, z.d);
         });
         used = { minX: bounds.minX, maxX: usedX, minZ: zTop - rowDepth, maxZ: bounds.maxZ };
+        laid = order.map(function (z) {
+            return { id: z.id, label: z.label, order: z.order, n: z.items.length,
+                x0: z.x0, x1: z.x1, z0: z.z0, z1: z.z1 };
+        });
         clear();
         order.forEach(function (z) {
             drawZone(z);
@@ -12008,9 +12065,66 @@ KBWorkspace.overview();
         });
         return objects;
     }
+    var lastStep = null;
+    function trayNodes() {
+        return KB.objectsRoot.children.filter(function (n) {
+            if (!KB.isPart(n))
+                return false;
+            return !(window.KBWorkspace && KBWorkspace.contains(n));
+        });
+    }
+    function repack() {
+        var nodes = trayNodes();
+        if (!nodes.length) {
+            clear();
+            return;
+        }
+        var descs = nodes.map(function (n) {
+            return { type: n.userData.kbType, p: [n.position.x, n.position.y, n.position.z],
+                r: [n.rotation.x, n.rotation.y, n.rotation.z], node: n };
+        });
+        arrange(descs);
+        descs.forEach(function (d) { d.node.position.set(d.p[0], d.p[1], d.p[2]); });
+    }
+    var watch = 0;
+    if (KB.onChange) {
+        KB.onChange(function () {
+            clearTimeout(watch);
+            watch = setTimeout(afterSettle, 520);
+        });
+    }
+    function afterSettle() {
+        if (!(window.KBCheck && window.KBParts && KBParts.ready()))
+            return;
+        var res = KBCheck.results();
+        if (!res || !res.ready) {
+            lastStep = null;
+            return;
+        }
+        var nx = KBCheck.next();
+        var i = nx ? nx.i : -1;
+        if (i === lastStep)
+            return;
+        if (lastStep === null) {
+            lastStep = i;
+            return;
+        }
+        if (KB.tweening && KB.tweening()) {
+            watch = setTimeout(afterSettle, 300);
+            return;
+        }
+        lastStep = i;
+        repack();
+    }
     window.KBTray = { arrange: arrange, bounds: bounds, clear: clear,
         extent: function () { return used || bounds; },
-        zones: function () { return group.children.length; } };
+        zones: function () { return group.children.length; },
+        layout: function () { return laid ? laid.slice() : []; },
+        byStep: function (on) { if (on !== undefined) {
+            BY_STEP = !!on;
+            stepCache = null;
+        } return BY_STEP; },
+        repack: repack };
 })();
 
 </script>
@@ -15327,7 +15441,7 @@ KBWorkspace.overview();
             return false;
         if (window.KBWorkspace && !KBWorkspace.contains(topOf(dst.node))) {
             report(a, b, false, 'receiving part outside workspace');
-            KB.toast(KBWorkspace.message(dst.node));
+            KBErrors.toast(KBWorkspace.message(dst.node));
             return false;
         }
         var reason = null;
@@ -15342,7 +15456,7 @@ KBWorkspace.overview();
         if (reason) {
             report(a, b, false, reason);
             flash(dst, COLOR_BAD);
-            KB.toast(reason === 'peg-on-peg' ? 'Cannot mate a peg to a peg' : 'The peg is wider than that hole');
+            KBErrors.toast(reason === 'peg-on-peg' ? 'Cannot mate a peg to a peg' : 'The peg is wider than that hole');
             return false;
         }
         var side = b.n ? b.n.clone() : b.d.clone();
@@ -15414,7 +15528,7 @@ KBWorkspace.overview();
             top.quaternion.copy(q0);
             top.updateMatrixWorld(true);
             report(a, b, false, 'assembly would cross workspace boundary');
-            KB.toast('Move the receiving part further inside the workspace before connecting.');
+            KBErrors.toast('Move the receiving part further inside the workspace before connecting.');
             return false;
         }
         var p1 = top.position.clone(), q1 = top.quaternion.clone();
@@ -15503,7 +15617,7 @@ KBWorkspace.overview();
     function reject(m, reason) {
         flash(m, COLOR_BAD);
         var msg = typeof reason === 'string' ? reason : 'Not that one \u2014 try again';
-        KB.toast(msg);
+        KBErrors.toast(msg);
         KB.emit('mateRejected', { node: m.node, id: m.f.id, end: m.end, reason: msg });
     }
     function arm(m) {
@@ -15717,6 +15831,7 @@ KBWorkspace.overview();
     window.KBMate = {
         locked: locked,
         release: release,
+        worldFeature: worldFeature,
         spotlight: function (list) { spot = list || []; rebuildMarkers(); },
         setGuard: function (g) { guard = g || null; },
         setEnabled: function (on) { enabled = !!on; if (!on)
@@ -16158,6 +16273,7 @@ KBWorkspace.overview();
 (function () {
     'use strict';
     var KB = window.KB, step = null, phase = '', signature = '', attempt = null;
+    var MUTED = new URLSearchParams(location.search).get('showGuide') !== '1';
     var card = document.createElement('section');
     card.id = 'nextGuide';
     card.hidden = true;
@@ -16208,7 +16324,8 @@ KBWorkspace.overview();
             return;
         signature = key;
         card.hidden = false;
-        card.dataset.state = state;
+        card.classList.toggle('ng-quiet', MUTED);
+        card.dataset.state = MUTED ? 'progress' : state;
         el('.ng-status').textContent = { workspace: '01 · Move into workspace', progress: '02 · Assembly in progress', error: '! · Needs attention', warn: '~ · Not aligned yet', success: '✓ · Step complete', waiting: 'Next step ready' }[state];
         el('h2').textContent = st.name;
         el('.ng-progress i').style.width = (st.total ? okN / st.total * 100 : 0) + '%';
@@ -16231,11 +16348,12 @@ KBWorkspace.overview();
         il.replaceChildren();
         rows.forEach(function (r) { var li = document.createElement('li'); li.className = r.c; li.textContent = (r.c === 'green' ? '\u2713 ' : r.c === 'red' ? '! ' : '') + r.msg; il.appendChild(li); });
         var errKey = rows.filter(function (r) { return r.c === 'red'; }).map(function (r) { return r.msg; }).join('|') || (state === 'error' ? message : '');
-        if (errKey && errKey !== seenErr && !open && !demoing)
+        if (errKey && errKey !== seenErr && !open && !demoing && !MUTED)
             setOpen(true);
         seenErr = errKey;
-        card.dataset.tone = state === 'error' || rows.some(function (r) { return r.c === 'red'; }) ? 'red'
-            : state === 'success' || rows.some(function (r) { return r.c === 'green'; }) ? 'green' : 'blue';
+        card.dataset.tone = MUTED ? 'blue'
+            : state === 'error' || rows.some(function (r) { return r.c === 'red'; }) ? 'red'
+                : state === 'success' || rows.some(function (r) { return r.c === 'green'; }) ? 'green' : 'blue';
         var done = res ? res.stepsSettled : 0, all = res ? res.steps.length : 0;
         el('.ng-pstep').textContent = all ? 'Step ' + Math.min(done + 1, all) + ' / ' + all : st.name;
         el('.ng-pbar i').style.width = (all ? done / all * 100 : 0) + '%';
@@ -16322,6 +16440,13 @@ KBWorkspace.overview();
     });
     window.KBGuide = { update: update, hide: hide,
         setOpen: setOpen,
+        mute: function (on) { if (on !== undefined) {
+            MUTED = !!on;
+            card.classList.toggle('ng-quiet', MUTED);
+            signature = '';
+            if (lastArgs)
+                draw.apply(null, lastArgs);
+        } return MUTED; },
         demo: function (d) {
             demoing = !!d;
             if (!d) {
@@ -16407,6 +16532,8 @@ KBWorkspace.overview();
     var bar = document.getElementById('answerBar');
     if (!bar)
         return;
+    var BAR_HIDDEN = new URLSearchParams(location.search).get('showAnswerBar') !== '1';
+    function showBar(on) { bar.style.display = (on && !BAR_HIDDEN) ? 'flex' : 'none'; }
     var HOVER = 1.35;
     var DUR = 1.15, GAP = 0.2, STEP_GAP = 0.5, OP = 0.32;
     var SPEEDS = [0.5, 1, 1.5, 2];
@@ -16592,7 +16719,7 @@ KBWorkspace.overview();
             });
             nodesEl.appendChild(dot);
         });
-        bar.style.display = 'flex';
+        showBar(true);
         setPlaying(true);
     }
     playBtn.addEventListener('click', function () {
@@ -16711,7 +16838,7 @@ KBWorkspace.overview();
         KB.highlight(node, 0xe8a33d);
         nodesEl.innerHTML = '';
         fill.style.width = '0%';
-        bar.style.display = 'flex';
+        showBar(true);
         if (nextBtn)
             nextBtn.classList.add('on');
         t = 0;
@@ -16720,6 +16847,24 @@ KBWorkspace.overview();
         render();
         rafId = requestAnimationFrame(tick);
         return true;
+    }
+    function candidatesFor(res, step) {
+        var free = res.users.filter(function (u) { return !u.slot; }), taken = [], cand = {};
+        step.slots.forEach(function (tt) {
+            if (tt.ok)
+                return;
+            if (step.assembly && tt.part) {
+                cand[tt.ref.i] = tt.part;
+                return;
+            }
+            var c = free.filter(function (u) { return u.ckey === tt.ref.ckey && taken.indexOf(u) < 0; })
+                .sort(function (a, b) { return Number(KBWorkspace.contains(b.node)) - Number(KBWorkspace.contains(a.node)); })[0];
+            if (c) {
+                cand[tt.ref.i] = c;
+                taken.push(c);
+            }
+        });
+        return cand;
     }
     function showStep(i) {
         if (!(window.KBParts && KBParts.ready() && window.KBCheck))
@@ -16749,20 +16894,7 @@ KBWorkspace.overview();
                         anchor = { ref: m.slot, M: ms.part.M, node: ms.part.node };
                 });
             });
-        var free = res.users.filter(function (u) { return !u.slot; }), taken = [], cand = {};
-        step.slots.forEach(function (tt) {
-            if (tt.ok)
-                return;
-            if (step.assembly && tt.part) {
-                cand[tt.ref.i] = tt.part;
-                return;
-            }
-            var c = free.filter(function (u) { return u.ckey === tt.ref.ckey && taken.indexOf(u) < 0; }).sort(function (a, b) { return Number(KBWorkspace.contains(b.node)) - Number(KBWorkspace.contains(a.node)); })[0];
-            if (c) {
-                cand[tt.ref.i] = c;
-                taken.push(c);
-            }
-        });
+        var cand = candidatesFor(res, step);
         if (!anchor) {
             var t0 = step.slots.filter(function (tt) { return cand[tt.ref.i]; })[0];
             if (t0) {
@@ -16878,7 +17010,7 @@ KBWorkspace.overview();
         Object.keys(cand).forEach(function (k) { var nd = cand[k].node; KB.highlight(nd, 0xe8a33d); focus.lit.push(nd); });
         nodesEl.innerHTML = '';
         fill.style.width = '0%';
-        bar.style.display = 'flex';
+        showBar(true);
         if (nextBtn)
             nextBtn.classList.add('on');
         t = 0;
@@ -17028,6 +17160,10 @@ KBWorkspace.overview();
     }
     window.KBAnswer = {
         play: play,
+        showBar: function (on) { if (on !== undefined) {
+            BAR_HIDDEN = !on;
+            showBar(!!on);
+        } return !BAR_HIDDEN; },
         frameGhost: frameGhost,
         playing: function () { return !!root; },
         showStep: showStep,
@@ -17045,6 +17181,35 @@ KBWorkspace.overview();
         stepCount: function () { loadData(); return DATA.steps.length; },
         requires: function (i) { loadData(); return DATA.source && DATA.steps[i] ? DATA.steps[i].requires : null; },
         seekStep: function (i) { t = stepEnd[i]; setPlaying(false); render(); },
+        movesFor: function (step) {
+            if (!(window.KBCheck && window.KBParts && KBParts.ready()))
+                return [];
+            var res = KBCheck.results && KBCheck.results();
+            if (!res || !res.ready || !step)
+                return [];
+            var cand = candidatesFor(res, step), out = [];
+            if (step.assembly && step.base && !step.base.ok) {
+                var bn = step.base.part && step.base.part.node;
+                if (!bn) {
+                    var want = step.base.ref.ckey;
+                    res.users.forEach(function (u) {
+                        if (!bn && !u.slot && u.ckey === want)
+                            bn = u.node;
+                    });
+                }
+                if (bn)
+                    out.push(bn);
+            }
+            step.slots.forEach(function (tt) {
+                var c = cand[tt.ref.i];
+                if (!c || !c.node || out.indexOf(c.node) >= 0)
+                    return;
+                if (step.assembly && window.KBWorkspace && KBWorkspace.contains(c.node))
+                    return;
+                out.push(c.node);
+            });
+            return out;
+        },
         ghosts: function () {
             return items.map(function (it) {
                 return { name: it.name, visible: it.g.visible, travel: !!it.dur,
@@ -17178,6 +17343,41 @@ KBWorkspace.overview();
 <script>
 (function () {
     'use strict';
+    var on = new URLSearchParams(location.search).get('showErrors') === '1';
+    function paint() {
+        var b = document.getElementById('btnShowErrors');
+        if (!b)
+            return;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+        var lbl = b.querySelector('.lbl');
+        if (lbl)
+            lbl.textContent = on ? 'Errors on' : 'Errors off';
+    }
+    function set(v) {
+        on = !!v;
+        paint();
+        if (window.KBCheck && KBCheck.results && KBCheck.results())
+            KBCheck.evaluate();
+        if (window.KB && KB.emit)
+            KB.emit('showErrorsChange', on);
+    }
+    var btn = document.getElementById('btnShowErrors');
+    if (btn)
+        btn.addEventListener('click', function () { set(!on); });
+    paint();
+    window.KBErrors = {
+        shown: function () { return on; },
+        set: set,
+        toast: function (msg) { if (on && window.KB && KB.toast)
+            KB.toast(msg); }
+    };
+})();
+
+</script>
+<script>
+(function () {
+    'use strict';
     var KB = window.KB;
     var btn = document.getElementById('btnCheck');
     var panel = document.getElementById('checkPanel');
@@ -17200,6 +17400,8 @@ KBWorkspace.overview();
     document.body.appendChild(notice);
     noticeButton.addEventListener('click', function () { panel.style.display = 'flex'; elClose.focus(); });
     function renderNotice(issues) {
+        if (window.KBErrors && !KBErrors.shown())
+            issues = [];
         var errors = issues.filter(function (issue) { return issue.severity === 'error'; });
         var warn = !errors.length;
         if (warn)
@@ -17227,10 +17429,21 @@ KBWorkspace.overview();
     var REVOLVE = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1,
         screw_m3x8_socket_cap: 1, knurled_standoff: 1, motor_nut_m5: 1, damper_m2: 1,
         propeller_cw: 1, propeller_ccw: 1 };
+    var FLIP_MATTERS = { propeller_cw: 1, propeller_ccw: 1 };
+    function flipped(key, qUser, qWant) {
+        var spec = KBParts.spec(key);
+        var pegs = (spec && spec.pegs) || [];
+        var f = pegs[0] || (spec && spec.holes && spec.holes[0]);
+        if (!f)
+            return false;
+        var d = new THREE.Vector3().fromArray(f.d);
+        var a = d.clone().applyQuaternion(qUser), b = d.clone().applyQuaternion(qWant);
+        return a.dot(b) < 0;
+    }
     var SCREW = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1,
         screw_m3x8_socket_cap: 1 };
     function family(key) { return key.indexOf('screw_') === 0 ? 'screw' : key.indexOf('split_') === 0 ? 'plate' : key; }
-    var SAME = { screw_m3x16_socket_cap: 'screw_m3x16_pan', propeller_ccw: 'propeller_cw' };
+    var SAME = { screw_m3x16_socket_cap: 'screw_m3x16_pan' };
     function canon(key) { return SAME[key] || key; }
     var results = null;
     var SNAP_POS_MM = 10, SNAP_ANG = 25;
@@ -17359,6 +17572,8 @@ KBWorkspace.overview();
             var reversed = ang.signed && ang.deg > 90;
             var nearAng = reversed ? 180 - ang.deg : ang.deg;
             var score = d + (reversed ? 0.02 : nearAng / 180 * 0.05);
+            if (FLIP_MATTERS[t.key] && flipped(t.key, _q2, _q))
+                reversed = true;
             if (!best || score < best.score)
                 best = { score: score, d: d, ang: ang.deg, reversed: reversed, nearAng: nearAng,
                     want: new THREE.Matrix4().multiplyMatrices(um.M, expected) };
@@ -17637,16 +17852,27 @@ KBWorkspace.overview();
             t.ok = !bad.length || agreeing > bad.length;
             t.err = bad.length ? bad[0] : t.near[0];
         });
+        function loneInWorkspace(node) {
+            if (!window.KBWorkspace || !KBWorkspace.contains(node))
+                return false;
+            var n = 0;
+            KB.objectsRoot.traverse(function (o) {
+                if (KB.isPart(o) && KBWorkspace.contains(o))
+                    n++;
+            });
+            return n === 1;
+        }
         var issues = [], correct = 0;
         var us = KBParts.unitScale();
         var mm = function (w) { return (w / us * 1000).toFixed(1); };
         var pairSeen = {};
         var misfits = {};
-        function keepClosest(node, d, msg, severity, host, reversed, ang, kind) {
+        function keepClosest(node, d, msg, severity, host, reversed, ang, kind, features, slotRef) {
             var id = node.uuid;
             if (!misfits[id] || d < misfits[id].d) {
                 misfits[id] = { node: node, d: d, msg: msg, severity: severity || 'error', kind: kind || 'hole',
-                    host: host || null, reversed: !!reversed, ang: ang || 0 };
+                    host: host || null, reversed: !!reversed, ang: ang || 0,
+                    features: features || null, slot: slotRef || null };
             }
         }
         slots.forEach(function (t) {
@@ -17686,16 +17912,21 @@ KBWorkspace.overview();
                 if (pairSeen[pk])
                     return;
                 pairSeen[pk] = 1;
+                var hostNode = t.err.ms.part ? t.err.ms.part.node : null;
+                var feats = t.err.m.features || null;
                 if (e.reversed) {
                     issues.push({ severity: 'error', kind: 'hole', node: t.part.node, slot: t.ref,
+                        host: hostNode, features: feats,
                         msg: t.ref.name + ' is inserted backwards into ' + mate.name + ' — the head faces the wrong way' });
                 }
                 else if (e.d >= POS_TOL) {
                     issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref, want: e.want,
+                        host: hostNode, features: feats,
                         msg: t.ref.name + ' is ' + mm(e.d) + ' mm off its place on ' + mate.name + which(t.part.node, e.want) });
                 }
                 else {
                     issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref,
+                        host: hostNode, features: feats,
                         msg: t.ref.name + ' is tilted ' + e.ang.toFixed(0) + '° on ' + mate.name });
                 }
                 return;
@@ -17737,7 +17968,7 @@ KBWorkspace.overview();
                 });
             }
             if (wrong) {
-                keepClosest(wrong.u.node, wrong.d, 'Wrong part on ' + wrong.m.slot.name + ': found ' + wrong.u.node.name + ', expected ' + t.ref.name, 'error', null, false, 0, 'pick');
+                keepClosest(wrong.u.node, wrong.d, 'Wrong part on ' + wrong.m.slot.name + ': found ' + wrong.u.node.name + ', expected ' + t.ref.name, 'error', null, false, 0, 'pick', null, t.ref);
                 return;
             }
             var misplaced = null;
@@ -17774,22 +18005,22 @@ KBWorkspace.overview();
                 if (misplaced.outside && !isOk(me) && !wasMated(misplaced.u.node)) {
                 }
                 else if (misplaced.outside && isOk(me)) {
-                    keepClosest(misplaced.u.node, misplaced.d, misplaced.u.node.name + ' is assembled outside the workspace — move it inside to be checked', 'hint', misplaced.host.node, false, 0, 'hint');
+                    keepClosest(misplaced.u.node, misplaced.d, misplaced.u.node.name + ' is assembled outside the workspace — move it inside to be checked', 'hint', misplaced.host.node, false, 0, 'hint', misplaced.m.features, t.ref);
                 }
                 else if (!me.reversed && misplaced.d < NEAR && me.nearAng >= ANG_TOL) {
-                    keepClosest(misplaced.u.node, misplaced.d, misplaced.u.node.name + ' is tilted ' + me.nearAng.toFixed(0) + '° in ' + misplaced.m.slot.name, 'error', misplaced.host.node, false, me.nearAng, 'align');
+                    keepClosest(misplaced.u.node, misplaced.d, misplaced.u.node.name + ' is tilted ' + me.nearAng.toFixed(0) + '° in ' + misplaced.m.slot.name, 'error', misplaced.host.node, false, me.nearAng, 'align', misplaced.m.features, t.ref);
                 }
                 else if (me.reversed) {
                     keepClosest(misplaced.u.node, misplaced.d, misplaced.u.node.name + ' is inserted backwards into ' + misplaced.m.slot.name +
-                        ' — the head faces the wrong way', 'error', misplaced.host.node, true);
+                        ' — the head faces the wrong way', 'error', misplaced.host.node, true, 0, 'hole', misplaced.m.features, t.ref);
                 }
                 else if (misplaced.d < NEAR) {
                     keepClosest(misplaced.u.node, misplaced.d, misplaced.u.node.name + ' is ' + mm(misplaced.d) + ' mm off its place on ' +
-                        misplaced.m.slot.name + ' (expected ' + t.ref.name + ')', 'error', misplaced.host.node, false, 0, 'align');
+                        misplaced.m.slot.name + ' (expected ' + t.ref.name + ')', 'error', misplaced.host.node, false, 0, 'align', misplaced.m.features, t.ref);
                 }
                 else {
                     keepClosest(misplaced.u.node, misplaced.d, misplaced.u.node.name + ' is in the wrong hole on ' + misplaced.m.slot.name +
-                        ' — ' + mm(misplaced.d) + ' mm from where ' + t.ref.name + ' belongs', 'error', misplaced.host.node);
+                        ' — ' + mm(misplaced.d) + ' mm from where ' + t.ref.name + ' belongs', 'error', misplaced.host.node, false, 0, 'hole', misplaced.m.features, t.ref);
                 }
             }
         });
@@ -17808,7 +18039,8 @@ KBWorkspace.overview();
                         return;
                 }
             }
-            issues.push({ severity: it.severity, kind: it.kind, node: it.node, slot: it.slot, msg: it.msg });
+            issues.push({ severity: it.severity, kind: it.kind, node: it.node, slot: it.slot, msg: it.msg,
+                host: it.host, features: it.features });
         });
         if (lastPick) {
             var cur = next();
@@ -17921,10 +18153,10 @@ KBWorkspace.overview();
             if (lv === 1)
                 return k === 'pick';
             if (lv === 2)
-                return k === 'pick' || k === 'hole';
+                return k === 'pick' || k === 'hole' || k === 'align';
             return true;
         });
-        if (lv === 3)
+        if (lv >= 2)
             issues.forEach(function (i) {
                 if (i.kind === 'align' && i.severity === 'error') {
                     i.severity = 'warn';
@@ -17960,7 +18192,10 @@ KBWorkspace.overview();
                     ok: t.ok, by: t.part ? t.part.id : null };
             }),
             issues: results.issues.map(function (i) {
-                return { severity: i.severity, message: i.msg, objectId: (i.node && i.node.userData.kbId) || null,
+                return { severity: i.severity, kind: i.kind || 'hole', message: i.msg,
+                    objectId: (i.node && i.node.userData.kbId) || null,
+                    hostId: (i.host && i.host.userData.kbId) || null,
+                    features: i.features || null,
                     step: i.step ? i.step.id : (i.slot ? stepId(i.slot.step) : null) };
             }),
             next: (function () { var n = next(); return n ? n.id : null; })(),
@@ -18310,7 +18545,7 @@ KBWorkspace.overview();
         }
         var list = Object.keys(final).map(function (k) { return final[k]; });
         if (!list.length) {
-            KB.toast(whyNothingSnapped());
+            KBErrors.toast(whyNothingSnapped());
             return 0;
         }
         list.forEach(function (pl) {
@@ -18340,7 +18575,7 @@ KBWorkspace.overview();
                 n += 1; });
         });
         if (!n)
-            KB.toast('Not close enough to snap \u2014 move it nearer to where it belongs');
+            KBErrors.toast('Not close enough to snap \u2014 move it nearer to where it belongs');
     });
     KB.on('grab', hideGhost);
     KB.onChange(function () {
@@ -18946,7 +19181,7 @@ KBWorkspace.overview();
         if (warnedFor === tag)
             return;
         warnedFor = tag;
-        KB.toast(msg);
+        KBErrors.toast(msg);
         KB.emit('pickWarn', { objectId: node.userData.kbId || null, name: node.name,
             key: node.userData.kbType.slice(5), step: nx.i, stepName: nx.name,
             belongsToStep: mine ? mine.step : null, message: msg });
@@ -18969,6 +19204,7 @@ KBWorkspace.overview();
         autoSnap: function (on) { if (on !== undefined)
             autoSnap = !!on; return autoSnap; },
         snapIntoPlace: snapIntoPlace,
+        invalidate: function () { lastSig = ''; results = null; },
         levelTarget: levelTarget,
         canon: canon,
         noteHole: function (node, msg) {
@@ -19226,7 +19462,7 @@ KBWorkspace.overview();
             return;
         var b = KBCheck.level2Base(node);
         if (b && b.isBase)
-            KB.toast('Now click inside the green workspace to move ' + node.name + ' there');
+            KBErrors.toast('Now click inside the green workspace to move ' + node.name + ' there');
     });
     KB.onSelection(function (sel) {
         if (level !== 2 || tutorialOn() || !window.KBCheck)
@@ -19254,7 +19490,7 @@ KBWorkspace.overview();
                     placeByClick(node, true);
             }
             else if (b && b.baseName)
-                KB.toast('Place ' + b.baseName + ' first \u2014 this part goes into it');
+                KBErrors.toast('Place ' + b.baseName + ' first \u2014 this part goes into it');
             else if (clicked)
                 placeByClick(node, true);
             return;
@@ -19333,7 +19569,20 @@ KBWorkspace.overview();
         });
     }
     var pendingCheck = null;
+    var FREE_INSERT = true;
+    function stageCheck(src, dst) {
+        var top = src.node;
+        while (top.parent && top.parent !== KB.objectsRoot)
+            top = top.parent;
+        pendingCheck = { node: src.node, src: src, dst: dst, top: top,
+            p: top.position.clone(), q: top.quaternion.clone(), at: performance.now() };
+    }
     function guard3(src, dst) {
+        if (FREE_INSERT) {
+            KBCheck.noteHole(null);
+            stageCheck(src, dst);
+            return null;
+        }
         var r = KBCheck.levelMateTarget(src.node, src.id, dst.node, dst.id);
         if (r.reason) {
             var back = KBCheck.levelMateTarget(dst.node, dst.id, src.node, src.id);
@@ -19382,11 +19631,16 @@ KBWorkspace.overview();
                 KBCheck.noteHole(null);
                 return;
             }
+            if (FREE_INSERT) {
+                KBCheck.noteHole(pc.node, bad.msg);
+                KBErrors.toast('Not like that — ' + bad.msg);
+                return;
+            }
             if (window.KBMate && KBMate.release)
                 KBMate.release(pc.node);
             KB.emit('handleMatch', { a: pc.src, b: pc.dst, success: false, error: bad.msg + ' (undone)' });
             KB.tween(pc.top, pc.p, pc.q, { duration: 0.45, onDone: function () { KB.pushSnapshot(); KBCheck.noteHole(pc.node, bad.msg + ' \u2014 undone, try again'); } });
-            KB.toast('Not like that \u2014 ' + bad.msg);
+            KBErrors.toast('Not like that \u2014 ' + bad.msg);
         })(0);
     });
     function resolve(src, dst) {
@@ -19457,7 +19711,7 @@ KBWorkspace.overview();
         catch (e) { }
         apply();
         if (!quiet)
-            KB.toast(TIPS[n]);
+            KBErrors.toast(TIPS[n]);
         KB.emit('levelChange', n);
         if (window.KBCheck)
             KBCheck.evaluate();
@@ -19470,7 +19724,9 @@ KBWorkspace.overview();
             if (b)
                 set(b.dataset.level);
         });
-    window.KBLevel = { get: function () { return level; }, set: set, tips: TIPS, busy: function () { return busy; } };
+    window.KBLevel = { get: function () { return level; }, set: set, tips: TIPS, busy: function () { return busy; },
+        freeInsert: function (on) { if (on !== undefined)
+            FREE_INSERT = !!on; return FREE_INSERT; } };
     (function hook() { if (window.KBMate)
         apply();
     else
@@ -19492,6 +19748,11 @@ KBWorkspace.overview();
     function keyOf(node) { return node.userData.kbType ? node.userData.kbType.slice(5) : ''; }
     function inWorkspace(node) { return !window.KBWorkspace || KBWorkspace.contains(node); }
     function partsToMove(step) {
+        if (window.KBAnswer && KBAnswer.movesFor) {
+            var m = KBAnswer.movesFor(step);
+            if (m && m.length)
+                return m;
+        }
         var out = [], used = {};
         var all = [];
         KB.objectsRoot.traverse(function (o) { if (KB.isPart(o))
@@ -19506,13 +19767,11 @@ KBWorkspace.overview();
         if (step.base && !step.base.ok && slots.indexOf(step.base) < 0)
             slots.unshift(step.base);
         slots.sort(function (a, b) { return Number(KBCheck.comesFirst(b.ref)) - Number(KBCheck.comesFirst(a.ref)); });
-        var kinds = [];
         slots.forEach(function (t) {
             if (t.ok || placed[t.ref.id])
                 return;
             if (t.part) {
                 out.push(t.part.node);
-                kinds.push(t.ref.ckey);
                 used[t.part.node.uuid] = true;
                 return;
             }
@@ -19520,27 +19779,31 @@ KBWorkspace.overview();
             all.forEach(function (n) {
                 if (used[n.uuid] || KBCheck.canon(keyOf(n)) !== want || KBCheck.placedSlotAny(n))
                     return;
-                var s = KBCheck.slotOf(n);
-                if (s && s.ok)
+                var sl = KBCheck.slotOf(n);
+                if (sl && sl.ok)
                     return;
-                var score = (n.name === t.ref.name ? 0 : 1) + (s ? 2 : 0);
+                var score = (n.name === t.ref.name ? 0 : 1) + (sl ? 2 : 0);
                 if (!best || score < best.score)
                     best = { node: n, score: score };
             });
             if (best) {
                 out.push(best.node);
-                kinds.push(t.ref.ckey);
                 used[best.node.uuid] = true;
             }
         });
-        var run = 0;
-        while (run < out.length && kinds[run] === kinds[0])
-            run++;
-        return out.slice(0, run);
+        return out;
     }
     var arrows = new Map();
-    var arrowGeo = null, arrowMat = null;
-    function makeArrow() {
+    var arrowGeo = null, arrowMats = {};
+    function arrowMaterial(hex) {
+        if (!arrowMats[hex])
+            arrowMats[hex] = new THREE.MeshBasicMaterial({
+                color: hex, transparent: true, opacity: 0.95,
+                depthTest: false, depthWrite: false, toneMapped: false, fog: false
+            });
+        return arrowMats[hex];
+    }
+    function makeArrow(hex) {
         if (!arrowGeo) {
             var cone = new THREE.ConeGeometry(0.5, 1, 20);
             cone.rotateX(Math.PI);
@@ -19548,13 +19811,28 @@ KBWorkspace.overview();
             var stem = new THREE.CylinderGeometry(0.18, 0.18, 0.9, 12);
             stem.translate(0, 1.45, 0);
             arrowGeo = [cone, stem];
-            arrowMat = new THREE.MeshBasicMaterial({ color: COLOR, transparent: true, opacity: 0.95, depthTest: false, depthWrite: false, toneMapped: false, fog: false });
         }
+        var mat = arrowMaterial(hex);
         var g = new THREE.Group();
-        arrowGeo.forEach(function (geo) { var m = new THREE.Mesh(geo, arrowMat); m.renderOrder = 999; g.add(m); });
+        arrowGeo.forEach(function (geo) { var m = new THREE.Mesh(geo, mat); m.renderOrder = 999; g.add(m); });
         g.userData.kbOverlay = true;
+        g.userData.kbTone = hex;
         KB.scene.add(g);
         return g;
+    }
+    function arrowTone(n) {
+        var t = window.KBMarks && KBMarks.toneOf && KBMarks.toneOf(n);
+        return (typeof t === 'number') ? t : COLOR.getHex();
+    }
+    function wantArrow(n) {
+        var a = arrows.get(n), hex = arrowTone(n);
+        if (a && a.userData.kbTone === hex)
+            return a;
+        if (a)
+            KB.scene.remove(a);
+        a = makeArrow(hex);
+        arrows.set(n, a);
+        return a;
     }
     function restore(n) {
         KB.highlight(n, null);
@@ -19570,12 +19848,35 @@ KBWorkspace.overview();
             arrows.delete(n);
         }
     }
+    function aiOwns(n) {
+        return !!(window.KBMarks && KBMarks.aiOwns && KBMarks.aiOwns(n));
+    }
+    var OWN_ARROW = true;
+    var markArrows = new Map();
+    var noArrow = new Set();
     function setLit(nodes) {
-        lit.forEach(function (n) { if (nodes.indexOf(n) < 0)
+        if (pointsNow()) {
+            lit.forEach(function (n) { if (nodes.indexOf(n) < 0)
+                restore(n); });
+            lit = nodes.slice();
+            lit.forEach(function (n) { if (!arrows.has(n))
+                arrows.set(n, makeArrow(COLOR.getHex())); });
+            return;
+        }
+        lit.forEach(function (n) { if (nodes.indexOf(n) < 0 && !markArrows.has(n))
             restore(n); });
         lit = nodes.slice();
-        lit.forEach(function (n) { if (!arrows.has(n))
-            arrows.set(n, makeArrow()); });
+        lit.forEach(function (n) {
+            if (noArrow.has(n) || !OWN_ARROW || aiOwns(n)) {
+                var a = arrows.get(n);
+                if (a && !markArrows.has(n)) {
+                    KB.scene.remove(a);
+                    arrows.delete(n);
+                }
+                return;
+            }
+            wantArrow(n);
+        });
     }
     if (KB.addPickProxy)
         KB.addPickProxy(function (ray) {
@@ -19605,30 +19906,48 @@ KBWorkspace.overview();
     var _hb = new THREE.Box3(), _hc = new THREE.Vector3();
     (function pulse() {
         requestAnimationFrame(pulse);
-        if (!lit.length)
+        if (!lit.length && !arrows.size)
             return;
         var now = performance.now(), w = 0.5 + 0.5 * Math.sin(now / 260);
         var k = 0.25 + 0.45 * w;
         lit.forEach(function (n) {
-            n.traverse(function (o) {
-                if (!o.isMesh || !o.material || !o.material.emissive || o.userData.kbOverlay)
-                    return;
-                var m = o.material;
-                if (!m.userData.kbBase)
-                    m.userData.kbBase = m.color.clone();
-                m.color.copy(m.userData.kbBase).lerp(TINT, 0.8 + 0.2 * w);
-                m.emissive.copy(COLOR);
-                m.emissiveIntensity = k;
-            });
-            var a = arrows.get(n);
-            if (!a)
+            var aiMarked = window.KBMarks && KBMarks.aiOwns && KBMarks.aiOwns(n);
+            if (!aiMarked)
+                n.traverse(function (o) {
+                    if (!o.isMesh || !o.material || !o.material.emissive || o.userData.kbOverlay)
+                        return;
+                    var m = o.material;
+                    if (!m.userData.kbBase)
+                        m.userData.kbBase = m.color.clone();
+                    m.color.copy(m.userData.kbBase).lerp(TINT, 0.8 + 0.2 * w);
+                    m.emissive.copy(COLOR);
+                    m.emissiveIntensity = k;
+                });
+            if (aiMarked && !pointsNow()) {
+                var a0 = arrows.get(n);
+                if (a0 && !markArrows.has(n)) {
+                    KB.scene.remove(a0);
+                    arrows.delete(n);
+                }
+            }
+        });
+        arrows.forEach(function (a, n) {
+            if (!n.parent) {
+                a.visible = false;
                 return;
+            }
+            var hex = arrowTone(n);
+            if (a.userData.kbTone !== hex) {
+                KB.scene.remove(a);
+                a = makeArrow(hex);
+                arrows.set(n, a);
+            }
             _hb.setFromObject(n);
             _hb.getCenter(_hc);
             var size = Math.max(0.06, KB.camera.position.distanceTo(_hc) * 0.028);
             a.scale.setScalar(size);
             a.position.set(_hc.x, _hb.max.y + size * (0.35 + 0.45 * (0.5 + 0.5 * Math.sin(now / 180))), _hc.z);
-            a.visible = !!n.parent;
+            a.visible = true;
         });
     })();
     var _b = new THREE.Box3(), _v = new THREE.Vector3();
@@ -19818,7 +20137,7 @@ KBWorkspace.overview();
     KB.on('levelFlight', function () { if (shown && !tutorialOn())
         hideCard(); soon(); });
     KB.on('levelFlight', function (f) {
-        if (!f || !f.node || tutorialOn() || !(follow || f.force || autoView()))
+        if (!f || !f.node || tutorialOn() || !(follow || (f.force && autoView()) || autoView()))
             return;
         followTo(keyOf(f.node), f.want, f.approach, f.node);
     });
@@ -19886,7 +20205,7 @@ KBWorkspace.overview();
         if (!shown)
             return;
         asked[shown.key] = use ? 'used' : 'dismissed';
-        if (use)
+        if (use && STICKY_FOLLOW)
             follow = true;
         if (use) {
             KB.flyCamera(shown.view.p, shown.view.t);
@@ -19944,7 +20263,12 @@ KBWorkspace.overview();
             return;
         }
         var nodes = partsToMove(st);
-        setLit(nodes);
+        if (pointed && !pointed.parent)
+            pointed = null;
+        if (pointed && nodes.indexOf(pointed) < 0) {
+            pointed = pointsNow() ? null : (nodes.length ? nodes[0] : null);
+        }
+        setLit(pointsNow() ? nodes : (pointed ? [pointed] : []));
         if (!nodes.length) {
             hideCard();
             return;
@@ -19988,6 +20312,11 @@ KBWorkspace.overview();
             }, 700);
             return;
         }
+        if (!CARDS) {
+            if (shown)
+                hideCard();
+            return;
+        }
         if (shown && shown.key === key)
             return;
         shown = { key: key, view: s.view };
@@ -19998,7 +20327,35 @@ KBWorkspace.overview();
     }
     function soon() { clearTimeout(timer); timer = setTimeout(refresh, 450); }
     var autoTimer = 0, pendingKey = null;
-    function autoView() { return window.KBLevel && KBLevel.get() <= 2; }
+    var AUTO_MAX = 1;
+    var CARDS = false;
+    var STICKY_FOLLOW = false;
+    function autoView() { return window.KBLevel && KBLevel.get() <= AUTO_MAX; }
+    var POINT_AT_L3 = true;
+    function pointsNow() { return POINT_AT_L3 || !(window.KBLevel && KBLevel.get() >= 3); }
+    var pointed = null;
+    function pointAt(node) {
+        if (!node) {
+            pointed = null;
+            refresh();
+            return false;
+        }
+        pointed = node;
+        refresh();
+        return pointed === node;
+    }
+    KB.on('place', function (node) {
+        if (!pointed)
+            return;
+        var hit = node === pointed;
+        node.traverse(function (o) { if (o === pointed)
+            hit = true; });
+        if (hit) {
+            if (pointsNow())
+                pointed = null;
+            soon();
+        }
+    });
     KB.onChange(soon);
     KB.onSelection(soon);
     KB.on('levelChange', soon);
@@ -20070,6 +20427,59 @@ KBWorkspace.overview();
         backToView();
     });
     window.KBFocus = { refresh: refresh, following: function () { return follow; }, viewForSlot: viewForSlot,
+        autoUpTo: function (n) { if (n !== undefined) {
+            AUTO_MAX = n;
+            soon();
+        } return AUTO_MAX; },
+        cards: function (on) { if (on !== undefined) {
+            CARDS = !!on;
+            if (!CARDS && shown)
+                hideCard();
+            soon();
+        } return CARDS; },
+        stickyFollow: function (on) { if (on !== undefined) {
+            STICKY_FOLLOW = !!on;
+            if (!STICKY_FOLLOW)
+                follow = false;
+        } return STICKY_FOLLOW; },
+        markArrow: function (node, on) {
+            if (!node)
+                return false;
+            if (pointsNow())
+                return true;
+            if (on) {
+                noArrow.delete(node);
+                markArrows.set(node, true);
+                wantArrow(node);
+                return true;
+            }
+            markArrows.delete(node);
+            noArrow.add(node);
+            var a = arrows.get(node);
+            if (a) {
+                KB.scene.remove(a);
+                arrows.delete(node);
+            }
+            return true;
+        },
+        forgetArrows: function () { noArrow.clear(); markArrows.clear(); refresh(); },
+        ownArrow: function (on) { if (on !== undefined) {
+            OWN_ARROW = !!on;
+            refresh();
+        } return OWN_ARROW; },
+        pointAtL3: function (on) { if (on !== undefined) {
+            POINT_AT_L3 = !!on;
+            refresh();
+        } return POINT_AT_L3; },
+        pointAt: pointAt, pointedAt: function () { return pointed; },
+        waitingFor: function () {
+            if (!(window.KBCheck && window.KBParts && KBParts.ready()))
+                return [];
+            if (!KBCheck.results || !KBCheck.results())
+                return [];
+            var st = KBCheck.next();
+            return st ? partsToMove(st).slice() : [];
+        },
         snapshot: snapshot, lit: function () { return lit.slice(); },
         suggestion: function () { return shown ? { key: shown.key, view: shown.view } : null; },
         use: function () { answer(true); }, dismiss: function () { answer(false); },
@@ -20608,6 +21018,622 @@ KBWorkspace.overview();
 <script>
 (function () {
     'use strict';
+    var KB = window.KB;
+    var ALL = 'all', STEP = 'step', OFF = 'off';
+    var mode = OFF;
+    var root = new THREE.Group();
+    root.userData.kbOverlay = true;
+    KB.scene.add(root);
+    var tags = [];
+    var selected = [];
+    KB.onSelection(function (sel) { selected = sel || []; });
+    function sprite(text) {
+        var cv = document.createElement('canvas');
+        var ctx = cv.getContext('2d');
+        ctx.font = '600 34px "IBM Plex Mono", monospace';
+        var w = Math.ceil(ctx.measureText(text).width) + 24;
+        cv.width = w;
+        cv.height = 52;
+        ctx = cv.getContext('2d');
+        ctx.font = '600 34px "IBM Plex Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeStyle = 'rgba(16,20,25,0.92)';
+        ctx.lineWidth = 7;
+        ctx.strokeText(text, w / 2, 27);
+        ctx.fillStyle = '#dfe7ef';
+        ctx.fillText(text, w / 2, 27);
+        var sp = new THREE.Sprite(new THREE.SpriteMaterial({
+            map: new THREE.CanvasTexture(cv), depthTest: false, transparent: true
+        }));
+        var h = 0.085;
+        sp.scale.set(h * w / 52, h, 1);
+        return sp;
+    }
+    function textFor(node) {
+        var n = node.name || '';
+        return n.length > 34 ? n.slice(0, 33) + '…' : n;
+    }
+    function inTray(node) {
+        return !window.KBWorkspace || !KBWorkspace.contains(node);
+    }
+    function wanted() {
+        var set = [];
+        if (mode === OFF)
+            return set;
+        function add(n) { if (n && KB.isPart(n) && set.indexOf(n) < 0)
+            set.push(n); }
+        KB.objectsRoot.traverse(function (o) {
+            if (!KB.isPart(o))
+                return;
+            if (mode === ALL || inTray(o))
+                add(o);
+        });
+        selected.forEach(add);
+        if (window.KBFocus && KBFocus.lit)
+            KBFocus.lit().forEach(add);
+        if (window.KBCheck && KBCheck.results && KBCheck.results()) {
+            (KBCheck.results().issues || []).forEach(function (i) { add(i.node); });
+        }
+        return set;
+    }
+    function sameSet(a, b) {
+        if (a.length !== b.length)
+            return false;
+        for (var i = 0; i < a.length; i++) {
+            if (a[i].node !== b[i] || a[i].text !== textFor(b[i]))
+                return false;
+        }
+        return true;
+    }
+    function rebuild(set) {
+        tags.forEach(function (t) {
+            root.remove(t.sprite);
+            t.sprite.material.map.dispose();
+            t.sprite.material.dispose();
+        });
+        tags = set.map(function (node) {
+            var sp = sprite(textFor(node));
+            root.add(sp);
+            return { node: node, sprite: sp, text: textFor(node) };
+        });
+    }
+    var box = new THREE.Box3(), c = new THREE.Vector3(), frame = 0;
+    (function tick() {
+        requestAnimationFrame(tick);
+        if (frame++ % 10 === 0) {
+            var set = wanted();
+            if (!sameSet(tags, set))
+                rebuild(set);
+        }
+        tags.forEach(function (t) {
+            box.setFromObject(t.node);
+            if (box.isEmpty())
+                return;
+            box.getCenter(c);
+            t.sprite.position.set(c.x, box.min.y - 0.13, c.z);
+        });
+    })();
+    function paint() {
+        var b = document.getElementById('btnNames');
+        if (!b)
+            return;
+        b.classList.toggle('on', mode === ALL);
+        b.setAttribute('aria-pressed', String(mode === ALL));
+        var lbl = b.querySelector('.lbl');
+        if (lbl)
+            lbl.textContent = mode === ALL ? 'All names' : 'Names';
+    }
+    var btn = document.getElementById('btnNames');
+    if (btn)
+        btn.addEventListener('click', function () {
+            mode = mode === ALL ? STEP : ALL;
+            rebuild(wanted());
+            paint();
+        });
+    paint();
+    window.KBNames = {
+        mode: function () { return mode; },
+        set: function (m) { mode = m === ALL ? ALL : (m === OFF ? OFF : STEP); rebuild(wanted()); paint(); }
+    };
+})();
+
+</script>
+<script>
+(function () {
+    'use strict';
+    var KB = window.KB;
+    var TONE = {
+        installed: { color: 0xf5e6a8, intensity: 0.22 },
+        just_ok: { color: 0xb8e6bd, intensity: 0.40 },
+        green: { color: 0x00c853, intensity: 0.85, tint: 0x0a7a35, tintAmount: 0.9 },
+        red: { color: 0xff0080, intensity: 0.95, tint: 0xc4006a, tintAmount: 0.95 }
+    };
+    var FLASH_MS = 600;
+    var ENABLED = true;
+    var marks = {};
+    var wasOk = {};
+    function slot(node) {
+        var m = marks[node.uuid];
+        if (!m) {
+            m = marks[node.uuid] = { node: node, base: null, flash: null, ai: null };
+        }
+        return m;
+    }
+    function live(m) { return !!(m && (m.ai || m.base || m.flash)); }
+    var _c = new THREE.Color();
+    function paint(node, tone) {
+        node.traverse(function (o) {
+            if (!o.isMesh || !o.material || !o.material.emissive || o.userData.kbOverlay)
+                return;
+            var m = o.material;
+            if (tone) {
+                m.emissive.set(tone.color);
+                m.emissiveIntensity = tone.intensity;
+                if (tone.tint !== undefined) {
+                    if (!m.userData.kbMarkBase)
+                        m.userData.kbMarkBase = m.color.clone();
+                    m.color.copy(m.userData.kbMarkBase).lerp(_c.set(tone.tint), tone.tintAmount);
+                }
+                else if (m.userData.kbMarkBase) {
+                    m.color.copy(m.userData.kbMarkBase);
+                    delete m.userData.kbMarkBase;
+                }
+            }
+            else {
+                m.emissive.set(0x000000);
+                m.emissiveIntensity = 1;
+                if (m.userData.kbMarkBase) {
+                    m.color.copy(m.userData.kbMarkBase);
+                    delete m.userData.kbMarkBase;
+                }
+            }
+        });
+    }
+    function toneOf(m) {
+        if (m.ai)
+            return TONE[m.ai] || { color: m.ai, intensity: 0.70 };
+        if (m.flash && m.flash > performance.now())
+            return TONE.just_ok;
+        if (m.base === 'installed')
+            return TONE.installed;
+        return null;
+    }
+    function focusOwns(node) {
+        return !!(window.KBFocus && KBFocus.lit && KBFocus.lit().indexOf(node) >= 0);
+    }
+    function apply(node) {
+        var m = marks[node.uuid];
+        if (!m) {
+            paint(node, null);
+            return;
+        }
+        if (m.flash && !m.ai && focusOwns(node)) {
+            m.flash = performance.now() + FLASH_MS;
+            setTimeout(function () { apply(node); }, 120);
+            return;
+        }
+        paint(node, toneOf(m));
+        if (!live(m))
+            delete marks[node.uuid];
+    }
+    var rawHighlight = KB.highlight;
+    KB.highlight = function (node, color) {
+        if (!node)
+            return;
+        var m = marks[node.uuid];
+        if (m && m.ai)
+            return apply(node);
+        if (color)
+            return rawHighlight(node, color);
+        if (live(m))
+            return apply(node);
+        return rawHighlight(node, color);
+    };
+    function expire(node, m) {
+        setTimeout(function () {
+            if (!m.flash)
+                return;
+            if (m.flash > performance.now()) {
+                expire(node, m);
+                return;
+            }
+            m.flash = null;
+            apply(node);
+        }, 120);
+    }
+    function inWorkspace(node) { return !window.KBWorkspace || KBWorkspace.contains(node); }
+    function syncInstalled() {
+        if (!ENABLED)
+            return;
+        if (!(window.KBCheck && window.KBParts && KBParts.ready()))
+            return;
+        if (!KBCheck.results()) {
+            wasOk = {};
+            return;
+        }
+        var res = KBCheck.results();
+        if (!res || !res.ready)
+            return;
+        var nowOk = {}, touched = {};
+        res.slots.forEach(function (t) {
+            if (!t.part || !t.ok)
+                return;
+            var node = t.part.node;
+            if (!inWorkspace(node))
+                return;
+            nowOk[node.uuid] = node;
+            var m = slot(node);
+            m.base = 'installed';
+            touched[node.uuid] = true;
+        });
+        Object.keys(nowOk).forEach(function (id) {
+            var node = nowOk[id], m = slot(node);
+            apply(node);
+            if (m.flash)
+                expire(node, m);
+        });
+        Object.keys(wasOk).forEach(function (id) {
+            if (touched[id])
+                return;
+            var m = marks[id];
+            if (!m)
+                return;
+            m.base = null;
+            m.flash = null;
+            apply(m.node);
+        });
+        wasOk = nowOk;
+    }
+    function clearSolvedMarks() {
+        if (!(window.KBCheck && KBCheck.results))
+            return;
+        var res = KBCheck.results();
+        if (!res || !res.ready)
+            return;
+        var solved = [];
+        Object.keys(marks).forEach(function (id) {
+            var m = marks[id];
+            if (m.ai !== 'red' || !m.node.parent)
+                return;
+            if (!inWorkspace(m.node))
+                return;
+            if (issueOn(m.node))
+                return;
+            solved.push(m);
+        });
+        if (!solved.length)
+            return;
+        settle();
+    }
+    var settleWatch = 0;
+    KB.onChange(function () {
+        clearTimeout(settleWatch);
+        settleWatch = setTimeout(function () {
+            syncInstalled();
+            clearSolvedMarks();
+        }, 520);
+    });
+    function issueOn(o) {
+        if (!(window.KBCheck && KBCheck.results))
+            return false;
+        var res = KBCheck.results();
+        if (!res || !res.ready)
+            return false;
+        return (res.issues || []).some(function (i) {
+            return i.node === o && i.severity !== 'hint' && i.kind !== 'hint';
+        });
+    }
+    function aiMarkedInside(node) {
+        var hit = false;
+        node.traverse(function (o) {
+            if (hit || !KB.isPart(o))
+                return;
+            var m = marks[o.uuid];
+            if (m && m.ai && inWorkspace(o) && !issueOn(o))
+                hit = true;
+        });
+        return hit;
+    }
+    function settle() {
+        clearAi();
+        var until = performance.now() + FLASH_MS, flashing = [];
+        Object.keys(marks).forEach(function (id) {
+            var m = marks[id];
+            if (m.base !== 'installed')
+                return;
+            m.flash = until;
+            flashing.push(m);
+        });
+        flashing.forEach(function (m) { apply(m.node); expire(m.node, m); });
+    }
+    KB.on('place', function (node) {
+        setTimeout(function () {
+            if (!ENABLED || !window.KBCheck)
+                return;
+            if (window.KBTutorial && KBTutorial.active())
+                return;
+            var res = KBCheck.evaluate();
+            if (!res || !res.ready)
+                return;
+            syncInstalled();
+            var t = KBCheck.slotOf(node);
+            if (!(t && t.ok) && !aiMarkedInside(node))
+                return;
+            settle();
+        }, 450);
+    });
+    var discRoot = new THREE.Group();
+    discRoot.name = 'AI marks';
+    discRoot.userData.kbOverlay = true;
+    discRoot.renderOrder = 996;
+    KB.scene.add(discRoot);
+    var discGeo = new THREE.CircleGeometry(1, 32);
+    var discs = [];
+    function featureOf(key, id) {
+        var spec = window.KBParts && KBParts.spec(key);
+        if (!spec)
+            return null;
+        var list = id.charAt(0) === 'H' ? (spec.holes || []) : (spec.pegs || []);
+        for (var i = 0; i < list.length; i++)
+            if (list[i].id === id)
+                return list[i];
+        return null;
+    }
+    function addDisc(node, id, color) {
+        var f = featureOf(node.userData.kbType.slice(5), id);
+        if (!f)
+            throw new Error('mark: no feature ' + id + ' on ' + node.name);
+        var tone = TONE[color] || { color: color };
+        var ends = id.charAt(0) === 'H' ? [1, -1] : [0];
+        ends.forEach(function (end) {
+            var mat = new THREE.MeshBasicMaterial({ color: tone.color, transparent: true, opacity: 0.85,
+                depthTest: false, depthWrite: false, side: THREE.DoubleSide });
+            var mesh = new THREE.Mesh(discGeo, mat);
+            mesh.renderOrder = 996;
+            mesh.userData.kbOverlay = true;
+            discRoot.add(mesh);
+            discs.push({ mesh: mesh, node: node, f: f, end: end, kind: id.charAt(0) === 'H' ? 'hole' : 'peg' });
+        });
+    }
+    function clearDiscs() {
+        discs.forEach(function (d) { d.mesh.material.dispose(); discRoot.remove(d.mesh); });
+        discs = [];
+    }
+    (function follow() {
+        requestAnimationFrame(follow);
+        if (!discs.length || !window.KBMate || !KBMate.worldFeature)
+            return;
+        discs.forEach(function (d) {
+            if (!d.node.parent) {
+                d.mesh.visible = false;
+                return;
+            }
+            var w = KBMate.worldFeature({ node: d.node, f: d.f, kind: d.kind, end: d.end });
+            var at = d.end ? w.mouth : w.c;
+            d.mesh.visible = true;
+            d.mesh.position.copy(at).addScaledVector(w.d, d.end * 0.012);
+            d.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), w.d);
+            var r = Math.max(w.r * 1.35, 0.075);
+            d.mesh.scale.set(r, r, 1);
+        });
+    })();
+    function clearAi() {
+        clearDiscs();
+        if (window.KBFocus && KBFocus.forgetArrows)
+            KBFocus.forgetArrows();
+        if (window.KBFocus && KBFocus.pointAt)
+            KBFocus.pointAt(null);
+        Object.keys(marks).slice().forEach(function (id) {
+            var m = marks[id];
+            if (!m.ai)
+                return;
+            m.ai = null;
+            if (window.KBFocus && KBFocus.markArrow)
+                KBFocus.markArrow(m.node, false);
+            apply(m.node);
+        });
+    }
+    function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+    function tokens(s) { return norm(s).split(' ').filter(Boolean); }
+    function findPart(idOrName) {
+        var byId = KB.partById(idOrName);
+        if (byId)
+            return byId;
+        var all = [];
+        KB.objectsRoot.traverse(function (o) { if (KB.isPart(o))
+            all.push(o); });
+        var want = norm(idOrName), exact = null;
+        all.forEach(function (n) { if (!exact && norm(n.name) === want)
+            exact = n; });
+        if (exact)
+            return exact;
+        var wt = tokens(idOrName), best = null;
+        if (!wt.length)
+            return null;
+        all.forEach(function (n) {
+            var nt = tokens(n.name);
+            var all_in = wt.every(function (w) { return nt.indexOf(w) >= 0; });
+            if (!all_in)
+                return;
+            if (!best || n.name.length < best.name.length)
+                best = n;
+        });
+        return best;
+    }
+    function destinationHoles(node) {
+        if (!(window.KBCheck && KBCheck.results))
+            return [];
+        var res = KBCheck.results();
+        if (!res || !res.ready)
+            return [];
+        var mine = null;
+        res.slots.forEach(function (t) { if (!mine && t.part && t.part.node === node)
+            mine = t; });
+        if (!mine) {
+            res.slots.forEach(function (t) { if (!mine && t.ref && t.ref.name === node.name)
+                mine = t; });
+        }
+        if (!mine || !mine.ref || !mine.ref.mates)
+            return [];
+        var out = [];
+        mine.ref.mates.forEach(function (m) {
+            (m.features || []).forEach(function (pair) {
+                var theirs = pair[1];
+                if (!theirs || theirs.charAt(0) !== 'H')
+                    return;
+                var hostSlot = m.slot, hostNode = null;
+                res.slots.forEach(function (t) { if (t.ref === hostSlot && t.part)
+                    hostNode = t.part.node; });
+                if (!hostNode)
+                    return;
+                out.push({ node: hostNode, feature: theirs });
+            });
+        });
+        return out;
+    }
+    function deferFor(node) {
+        if (!(window.KBCheck && KBCheck.level2Base))
+            return null;
+        var b = KBCheck.level2Base(node);
+        if (!b)
+            return null;
+        if (b.isBase)
+            return { isBase: true };
+        if (b.baseName)
+            return { needsFirst: b.baseName };
+        return null;
+    }
+    function set(items, clear) {
+        if (clear)
+            clearAi();
+        var marked = [], notFound = [], deferred = [], pointed = [];
+        (items || []).forEach(function (it) {
+            if (it && it.next && it.point && !it.id) {
+                var w = (window.KBFocus && KBFocus.waitingFor) ? KBFocus.waitingFor() : [];
+                if (!w.length) {
+                    notFound.push('(this step is waiting for nothing)');
+                    return;
+                }
+                if (window.KBFocus.pointAt(w[0])) {
+                    pointed.push(w[0].name);
+                    if (it.arrow === false && KBFocus.markArrow)
+                        KBFocus.markArrow(w[0], false);
+                }
+                else {
+                    notFound.push(w[0].name + ' (the bench would not point at it)');
+                }
+                return;
+            }
+            if (!it)
+                throw new Error('mark needs an entry');
+            if (it.next && !it.id) {
+                var wn = (window.KBFocus && KBFocus.waitingFor) ? KBFocus.waitingFor() : [];
+                if (!wn.length) {
+                    notFound.push('(this step is waiting for nothing)');
+                    return;
+                }
+                it = Object.assign({}, it, { id: wn[0].name });
+            }
+            if (!it.id)
+                throw new Error('mark needs id: ' + JSON.stringify(it));
+            if (!it.point && !it.color)
+                throw new Error('mark needs point or color: ' + JSON.stringify(it));
+            if (it.color === 'point')
+                throw new Error('point is not a colour; send {point:true} with no colour: ' + JSON.stringify(it));
+            var node = findPart(it.id);
+            if (!node) {
+                notFound.push(it.id);
+                return;
+            }
+            if (it.point) {
+                if (!(window.KBFocus && KBFocus.pointAt))
+                    throw new Error('this build has no KBFocus.pointAt');
+                if (KBFocus.pointAt(node))
+                    pointed.push(node.name);
+                else
+                    notFound.push(it.id + ' (not a part this step is waiting for)');
+                return;
+            }
+            if (it.holes) {
+                var dest = destinationHoles(node);
+                if (!dest.length) {
+                    var d = deferFor(node);
+                    if (!d) {
+                        notFound.push(it.id + ' (no destination hole known yet)');
+                        return;
+                    }
+                    d.asked = it.id;
+                    d.name = node.name;
+                    deferred.push(d);
+                    return;
+                }
+                dest.forEach(function (h) { addDisc(h.node, h.feature, it.color); });
+                marked.push({ asked: it.id, id: node.userData.kbId || null, name: node.name,
+                    color: it.color,
+                    holes: dest.map(function (h) { return h.node.name + '/' + h.feature; }) });
+                return;
+            }
+            if (it.feature) {
+                try {
+                    addDisc(node, it.feature, it.color);
+                }
+                catch (e) {
+                    notFound.push(it.id + ' (' + e.message + ')');
+                    return;
+                }
+            }
+            else {
+                slot(node).ai = it.color;
+                apply(node);
+            }
+            if (window.KBFocus && KBFocus.markArrow)
+                KBFocus.markArrow(node, !!it.arrow);
+            marked.push({ asked: it.id, id: node.userData.kbId || null, name: node.name,
+                color: it.color, arrow: !!it.arrow });
+        });
+        return { marked: marked, notFound: notFound, deferred: deferred, pointed: pointed };
+    }
+    window.KBMarks = {
+        set: set,
+        tone: function (name, spec) {
+            if (spec) {
+                TONE[name] = spec;
+                Object.keys(marks).forEach(function (id) { apply(marks[id].node); });
+            }
+            return TONE[name];
+        },
+        find: function (idOrName) { var n = findPart(idOrName); return n ? { id: n.userData.kbId || null, name: n.name } : null; },
+        clear: clearAi,
+        aiOwns: function (node) { var k = marks[node && node.uuid]; return !!(k && k.ai); },
+        auto: function (on) {
+            if (on !== undefined) {
+                ENABLED = !!on;
+                if (!ENABLED) {
+                    Object.keys(marks).slice().forEach(function (id) {
+                        var m = marks[id];
+                        m.base = null;
+                        m.flash = null;
+                        apply(m.node);
+                    });
+                    wasOk = {};
+                }
+                else
+                    syncInstalled();
+            }
+            return ENABLED;
+        },
+        tones: TONE,
+        toneOf: function (node) { var m = node && marks[node.uuid]; var t = m && toneOf(m); return t ? t.color : null; },
+        discs: function () { return discs.length; },
+        state: function (node) { var m = node && marks[node.uuid]; return m ? { base: m.base, flash: !!(m.flash && m.flash > performance.now()), ai: m.ai } : null; }
+    };
+})();
+
+</script>
+<script>
+(function () {
+    'use strict';
     if (!new URLSearchParams(location.search).has('bridge'))
         return;
     var host = window.parent !== window ? window.parent : window.opener;
@@ -20662,6 +21688,8 @@ KBWorkspace.overview();
                 KBTray.arrange(loose);
         }
         KB.loadSceneData({ v: 1, objects: objects }, true);
+        if (window.KBCheck && KBCheck.invalidate)
+            KBCheck.invalidate();
         KB.setSelection([]);
         KB.pushSnapshot();
         KB.resetHistory();
@@ -20669,6 +21697,11 @@ KBWorkspace.overview();
             KBWorkspace.overview();
         if (skipped.length)
             warn('Skipped parts with no known model: ' + skipped.join(', '));
+        if (wantStep !== null) {
+            var step = wantStep;
+            wantStep = null;
+            showStepWhenReady(step, 0, true);
+        }
     }
     function currentScene() {
         var out = [];
@@ -20730,6 +21763,14 @@ KBWorkspace.overview();
         if (!st)
             return null;
         var msg = { type: 'kb:state', state: st };
+        try {
+            msg.state.waiting = (window.KBFocus && KBFocus.waitingFor)
+                ? KBFocus.waitingFor().map(function (n) { return n.name; })
+                : [];
+        }
+        catch (e) {
+            msg.state.waiting = [];
+        }
         if (placedNode) {
             var slot = KBCheck.slotOf(placedNode);
             msg.lastPlace = { objectId: placedNode.userData.kbId, pose: poseOf(placedNode),
@@ -20744,8 +21785,28 @@ KBWorkspace.overview();
         var hit = res && res.steps.filter(function (s) { return s.id === ref; })[0];
         return hit ? hit.i : -1;
     }
+    var wantStep = null;
+    function showStepWhenReady(step, waited, dontRemember) {
+        if (!window.KBAnswer)
+            return;
+        if (!dontRemember)
+            wantStep = step;
+        var res = window.KBCheck && KBCheck.results && KBCheck.results();
+        var i = (res && res.ready) ? stepIndex(step) : -1;
+        if (i >= 0) {
+            KBAnswer.showStep(i);
+            return;
+        }
+        if ((waited || 0) >= 2000) {
+            post({ type: 'kb:warn', message: 'no such step to show: ' + step });
+            return;
+        }
+        setTimeout(function () { showStepWhenReady(step, (waited || 0) + 100, dontRemember); }, 100);
+    }
     KB.on('guide', function (g) { post({ type: 'kb:guide', guide: g || null }); });
     KB.on('pickWarn', function (w) { post({ type: 'kb:pickWarn', pick: w }); });
+    KB.on('sceneSeated', function () { var st = stateMsg(); if (st)
+        post(st); });
     KB.on('tutorialEnd', function (result) {
         if (tutorialSession)
             post({ type: 'kb:tutorialEnd', reason: result.reason, experience: result.experience || null, level: result.level || null });
@@ -20835,10 +21896,10 @@ KBWorkspace.overview();
                     KBAnswer.showNext();
                 break;
             case 'kb:showStep':
-                if (window.KBAnswer)
-                    KBAnswer.showStep(stepIndex(msg.step));
+                showStepWhenReady(msg.step);
                 break;
             case 'kb:hideAnswer':
+                wantStep = null;
                 if (window.KBAnswer)
                     KBAnswer.hide();
                 break;
@@ -20851,7 +21912,26 @@ KBWorkspace.overview();
                     KBWorkspace.look(msg.where === 'tray' ? 'tray' : 'work');
                 break;
             case 'kb:highlight':
-                KB.highlight(KB.partById(msg.id), msg.color || null);
+                if (msg.items || msg.clear) {
+                    if (!window.KBMarks) {
+                        warn('this build has no marks module');
+                        break;
+                    }
+                    try {
+                        var res = KBMarks.set(msg.items || [], !!msg.clear);
+                        post({ type: 'kb:marks', marked: res.marked, notFound: res.notFound,
+                            deferred: res.deferred, pointed: res.pointed });
+                        if (res.notFound.length)
+                            warn('highlight: not in the scene: ' + res.notFound.join(', '));
+                    }
+                    catch (e) {
+                        post({ type: 'kb:marks', marked: [], notFound: ['(refused: ' + e.message + ')'],
+                            deferred: [], pointed: [] });
+                        warn('highlight: ' + e.message);
+                    }
+                }
+                else
+                    KB.highlight(KB.partById(msg.id), msg.color || null);
                 break;
             case 'kb:fuse':
                 KB.fuse(KB.partById(msg.parentId), KB.partById(msg.childId));
@@ -20872,6 +21952,572 @@ KBWorkspace.overview();
             pendingInit = null;
         }
     })();
+})();
+
+</script>
+<script>
+(function () {
+    'use strict';
+    var PANEL_ID = 'kbStepDebug';
+    var STYLE_ID = 'kbStepDebugStyle';
+    var POLL_MS = 250;
+    var MINI = {
+        name: 'mini',
+        present: function () { return !!window.KBMini; },
+        steps: function () {
+            var s = window.KBMini.steps();
+            return (s && s.length) ? s.map(function (st) { return st.name; }) : null;
+        },
+        play: function (i) { return window.KBMini.showStep(i); },
+        current: function () {
+            var st = window.KBMini.status();
+            return st ? st.step : -1;
+        }
+    };
+    var BENCH = {
+        name: 'bench',
+        present: function () { return !!(window.KBAnswer && window.KBCheck); },
+        steps: function () {
+            KBCheck.evaluate();
+            var r = KBCheck.results();
+            if (!r || !r.ready || !r.steps || !r.steps.length)
+                return null;
+            return r.steps.map(function (st) { return st.name; });
+        },
+        play: function (i) { return KBAnswer.showStep(i); },
+        current: function () {
+            var f = KBAnswer.focus();
+            return f ? f.step : -1;
+        }
+    };
+    var api = MINI.present() ? MINI : (BENCH.present() ? BENCH : null);
+    var on = new URLSearchParams(location.search).get('debugSteps') === '1';
+    var names = null;
+    var rows = [];
+    var panel = null;
+    var timer = 0;
+    var lastMark = -2;
+    var CSS = [
+        '#' + PANEL_ID + '-btn{position:fixed;top:66px;right:10px;z-index:9001;',
+        '  padding:5px 10px;background:rgba(20,24,30,.94);color:#dfe4ea;',
+        '  border:1px solid #3b424c;border-radius:6px;cursor:pointer;',
+        '  font:12px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}',
+        '#' + PANEL_ID + '-btn:hover{background:#2a313b}',
+        '#' + PANEL_ID + '-btn.on{background:#e8a33d;color:#1a1e24;border-color:#e8a33d}',
+        '#' + PANEL_ID + '{position:fixed;top:98px;right:10px;z-index:9000;',
+        '  width:232px;max-height:calc(100vh - 112px);display:flex;flex-direction:column;',
+        '  background:rgba(20,24,30,.94);color:#dfe4ea;border:1px solid #3b424c;border-radius:6px;',
+        '  font:12px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;',
+        '  box-shadow:0 6px 24px rgba(0,0,0,.45);overflow:hidden}',
+        '#' + PANEL_ID + ' .kbsd-head{flex:0 0 auto;padding:6px 8px;border-bottom:1px solid #3b424c;',
+        '  color:#9aa4b2;letter-spacing:.04em;text-transform:uppercase;font-size:10px}',
+        '#' + PANEL_ID + ' .kbsd-list{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain}',
+        '#' + PANEL_ID + ' .kbsd-row{display:flex;gap:6px;align-items:baseline;padding:3px 8px;',
+        '  cursor:pointer;border:0;width:100%;background:none;color:inherit;font:inherit;text-align:left}',
+        '#' + PANEL_ID + ' .kbsd-row:hover{background:#2a313b}',
+        '#' + PANEL_ID + ' .kbsd-row.on{background:#e8a33d;color:#1a1e24}',
+        '#' + PANEL_ID + ' .kbsd-n{flex:0 0 22px;text-align:right;opacity:.6}',
+        '#' + PANEL_ID + ' .kbsd-row.on .kbsd-n{opacity:.85}',
+        '#' + PANEL_ID + ' .kbsd-name{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+    ].join('\n');
+    function seatBefore(i) {
+        if (!(window.KBCheck && KBCheck.results && KBCheck.refToWorld))
+            return 0;
+        var res = KBCheck.evaluate();
+        if (!res || !res.ready)
+            return 0;
+        var W = KBCheck.refToWorld(), moved = 0;
+        var free = [];
+        KB.objectsRoot.traverse(function (o) { if (KB.isPart(o))
+            free.push(o); });
+        var taken = {};
+        res.slots.forEach(function (t) { if (t.part)
+            taken[t.part.node.uuid] = true; });
+        res.slots.forEach(function (t) {
+            if (t.ref.step >= i)
+                return;
+            var node = t.part && t.part.node;
+            if (!node) {
+                for (var pass = 0; pass < 2 && !node; pass++) {
+                    for (var k = 0; k < free.length; k++) {
+                        var n = free[k];
+                        if (taken[n.uuid])
+                            continue;
+                        var nk = n.userData.kbType.slice(5);
+                        if (pass === 0 ? nk !== t.ref.key : KBCheck.canon(nk) !== t.ref.ckey)
+                            continue;
+                        node = n;
+                        taken[n.uuid] = true;
+                        break;
+                    }
+                }
+            }
+            if (!node)
+                return;
+            var want = new THREE.Matrix4().multiplyMatrices(W, t.ref.M);
+            var pos = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+            want.decompose(pos, q, sc);
+            if (node.parent !== KB.objectsRoot)
+                KB.objectsRoot.attach(node);
+            node.position.copy(pos);
+            node.quaternion.copy(q);
+            node.updateMatrixWorld(true);
+            KBCheck.markLevelPlaced(node, t.ref);
+            moved += 1;
+        });
+        if (moved) {
+            KB.pushSnapshot();
+            KBCheck.evaluate();
+        }
+        return moved;
+    }
+    function playFrom(i) {
+        if (api.name !== 'bench') {
+            api.play(i);
+            mark(api.current());
+            return;
+        }
+        var moved = seatBefore(i);
+        if (window.KBAnswer && KBAnswer.hide)
+            KBAnswer.hide();
+        if (moved)
+            KB.emit('sceneSeated', null);
+        mark(i);
+    }
+    function makeToggle() {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.id = PANEL_ID + '-btn';
+        b.textContent = 'Steps';
+        b.title = 'Show the step list';
+        b.addEventListener('click', function () {
+            if (panel) {
+                closeList();
+            }
+            else {
+                build();
+            }
+            b.classList.toggle('on', !!panel);
+        });
+        return b;
+    }
+    function closeList() {
+        if (panel && panel.parentNode)
+            panel.parentNode.removeChild(panel);
+        panel = null;
+        rows = [];
+        lastMark = -2;
+    }
+    function ensureStyle() {
+        if (document.getElementById(STYLE_ID))
+            return;
+        var st = document.createElement('style');
+        st.id = STYLE_ID;
+        st.textContent = CSS;
+        document.head.appendChild(st);
+    }
+    function build() {
+        if (panel)
+            return;
+        ensureStyle();
+        panel = document.createElement('div');
+        panel.id = PANEL_ID;
+        var head = document.createElement('div');
+        head.className = 'kbsd-head';
+        head.textContent = names.length + ' steps · ' + api.name;
+        var list = document.createElement('div');
+        list.className = 'kbsd-list';
+        rows = names.map(function (nm, i) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'kbsd-row';
+            b.setAttribute('data-step', String(i));
+            var n = document.createElement('span');
+            n.className = 'kbsd-n';
+            n.textContent = String(i + 1);
+            var t = document.createElement('span');
+            t.className = 'kbsd-name';
+            t.textContent = nm;
+            t.title = nm;
+            b.appendChild(n);
+            b.appendChild(t);
+            b.addEventListener('click', function () { playFrom(i); });
+            list.appendChild(b);
+            return b;
+        });
+        panel.appendChild(head);
+        panel.appendChild(list);
+        document.body.appendChild(panel);
+        lastMark = -2;
+        mark(api.current());
+    }
+    var toggle = null;
+    function ensureToggle() {
+        ensureStyle();
+        if (toggle && toggle.parentNode)
+            return toggle;
+        toggle = makeToggle();
+        document.body.appendChild(toggle);
+        return toggle;
+    }
+    function destroy() {
+        if (toggle && toggle.parentNode)
+            toggle.parentNode.removeChild(toggle);
+        toggle = null;
+        if (panel && panel.parentNode)
+            panel.parentNode.removeChild(panel);
+        var st = document.getElementById(STYLE_ID);
+        if (st && st.parentNode)
+            st.parentNode.removeChild(st);
+        panel = null;
+        rows = [];
+        lastMark = -2;
+    }
+    function mark(i) {
+        if (!panel || i === lastMark)
+            return;
+        lastMark = i;
+        rows.forEach(function (b, k) { b.classList.toggle('on', k === i); });
+        var cur = rows[i];
+        if (cur && cur.scrollIntoView)
+            cur.scrollIntoView({ block: 'nearest' });
+    }
+    function poll() {
+        timer = 0;
+        if (!on || !api)
+            return;
+        if (!names) {
+            var got = null;
+            try {
+                got = api.steps();
+            }
+            catch (e) {
+                got = null;
+            }
+            if (got && got.length)
+                names = got;
+        }
+        if (names) {
+            ensureToggle();
+            if (panel)
+                mark(api.current());
+        }
+        timer = setTimeout(poll, POLL_MS);
+    }
+    function show(v) {
+        on = !!v;
+        if (!api)
+            return false;
+        if (!on) {
+            destroy();
+            if (timer) {
+                clearTimeout(timer);
+                timer = 0;
+            }
+            return false;
+        }
+        if (!timer)
+            poll();
+        return !!panel;
+    }
+    if (on) {
+        if (document.readyState === 'loading')
+            document.addEventListener('DOMContentLoaded', poll);
+        else
+            poll();
+    }
+    window.KBStepDebug = {
+        shown: function () { return !!toggle; },
+        listOpen: function () { return !!panel; },
+        show: show,
+        build: function () { return api ? api.name : null; },
+        steps: function () { return names ? names.slice() : []; },
+        current: function () { return api ? api.current() : -1; },
+        play: function (i) { return api ? playFrom(i) : false; }
+    };
+})();
+
+</script>
+<script>
+(function () {
+    'use strict';
+    var KB = window.KB;
+    var STORE_KEY = 'kb.settings';
+    var GROUPS = [
+        { name: 'Guidance', rows: [
+                { key: 'pointAtL3', type: 'bool', factory: true, levels: 'level 3',
+                    label: 'Level 3 points at the next part by itself',
+                    get: function () { return KBFocus.pointAtL3(); },
+                    set: function (v) { KBFocus.pointAtL3(v); } },
+                { key: 'autoUpTo', type: 'choice', choices: [1, 2, 3], factory: 1, levels: 'levels 1 / 2',
+                    label: 'Fly the camera by itself up to level',
+                    get: function () { return KBFocus.autoUpTo(); },
+                    set: function (v) { KBFocus.autoUpTo(v); } },
+                { key: 'cards', type: 'bool', factory: false, levels: 'every level',
+                    label: 'Suggested-view card, top right',
+                    get: function () { return KBFocus.cards(); },
+                    set: function (v) { KBFocus.cards(v); } },
+                { key: 'stickyFollow', type: 'bool', factory: false, levels: 'every level',
+                    label: 'Follow the camera for good once a view is used',
+                    get: function () { return KBFocus.stickyFollow(); },
+                    set: function (v) { KBFocus.stickyFollow(v); } }
+            ] },
+        { name: 'Words', rows: [
+                { key: 'guideMute', type: 'bool', factory: true, levels: 'every level',
+                    label: "Mute the guide card's messages (keep the step progress)",
+                    get: function () { return KBGuide.mute(); },
+                    set: function (v) { KBGuide.mute(v); } },
+                { key: 'muteToasts', type: 'bool', factory: true, levels: 'every level',
+                    label: 'Mute the floating toasts',
+                    get: function () { return KB.muteToasts(); },
+                    set: function (v) { KB.muteToasts(v); } },
+                { key: 'showErrors', type: 'bool', factory: false, levels: 'every level',
+                    label: 'Error notices in the corner',
+                    get: function () { return KBErrors.shown(); },
+                    set: function (v) { KBErrors.set(v); } }
+            ] },
+        { name: 'Controls', rows: [
+                { key: 'showBar', type: 'bool', factory: false, levels: 'every level',
+                    label: 'The yellow play bar',
+                    get: function () { return KBAnswer.showBar(); },
+                    set: function (v) { KBAnswer.showBar(v); } }
+            ] },
+        { name: 'Interaction', rows: [
+                { key: 'freeInsert', type: 'bool', factory: true, levels: 'level 3',
+                    label: 'Level 3 accepts any hole and never undoes the part',
+                    get: function () { return KBLevel.freeInsert(); },
+                    set: function (v) { KBLevel.freeInsert(v); } }
+            ] },
+        { name: 'Parts tray', rows: [
+                { key: 'trayByStep', type: 'bool', factory: true, levels: 'every level',
+                    label: 'Order the tray by the step that first needs a part',
+                    get: function () { return KBTray.byStep(); },
+                    set: function (v) { KBTray.byStep(v); } }
+            ] },
+        { name: 'Colouring', rows: [
+                { key: 'marksAuto', type: 'bool', factory: true, levels: 'every level',
+                    label: 'Pale yellow on installed parts, pale green on a finished one',
+                    get: function () { return KBMarks.auto(); },
+                    set: function (v) { KBMarks.auto(v); } }
+            ] },
+        { name: 'Debug', rows: [
+                { key: 'stepDebug', type: 'bool', factory: false, levels: 'every level',
+                    label: 'The 46-step panel',
+                    get: function () { return KBStepDebug.shown(); },
+                    set: function (v) { KBStepDebug.show(v); } }
+            ] }
+    ];
+    var ROWS = [];
+    GROUPS.forEach(function (g) { g.rows.forEach(function (r) { ROWS.push(r); }); });
+    function rowFor(key) {
+        for (var i = 0; i < ROWS.length; i++)
+            if (ROWS[i].key === key)
+                return ROWS[i];
+        throw new Error('settings: no switch named ' + key);
+    }
+    function readLive() {
+        var out = {};
+        ROWS.forEach(function (r) { out[r.key] = r.get(); });
+        return out;
+    }
+    function factoryValues() {
+        var out = {};
+        ROWS.forEach(function (r) { out[r.key] = r.factory; });
+        return out;
+    }
+    function readStored() {
+        var raw = null;
+        try {
+            raw = localStorage.getItem(STORE_KEY);
+        }
+        catch (e) {
+            return null;
+        }
+        if (raw === null)
+            return null;
+        var got = JSON.parse(raw);
+        if (!got || typeof got !== 'object')
+            throw new Error('settings: stored value is not an object');
+        Object.keys(got).forEach(function (k) { rowFor(k); });
+        return got;
+    }
+    function writeStored(vals) {
+        var diff = {};
+        ROWS.forEach(function (r) { if (vals[r.key] !== r.factory)
+            diff[r.key] = vals[r.key]; });
+        try {
+            if (Object.keys(diff).length)
+                localStorage.setItem(STORE_KEY, JSON.stringify(diff));
+            else
+                localStorage.removeItem(STORE_KEY);
+        }
+        catch (e) { }
+        return diff;
+    }
+    function applyAll(vals) {
+        ROWS.forEach(function (r) { if (vals[r.key] !== undefined)
+            r.set(vals[r.key]); });
+    }
+    (function boot() {
+        if (!(window.KBFocus && window.KBGuide && window.KBErrors && window.KBAnswer &&
+            window.KBLevel && window.KBTray && window.KBMarks && window.KBStepDebug)) {
+            setTimeout(boot, 100);
+            return;
+        }
+        var stored = readStored();
+        if (stored)
+            applyAll(stored);
+    })();
+    var pending = null, panel = null, btn = null;
+    var CSS = {
+        panel: 'position:fixed;top:44px;right:12px;z-index:60;width:330px;max-height:calc(100vh - 70px);' +
+            'overflow:auto;background:#1b1f27;color:#e6e9ef;border:1px solid #39404d;border-radius:8px;' +
+            'box-shadow:0 10px 30px rgba(0,0,0,.45);font:12px/1.45 system-ui,sans-serif;padding:10px 12px',
+        group: 'margin:8px 0 2px;font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8d97a8',
+        row: 'display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-top:1px solid #272d38',
+        text: 'flex:1;min-width:0',
+        levels: 'color:#8d97a8;font-size:11px',
+        ctrl: 'flex:0 0 auto;background:#2a313c;color:#e6e9ef;border:1px solid #454e5d;border-radius:4px;' +
+            'padding:2px 8px;cursor:pointer;font:inherit;min-width:54px;text-align:center',
+        foot: 'display:flex;gap:8px;justify-content:flex-end;margin-top:10px;padding-top:9px;border-top:1px solid #272d38',
+        note: 'color:#8d97a8;font-size:11px;margin:0 0 6px'
+    };
+    function render() {
+        panel.textContent = '';
+        var note = document.createElement('p');
+        note.style.cssText = CSS.note;
+        note.textContent = 'Nothing changes on the bench until you press Save. Save is also the way out.';
+        panel.appendChild(note);
+        GROUPS.forEach(function (g) {
+            var h = document.createElement('div');
+            h.style.cssText = CSS.group;
+            h.textContent = g.name;
+            panel.appendChild(h);
+            g.rows.forEach(function (r) {
+                var row = document.createElement('div');
+                row.style.cssText = CSS.row;
+                row.setAttribute('data-kb-setting', r.key);
+                var text = document.createElement('div');
+                text.style.cssText = CSS.text;
+                var lbl = document.createElement('div');
+                lbl.textContent = r.label;
+                var lv = document.createElement('div');
+                lv.style.cssText = CSS.levels;
+                lv.textContent = r.levels;
+                text.appendChild(lbl);
+                text.appendChild(lv);
+                var ctrl = document.createElement('button');
+                ctrl.type = 'button';
+                ctrl.style.cssText = CSS.ctrl;
+                ctrl.setAttribute('data-kb-toggle', r.key);
+                ctrl.textContent = r.type === 'bool' ? (pending[r.key] ? 'on' : 'off') : String(pending[r.key]);
+                ctrl.addEventListener('click', function () {
+                    if (r.type === 'bool')
+                        pending[r.key] = !pending[r.key];
+                    else {
+                        var i = r.choices.indexOf(pending[r.key]);
+                        pending[r.key] = r.choices[(i + 1) % r.choices.length];
+                    }
+                    render();
+                });
+                row.appendChild(text);
+                row.appendChild(ctrl);
+                panel.appendChild(row);
+            });
+        });
+        var foot = document.createElement('div');
+        foot.style.cssText = CSS.foot;
+        var def = document.createElement('button');
+        def.type = 'button';
+        def.style.cssText = CSS.ctrl;
+        def.id = 'kbSettingsDefault';
+        def.textContent = 'Default';
+        def.title = 'Put the factory values in this form. Nothing is applied or saved until Save.';
+        def.addEventListener('click', function () { pending = factoryValues(); render(); });
+        var save = document.createElement('button');
+        save.type = 'button';
+        save.style.cssText = CSS.ctrl;
+        save.id = 'kbSettingsSave';
+        save.textContent = 'Save';
+        save.addEventListener('click', save_);
+        foot.appendChild(def);
+        foot.appendChild(save);
+        panel.appendChild(foot);
+    }
+    function open() {
+        if (panel)
+            return;
+        pending = readLive();
+        panel = document.createElement('div');
+        panel.id = 'kbSettingsPanel';
+        panel.style.cssText = CSS.panel;
+        document.body.appendChild(panel);
+        render();
+    }
+    function save_() {
+        if (!panel)
+            throw new Error('settings: save with no panel open');
+        applyAll(pending);
+        writeStored(pending);
+        close();
+    }
+    function close() {
+        if (panel) {
+            panel.remove();
+            panel = null;
+        }
+        pending = null;
+    }
+    function makeButton() {
+        var host = document.querySelector('header');
+        if (!host)
+            throw new Error('settings: no toolbar to put the gear in');
+        var b = document.createElement('button');
+        b.id = 'btnSettings';
+        b.className = 'tool';
+        b.type = 'button';
+        b.title = 'Settings: the twelve switches, as a form you Save';
+        b.innerHTML = '<svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
+            'stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="2.6"/>' +
+            '<path d="M10 2.6v2M10 15.4v2M2.6 10h2M15.4 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4' +
+            'M15.3 4.7l-1.4 1.4M6.1 13.9l-1.4 1.4"/></svg><span class="lbl">Settings</span>';
+        b.addEventListener('click', function () { if (!panel)
+            open(); });
+        host.appendChild(b);
+        return b;
+    }
+    function gear(on) {
+        if (on && !btn)
+            btn = makeButton();
+        else if (!on && btn) {
+            close();
+            btn.remove();
+            btn = null;
+        }
+        return !!btn;
+    }
+    if (new URLSearchParams(location.search).get('settings') !== '0') {
+        if (document.querySelector('header'))
+            gear(true);
+        else
+            document.addEventListener('DOMContentLoaded', function () { gear(true); });
+    }
+    KB.settings = function (on) { if (on !== undefined)
+        gear(!!on); return !!btn; };
+    window.KBSettings = {
+        live: readLive,
+        pending: function () { return pending ? JSON.parse(JSON.stringify(pending)) : null; },
+        stored: readStored,
+        factory: factoryValues,
+        keys: function () { return ROWS.map(function (r) { return r.key; }); },
+        groups: function () {
+            return GROUPS.map(function (g) {
+                return { name: g.name, keys: g.rows.map(function (r) { return r.key; }) };
+            });
+        },
+        open: open, save: save_, isOpen: function () { return !!panel; },
+        gear: gear, storeKey: STORE_KEY
+    };
 })();
 
 </script>
