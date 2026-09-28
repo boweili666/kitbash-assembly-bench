@@ -18,6 +18,12 @@
  *     {type:'kb:look', where:'work'|'tray'|'ghost'} 镜头飞到装配区 / 物料区 / 当前虚影
  *                                                  在用户当前结构上循环演示下一步 / 某一步的虚影
  *     {type:'kb:highlight', id, color|null}        高亮某个零件(琥珀色等),null 取消
+ *     {type:'kb:highlight', items:[{id, color, feature?, holes?}], clear?}
+ *                                                  AI 指点着色:color 'red'(你弄错的)/ 'green'(你该做的);
+ *                                                  给了 feature(H3 / P1)就标那个孔口的圆片, 不给就标零件本体;
+ *                                                  holes:true = 标"这颗零件该进的那个孔", 孔号由台子按参考装配
+ *                                                  自己解析(宿主猜不出来: 步骤描述的孔号和台子的 feature id 不一致);
+ *                                                  clear:true 先清掉全部 AI 标记(台子自带的淡黄自动回来)
  *     {type:'kb:fuse', parentId, childId} / {type:'kb:unfuse', childId}
  *                                                  两件从此一体移动(步骤判定完成后由宿主调用)
  *   仿真台 → 宿主
@@ -25,12 +31,18 @@
  *     {type:'kb:grab' | 'kb:move' | 'kb:place', id, name, key, pose}
  *     Automatic frame capture is disabled; no kb:frame events are emitted.
  *     {type:'kb:scene', parts:[{id, name, key, pose}]}
- *     {type:'kb:state', state, lastPlace?}         每次放下后的装配状态(见 check.js state()):
+ *     {type:'kb:state', state, lastPlace?}         装配状态(见 check.js state()): 每次放下之后, 以及
+ *                                                  Steps 列表整批摆件(跳步)之后 —— 后者没有 lastPlace,
+ *                                                  因为没有哪一件是刚放下的。
  *                                                  steps[{id,index,name,state:complete|available|premature|blocked,progress,requires}]
  *                                                  parts[{id,name,step,placed,ok,by}] issues[{severity,message,objectId,step}] next score
+ *                                                  waiting[<零件名>] 这一步还在等哪几件(就是屏幕上的阴影), 第一个是下一件
  *     {type:'kb:guide', guide|null}                Next 引导卡片的内容:{step,name,state,status,
  *                                                  message,ok,total,settled,steps,parts[{name,key,ok,state}]}
  *     {type:'kb:pickWarn', pick}                  拿了这一步用不到的零件:{objectId,name,key,step,stepName,belongsToStep,message}
+ *     {type:'kb:marks', marked:[{asked,id,name,color}], notFound:[...]}
+ *                                                  kb:highlight 的结果:哪些标上了(asked 是宿主给的名字/id),
+ *                                                  哪些在台面上根本不存在(比如工具)
  *     {type:'kb:handleClick', objectId, handleId, end}
  *                                                  点了某个零件上的孔 / 销(handle):选源、点目标都算。
  *                                                  handleId 是 H1 / P1 这类特征号;end:孔的哪个孔口(1 / -1),销是 0
@@ -107,11 +119,28 @@
       if (loose.length) KBTray.arrange(loose);
     }
     KB.loadSceneData({ v: 1, objects: objects }, true);
+    // 上一个场面的判定到此为止。不说这一句, 判定会连同"哪几步已经装好"
+    // 一起留到新场景上。
+    if (window.KBCheck && KBCheck.invalidate) KBCheck.invalidate();
     KB.setSelection([]);
     KB.pushSnapshot();
     KB.resetHistory();
     if (window.KBWorkspace) KBWorkspace.overview();
     if (skipped.length) warn('Skipped parts with no known model: ' + skipped.join(', '));
+    // A scene replaces every object, so a demonstration started before it
+    // arrived is now pointing at parts that no longer exist -- and the camera
+    // has just been sent back to the overview. Hosts do ask in that order:
+    // they send the scene and the step together, on the same handshake.
+    // Put the demonstration back rather than leaving a still picture.
+    //
+    // Once, though: the request is consumed here. Leaving it set meant every
+    // later scene replayed it, and the pane assembled the same step over and
+    // over because each replay ends by handing the kit back.
+    if (wantStep !== null) {
+      var step = wantStep;
+      wantStep = null;
+      showStepWhenReady(step, 0, true);
+    }
   }
 
   function currentScene() {
@@ -173,6 +202,16 @@
     var st = res && res.ready ? KBCheck.state() : null;
     if (!st) return null;
     var msg = { type: 'kb:state', state: st };
+    // 台子已经算出这一步在等哪几件 —— 就是屏幕上那个阴影。把它直接报上去,
+    // 宿主(和 tutor)就不必再从 parts + next 自己推一遍: 那个再推一遍的版本
+    // 靠的是两边 step id 同一个命名空间, 一旦不同就静默返回空, 于是 tutor
+    // 手里没有清单, 只好自己编一个零件名, 再回头让台子去找它不要的那一件。
+    // 顺序是台子自己的顺序, 第一个就是下一件。
+    try {
+      msg.state.waiting = (window.KBFocus && KBFocus.waitingFor)
+        ? KBFocus.waitingFor().map(function (n) { return n.name; })
+        : [];
+    } catch (e) { msg.state.waiting = []; }
     if (placedNode) {
       var slot = KBCheck.slotOf(placedNode);
       msg.lastPlace = { objectId: placedNode.userData.kbId, pose: poseOf(placedNode),
@@ -187,11 +226,34 @@
     return hit ? hit.i : -1;
   }
 
+  /* 宿主往往在 kb:ready 之后立刻要求演示某一步, 但 ready 说的是"零件库装好了",
+     场景是随后 kb:init 才进来的 —— 那一刻 Checks 还没有步骤表, 步骤 id 查不到,
+     showStep 收到 -1, 什么也不播。等它算出来再播, 最多等两秒。 */
+  var wantStep = null;      // 最近一次被要求演示的步骤(场景换了之后要补播)
+
+  function showStepWhenReady(step, waited, dontRemember) {
+    if (!window.KBAnswer) return;
+    if (!dontRemember) wantStep = step;
+    var res = window.KBCheck && KBCheck.results && KBCheck.results();
+    var i = (res && res.ready) ? stepIndex(step) : -1;
+    if (i >= 0) { KBAnswer.showStep(i); return; }
+    if ((waited || 0) >= 2000) {
+      post({ type: 'kb:warn', message: 'no such step to show: ' + step });
+      return;
+    }
+    setTimeout(function () { showStepWhenReady(step, (waited || 0) + 100, dontRemember); }, 100);
+  }
+
   /* ---------- 宿主消息 ---------- */
   // 引导卡片的文字(Next 给出的那几句)原样转给宿主 —— 调试页面和 ARISTOS 都能用
   KB.on('guide', function (g) { post({ type: 'kb:guide', guide: g || null }); });
   // 学员拿了这一步用不到的零件 —— 只是提醒,没拦着
   KB.on('pickWarn', function (w) { post({ type: 'kb:pickWarn', pick: w }); });
+  // 场面被整批摆过了(Steps 列表跳步: 直接写位姿把前 i 步摆好, 不走放件那条路)。
+  // 没有 placedNode —— 没有哪一件是"刚放下的", 报的是整个场面现在是什么样。
+  // 这一条不加, 跳步之后 kb:state 一条都不出, 宿主的任务图和 tutor 就停在
+  // 跳之前(见 stepdebug.js 的 playFrom)。
+  KB.on('sceneSeated', function () { var st = stateMsg(); if (st) post(st); });
 
   KB.on('tutorialEnd', function (result) {
     if (tutorialSession) post({ type: 'kb:tutorialEnd', reason: result.reason, experience: result.experience || null, level: result.level || null });
@@ -254,13 +316,35 @@
       case 'kb:startFrames': startFrames(); break;
       case 'kb:getState': { var st = stateMsg(); if (st) post(st); break; }
       case 'kb:showNext': if (window.KBAnswer) KBAnswer.showNext(); break;
-      case 'kb:showStep': if (window.KBAnswer) KBAnswer.showStep(stepIndex(msg.step)); break;
-      case 'kb:hideAnswer': if (window.KBAnswer) KBAnswer.hide(); break;
+      case 'kb:showStep': showStepWhenReady(msg.step); break;
+      case 'kb:hideAnswer': wantStep = null; if (window.KBAnswer) KBAnswer.hide(); break;
       case 'kb:look':
         if (msg.where === 'ghost') { if (window.KBAnswer) KBAnswer.frameGhost(); }
         else if (window.KBWorkspace) KBWorkspace.look(msg.where === 'tray' ? 'tray' : 'work');
         break;
-      case 'kb:highlight': KB.highlight(KB.partById(msg.id), msg.color || null); break;
+      case 'kb:highlight':
+        // 新形式: items 里可以点名零件本体, 也可以带 feature 标某个孔; clear 清掉全部 AI 标记。
+        // 旧形式 {id, color} 原样保留 —— 宿主现有的调用一行都不用改
+        if (msg.items || msg.clear) {
+          if (!window.KBMarks) { warn('this build has no marks module'); break; }
+          try {
+            var res = KBMarks.set(msg.items || [], !!msg.clear);
+            // 点名了台子上没有的东西不静默吞掉:报回宿主,tutor 才知道自己说错了。
+            // deferred:要标的孔还画不出来(宿主件没上桌),台子改回"先装哪一件";
+            // pointed:临时指出来的那一件(学员问了才有)
+            post({ type: 'kb:marks', marked: res.marked, notFound: res.notFound,
+                   deferred: res.deferred, pointed: res.pointed });
+            if (res.notFound.length) warn('highlight: not in the scene: ' + res.notFound.join(', '));
+          } catch (e) {
+            // 抛了也要回一份 kb:marks。宿主是在**等回执**的: 只发一条 warn,
+            // 它就一直等到超时(实测 8 秒), 而这 8 秒里 tutor 什么都说不了。
+            // 畸形条目是我们自己的 bug, 该当场说清楚, 不该拖成一次静默的卡顿。
+            post({ type: 'kb:marks', marked: [], notFound: ['(refused: ' + e.message + ')'],
+                   deferred: [], pointed: [] });
+            warn('highlight: ' + e.message);
+          }
+        } else KB.highlight(KB.partById(msg.id), msg.color || null);
+        break;
       case 'kb:fuse': KB.fuse(KB.partById(msg.parentId), KB.partById(msg.childId)); break;
       case 'kb:unfuse': KB.unfuse(KB.partById(msg.childId)); break;
     }
