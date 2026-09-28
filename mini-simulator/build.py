@@ -24,12 +24,38 @@ import shutil
 import subprocess
 
 root = pathlib.Path(__file__).parent
-BENCH = (root.parent / "feature-simulator-bowei" / "handle-callbacks").resolve()
+
+
+def _find_bench() -> pathlib.Path:
+    """Where the bench is, whose vendor/ and assets/ this build reads.
+
+    Three layouts, in order of authority:
+      KB_BENCH=...            said explicitly
+      root.parent             this directory lives inside the bench repo
+                              (wenhel/simulator, where mini-simulator/ is a
+                              subdirectory)
+      ../feature-simulator-bowei/handle-callbacks
+                              the moonshot monorepo, where the two sat side
+                              by side -- how this was built before the code
+                              moved into its own branch
+
+    A directory counts as the bench when it has vendor/, which is what read()
+    falls through to."""
+    said = os.environ.get("KB_BENCH")
+    cands = [pathlib.Path(said)] if said else []
+    cands += [root.parent,
+              root.parent / "feature-simulator-bowei" / "handle-callbacks"]
+    for c in cands:
+        if (c / "vendor").is_dir():
+            return c.resolve()
+    raise SystemExit("bench not found -- looked in "
+                     + ", ".join(str(c) for c in cands)
+                     + "\nset KB_BENCH to the directory holding vendor/")
+
+
+BENCH = _find_bench()
 dist = root / "dist"
 dist.mkdir(exist_ok=True)
-
-if not BENCH.exists():
-    raise SystemExit(f"bench not found at {BENCH}")
 
 html = (root / "index.html").read_text(encoding="utf-8")
 
@@ -44,7 +70,10 @@ def read(rel: str) -> str:
 def _node_path() -> str:
     """typescript 可能装在哪儿(给注释剥离器用)。"""
     cands = [os.environ.get("KB_NODE_PATH", ""),
-             str(BENCH.parents[2] / "gin-dev-latest" / "external" / "aristos_frontend" / "node_modules")]
+             # the monorepo layout, kept as a fallback for builds run there
+             str(BENCH.parents[2] / "gin-dev-latest" / "external"
+                 / "aristos_frontend" / "node_modules")
+             if len(BENCH.parents) > 2 else ""]
     try:
         cands.append(subprocess.check_output(["npm", "root", "-g"], text=True,
                                              stderr=subprocess.DEVNULL).strip())
