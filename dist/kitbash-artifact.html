@@ -1502,7 +1502,7 @@ body[data-level="3"] #hints .lv1only, body[data-level="3"] #hints .lv2only { dis
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-27 22:53';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-09-28 01:55';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -17908,20 +17908,21 @@ KBWorkspace.overview();
                 pairSeen[pk] = 1;
                 var hostNode = t.err.ms.part ? t.err.ms.part.node : null;
                 var feats = t.err.m.features || null;
+                var whose = (t.part && t.part.node && t.part.node.name) || t.ref.name;
                 if (e.reversed) {
                     issues.push({ severity: 'error', kind: 'hole', node: t.part.node, slot: t.ref,
                         host: hostNode, features: feats,
-                        msg: t.ref.name + ' is inserted backwards into ' + mate.name + ' — the head faces the wrong way' });
+                        msg: whose + ' is inserted backwards into ' + mate.name + ' — the head faces the wrong way' });
                 }
                 else if (e.d >= POS_TOL) {
                     issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref, want: e.want,
                         host: hostNode, features: feats,
-                        msg: t.ref.name + ' is ' + mm(e.d) + ' mm off its place on ' + mate.name + which(t.part.node, e.want) });
+                        msg: whose + ' is ' + mm(e.d) + ' mm off its place on ' + mate.name + which(t.part.node, e.want) });
                 }
                 else {
                     issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref,
                         host: hostNode, features: feats,
-                        msg: t.ref.name + ' is tilted ' + e.ang.toFixed(0) + '° on ' + mate.name });
+                        msg: whose + ' is tilted ' + e.ang.toFixed(0) + '° on ' + mate.name });
                 }
                 return;
             }
@@ -18188,6 +18189,7 @@ KBWorkspace.overview();
             issues: results.issues.map(function (i) {
                 return { severity: i.severity, kind: i.kind || 'hole', message: i.msg,
                     objectId: (i.node && i.node.userData.kbId) || null,
+                    inWorkspace: i.node ? KBWorkspace.contains(i.node) : null,
                     hostId: (i.host && i.host.userData.kbId) || null,
                     features: i.features || null,
                     step: i.step ? i.step.id : (i.slot ? stepId(i.slot.step) : null) };

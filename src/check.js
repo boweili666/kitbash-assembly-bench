@@ -562,18 +562,25 @@
         // 接收件与期望的特征配对:宿主要据此标出"正确的孔"(bridge 的 kb:highlight feature)
         var hostNode = t.err.ms.part ? t.err.ms.part.node : null;
         var feats = t.err.m.features || null;
+        // Name the part that is ACTUALLY there, not the slot it was matched to.
+        // Slots are matched by geometry among parts of the same type, so a part
+        // nudged a few millimetres can be claimed by its twin's slot -- and the
+        // sentence then tells the trainee to move a part they never touched
+        // ("raise the Right Arm Wedge" about the left one). The slot's name is
+        // still right for the place; only the thing being moved is the object.
+        var whose = (t.part && t.part.node && t.part.node.name) || t.ref.name;
         if (e.reversed) {
           issues.push({ severity: 'error', kind: 'hole', node: t.part.node, slot: t.ref,
             host: hostNode, features: feats,
-            msg: t.ref.name + ' is inserted backwards into ' + mate.name + ' — the head faces the wrong way' });
+            msg: whose + ' is inserted backwards into ' + mate.name + ' — the head faces the wrong way' });
         } else if (e.d >= POS_TOL) {
           issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref, want: e.want,
             host: hostNode, features: feats,
-            msg: t.ref.name + ' is ' + mm(e.d) + ' mm off its place on ' + mate.name + which(t.part.node, e.want) });
+            msg: whose + ' is ' + mm(e.d) + ' mm off its place on ' + mate.name + which(t.part.node, e.want) });
         } else {
           issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref,
             host: hostNode, features: feats,
-            msg: t.ref.name + ' is tilted ' + e.ang.toFixed(0) + '° on ' + mate.name });
+            msg: whose + ' is tilted ' + e.ang.toFixed(0) + '° on ' + mate.name });
         }
         return;
       }
@@ -841,6 +848,9 @@
         // it up in the build. Without kind the host can only guess.
         return { severity: i.severity, kind: i.kind || 'hole', message: i.msg,
           objectId: (i.node && i.node.userData.kbId) || null,
+          // 零件在装配区里吗。severity 分不出"还没搬进来"和"搬进来了但没装上",
+          // 两者都是 hint,可前者不该被标错、后者该被标错。这一位就是那个区别。
+          inWorkspace: i.node ? KBWorkspace.contains(i.node) : null,
           // 接收件和期望的特征配对:没有这两个, "装错孔了"只能说出哪件错, 说不出哪个孔
           hostId: (i.host && i.host.userData.kbId) || null,
           features: i.features || null,
