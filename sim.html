@@ -1534,7 +1534,7 @@ body.demo-mode #debugSteps { display: none !important; }
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-09-25 22:51';  /* build.py 会把它换成构建时间 */</script>
+<script>window.KB_BUILD = '2026-10-05 15:26';  /* build.py 会把它换成构建时间 */</script>
 <script>
 /**
  * @license
@@ -15164,6 +15164,33 @@ KBWorkspace.overview();
       }
       if (off > 0) center.addScaledVector(b.tip, off);
     }
+    if (a.kind === 'peg' && b.kind === 'hole' && window.KBCollide) {
+      // The peg sticks out of a part it already goes through (wedge + screw into the X-Lock): that carrying
+      // part stops at the receiving part's face, so back out along the hole until nothing else collides.
+      // A lone screw has no carrier and stays fully seated.
+      var carriers = partsUnder(top, []).filter(function (n) { return n !== a.owner; });
+      if (carriers.length) {
+        var against = partsUnder(topOf(dst.node), []);
+        var tolP = 0.5 * (KBParts.unitScale() / 1000);
+        var free = function () {
+          for (var i = 0; i < carriers.length; i++) {
+            var boxC = new THREE.Box3().expandByObject(carriers[i]);
+            for (var j = 0; j < against.length; j++) {
+              if (!boxC.intersectsBox(new THREE.Box3().expandByObject(against[j]))) continue;
+              if (KBCollide.penetration(carriers[i], against[j]) > tolP) return false;
+            }
+          }
+          return true;
+        };
+        var stepP = 0.5 * (KBParts.unitScale() / 1000), back = 0;
+        while (!free() && back < a.depth) {
+          back = Math.min(a.depth, back + stepP);
+          top.position.copy(p0); top.quaternion.copy(q0); top.updateMatrixWorld(true);
+          applyWorld(top, q, deltaTo(center.clone().addScaledVector(side, back)));
+        }
+        if (back > 0) center.addScaledVector(side, back);
+      }
+    }
     if (window.KBWorkspace && !KBWorkspace.contains(top)) {
       top.position.copy(p0); top.quaternion.copy(q0); top.updateMatrixWorld(true);
       report(a, b, false, 'assembly would cross workspace boundary');
@@ -17210,6 +17237,9 @@ KBWorkspace.overview();
         var e = t.err.e, mate = t.err.m.slot;
         var pk = Math.min(t.ref.i, mate.i) + '|' + Math.max(t.ref.i, mate.i);
         if (pairSeen[pk]) return;
+        // a part that was never connected and lies well away from its place is simply not placed yet
+        // (Level 3 brings parts into the workspace first) - "backwards" / "off" only for parts actually on it
+        if (e.d >= NEAR && !wasMated(t.part.node) && !levelPlaced[t.part.node.uuid]) return;
         pairSeen[pk] = 1;
         if (e.reversed) {
           issues.push({ severity: 'error', kind: 'hole', node: t.part.node, slot: t.ref,
@@ -17290,8 +17320,8 @@ KBWorkspace.overview();
         // 装配区外的零件只有一种说法:"你按答案装好了,但装在区外"。
         // 其余(装反 / 插错孔 / 差几毫米)一律不对区外的零件下结论 ——
         // 料盘里螺丝和立柱本来就一排排挨着、方向相反,照着几何去套必然误判
-        if (misplaced.outside && !isOk(me) && !wasMated(misplaced.u.node)) {
-          /* 躺在料盘里、从没被配过的零件:不作声 */
+        if (!isOk(me) && !wasMated(misplaced.u.node) && (misplaced.outside || misplaced.d >= NEAR)) {
+          /* never connected, and in the tray or still well away from it: just lying there, say nothing */
         } else if (misplaced.outside && isOk(me)) {
           // 真的按答案配好了、只是整组还在装配区外 —— 让人搬进去
           keepClosest(misplaced.u.node, misplaced.d,
@@ -18103,7 +18133,7 @@ KBWorkspace.overview();
     var all = ((spec && spec.holes) || []).concat((spec && spec.pegs) || []);
     return all.filter(function (f) { return f.id === id; })[0] || null;
   }
-  function levelMateTarget(srcNode, srcId, dstNode, dstId) {
+  function levelMateTarget(srcNode, srcId, dstNode, dstId, dstEnd) {   // dstEnd: the clicked mouth of the hole (1 / -1), optional
     evaluate();
     if (!results || !results.ready) return { reason: 'Parts are still loading' };
     var sKey = srcNode.userData.kbType.slice(5), dKey = dstNode.userData.kbType.slice(5);
@@ -18116,8 +18146,13 @@ KBWorkspace.overview();
     var sMine = slotForNode(srcNode), dMine = slotForNode(dstNode);
     // 同型号还没装好的位置都算候选(包括检查暂时把这个零件归过去的那个)。只看"归过去的那个"的话,
     // 对称的板子会把别的孔位映射到点的孔上:零件装对了孔,却被记成另一颗螺丝,随后报"插错孔"
-    var srcSlots = sMine && sMine.ok && staged[srcNode.uuid] ? [sMine] : sMine && sMine.ok ? [] : results.slots.filter(function (t) {
-      return t.ref.ckey === canon(sKey) && !t.ok && (!t.part || t.part.node === srcNode);
+    // pre-built groups of an assembly step that isn't done yet are interchangeable (the two wedge + screw groups
+    // go on either side of the X-Lock): their positions stay candidates even while held by the twin part
+    var openGroup = function (t) {
+      return results.steps.some(function (x) { return x.assembly && x.state !== 'complete' && x.assembly.groups.some(function (g) { return g.indexOf(t.ref.id) >= 0; }); });
+    };
+    var srcSlots = sMine && sMine.ok && staged[srcNode.uuid] && !(window.KBLevel && KBLevel.get() === 3) ? [sMine] : sMine && sMine.ok && !openGroup(sMine) ? [] : results.slots.filter(function (t) {
+      return t.ref.ckey === canon(sKey) && (!t.ok || openGroup(t)) && (!t.part || t.part.node === srcNode || openGroup(t));
     });
     var dstSlots = dMine ? [dMine] : results.slots.filter(function (t) { return t.ref.ckey === canon(dKey); });
     var paired = false, best = null, open = openSteps(), nxt = next(), curStep = nxt ? nxt.i : -1;
@@ -18134,10 +18169,18 @@ KBWorkspace.overview();
           if (Math.abs(aS.dot(aD)) < Math.cos(THREE.MathUtils.degToRad(20))) return;
           var off = cS.clone().sub(cD);
           var radial = off.clone().sub(aD.clone().multiplyScalar(off.dot(aD))).length();
+          // a peg into a hole clicked at one mouth goes in from that side: prefer the position whose tip points
+          // into that mouth (two wedge screws share the X-Lock's cross hole, one from each side)
+          var side = 0;
+          if (dstEnd && String(srcId).charAt(0) === 'P' && String(dstId).charAt(0) === 'H') {
+            var bb = KBParts.spec(sKey).bbox, body = new THREE.Vector3((bb.min[0] + bb.max[0]) / 2, (bb.min[1] + bb.max[1]) / 2, (bb.min[2] + bb.max[2]) / 2).applyMatrix4(want);
+            var tipS = aS.clone().multiplyScalar(cS.clone().sub(body).dot(aS) < 0 ? -1 : 1);
+            if (tipS.dot(aD) * dstEnd > 0) side = 0.5;
+          }
           // 先看是不是现在这一步的位置(绝对优先),再看能不能做、贴合多少、要不要经过对称映射。
           // 只按贴合比:采来的位姿有一两毫米误差,对称那一侧的别的零件位置可能"更贴",
           // 零件装对了孔却被记成另一个编号,后面的步骤全乱
-          var score = (s.ref.step === curStep ? 0 : open[s.ref.step] ? 1 : 2) + radial + (si ? 0.01 : 0);
+          var score = (s.ref.step === curStep ? 0 : open[s.ref.step] ? 1 : 2) + side + radial + (si ? 0.01 : 0);
           if (radial > hitTol) return;                     // 孔位偏 3 mm 以上:不是这个孔,不参与挑选
           if (!best || score < best.score) best = { s: s, want: want, radial: radial, score: score };
         });
@@ -18318,13 +18361,13 @@ KBWorkspace.overview();
   /* ---------- 用户真的配上去过的零件 ----------
      料盘里的零件从没被配过,拿这个当门槛,装配区外也能放心判错,
      不会再把托盘里挨着摆的螺丝和立柱说成"装反了" */
-  var userMated = Object.create(null);
+  var userMated = Object.create(null), lastMated = [];
   KB.on('snapAttempt', function (a) {
     if (!a || !a.success) return;
+    lastMated = [];                       // what this connection newly marked, so an undo can take it back
     [a.object1, a.object2].forEach(function (n) {
       var top = n && (KB.topOf ? KB.topOf(n) : n);
-      if (top && top.uuid) userMated[top.uuid] = true;
-      if (n && n.uuid) userMated[n.uuid] = true;
+      [top, n].forEach(function (x) { if (x && x.uuid && !userMated[x.uuid]) { userMated[x.uuid] = true; lastMated.push(x.uuid); } });
     });
   });
   function wasMated(node) {
@@ -18391,6 +18434,8 @@ KBWorkspace.overview();
 
   window.KBCheck = {
     groupReadySteps: groupReadySteps,
+    // Level 3 undid the last connection: those parts count as never connected again
+    forgetLastMate: function () { lastMated.forEach(function (u) { delete userMated[u]; }); lastMated = []; },
     evaluate: function () { evaluate(); return results; },
     diagnose: diagnose,
     /* 落位吸附开关:放下时离正确位置 10 mm / 25° 以内就吸到参考位姿 */
@@ -18736,15 +18781,19 @@ KBWorkspace.overview();
      放行的,配合完再看一眼:这个零件报了错(比如装反了)-> 退回原位,错误挂在指引卡片上(红) */
   var pendingCheck = null;
   function guard3(src, dst) {
-    var r = KBCheck.levelMateTarget(src.node, src.id, dst.node, dst.id);
+    var r = KBCheck.levelMateTarget(src.node, src.id, dst.node, dst.id, dst.end), rNode = src.node, rId = src.id, rMoves = true;
     if (r.reason) {
-      var back = KBCheck.levelMateTarget(dst.node, dst.id, src.node, src.id);
+      var back = KBCheck.levelMateTarget(dst.node, dst.id, src.node, src.id, src.end);
       if (back.reason) { KBCheck.noteHole(src.node, r.reason); return r.reason; }
-      r = back;
+      r = back; rNode = dst.node; rId = dst.id; rMoves = false;
     }
     var nx = KBCheck.next();
     if (nx && r.slot) {
       var inStep = nx.slots.some(function (t) { return t.ref === r.slot; }) || (nx.base && nx.base.ref === r.slot) || r.slot.step === nx.i;
+      // identical parts in sibling steps (the 4 X-Lock screws, steps A-D): any of their holes is fine,
+      // as long as that step can be done now - only a step that has to wait is "not yet"
+      var res = KBCheck.results(), other = res && res.steps && res.steps[r.slot.step];
+      if (!inStep && other && other.state === 'available') inStep = true;
       if (!inStep) {
         var msg = 'Not yet \u2014 this step is \u201c' + nx.name + '\u201d. ' + (r.slot.name || 'That part') + ' comes later.';
         KBCheck.noteHole(src.node, msg);
@@ -18753,8 +18802,36 @@ KBWorkspace.overview();
     }
     KBCheck.noteHole(null);                 // 这一下点对了:之前点错留下的那条先清掉,不然配合完会被它误判
     var top = src.node; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
-    pendingCheck = { node: src.node, src: src, dst: dst, top: top, p: top.position.clone(), q: top.quaternion.clone(), at: performance.now() };
+    pendingCheck = { node: src.node, src: src, dst: dst, top: top, p: top.position.clone(), q: top.quaternion.clone(), at: performance.now(),
+                     r: r, rNode: rNode, rId: rId, rMoves: rMoves };
     return null;                                                // 放行:照常配合
+  }
+  /* Joining pre-built assemblies (wedge + screw onto the X-Lock): how deep the screw goes and how the wedge
+     sits around it can't be judged by eye, so a connection made at the right hole from the right side
+     settles into its reference pose. Other connections keep the arrow-key fine-tuning. */
+  function featureDir(node, id, M) {
+    var spec = KBParts.spec(node.userData.kbType.slice(5)), f = null;
+    (spec.pegs || []).concat(spec.holes || []).forEach(function (x) { if (x.id === id) f = x; });
+    return f ? new THREE.Vector3().fromArray(f.d).transformDirection(M) : null;
+  }
+  function snapAssembly(pc, done) {
+    var r = pc.r, res = KBCheck.results();
+    // the part belongs to a pre-built group of an assembly step that isn't done yet (step 3: each wedge + screw)
+    var st = r && r.slot && res && res.steps ? res.steps.filter(function (x) {
+      return x.assembly && x.state !== 'complete' && x.assembly.groups.some(function (g) { return g.indexOf(r.slot.id) >= 0; });
+    })[0] : null;
+    if (!r || !r.want || !st || !pc.rNode || !pc.rNode.parent) { done(); return; }
+    pc.rNode.updateMatrixWorld(true);
+    var S = pc.rNode.matrixWorld.clone(), Wm = r.want;
+    var a1 = featureDir(pc.rNode, pc.rId, S), a2 = featureDir(pc.rNode, pc.rId, Wm);
+    var far = new THREE.Vector3().setFromMatrixPosition(S).distanceTo(new THREE.Vector3().setFromMatrixPosition(Wm));
+    if (!a1 || !a2 || a1.dot(a2) < 0.9 || far > 40 * KBParts.unitScale() / 1000) { done(); return; }   // wrong side / far off: let the checks say so
+    var top = pc.rMoves ? pc.top : pc.top;
+    while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
+    top.updateMatrixWorld(true);
+    var M = pc.rMoves ? Wm.clone().multiply(S.clone().invert()) : S.clone().multiply(Wm.clone().invert());
+    var loc = toParentLocal(top, M.multiply(top.matrixWorld.clone()));
+    KB.tween(top, loc.p, loc.q, { duration: 0.35, onDone: function () { KB.emit('place', top); KB.pushSnapshot(); setTimeout(done, 50); } });
   }
   KB.on('snapAttempt', function (a) {
     var pc = pendingCheck;
@@ -18762,19 +18839,29 @@ KBWorkspace.overview();
     pendingCheck = null;
     if (!a.success) return;
     // 等配合的补间落定、检查跑完,再看这个零件有没有被判错
-    (function wait(n) {
+    function wait(n) {
       if (((KB.tweening && KB.tweening()) || KB.interacting()) && n < 40) { setTimeout(function () { wait(n + 1); }, 100); return; }
       var res = KBCheck.evaluate();
       if (!res || !res.ready) return;
-      var mine = {}; pc.top.traverse(function (x) { if (KB.isPart(x)) mine[x.uuid] = true; });
+      // the part that moved and the one it went into: a screw put in backwards is reported on the screw,
+      // whichever of the two was clicked first
+      var mine = {}, dtop = pc.dst && pc.dst.node; while (dtop && dtop.parent && dtop.parent !== KB.objectsRoot) dtop = dtop.parent;
+      [pc.top, dtop].forEach(function (t) { if (t) t.traverse(function (x) { if (KB.isPart(x)) mine[x.uuid] = true; }); });
       var bad = res.issues.filter(function (i) { return i.severity === 'error' && i.key !== 'hole' && i.node && mine[i.node.uuid]; })[0];
       if (!bad) { KBCheck.noteHole(null); return; }
       if (window.KBMate && KBMate.release) KBMate.release(pc.node);
+      if (KBCheck.forgetLastMate) KBCheck.forgetLastMate();
       // 配合当时报了成功,检查判错后撤销:再补一条失败的 handleMatch
       KB.emit('handleMatch', { a: pc.src, b: pc.dst, success: false, error: bad.msg + ' (undone)' });
       KB.tween(pc.top, pc.p, pc.q, { duration: 0.45, onDone: function () { KB.pushSnapshot(); KBCheck.noteHole(pc.node, bad.msg + ' \u2014 undone, try again'); } });
       KB.toast('Not like that \u2014 ' + bad.msg);
-    })(0);
+    }
+    // after mate.js has finished this connection (its own toast and the hole lock), not in the middle of it
+    setTimeout(function () { settle(0); }, 0);
+    function settle(k) {
+      if (((KB.tweening && KB.tweening()) || KB.interacting()) && k < 40) { setTimeout(function () { settle(k + 1); }, 100); return; }
+      snapAssembly(pc, function () { wait(0); });
+    }
   });
 
   function resolve(src, dst) {
