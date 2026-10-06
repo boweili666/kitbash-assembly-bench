@@ -43,6 +43,7 @@
   var armed = null;   // 已选中的源特征(marker)
   var hover = null;
   var lastMate = null; // {node(顶层节点), point, dir} 最近一次装配的轴,供 ←/→ 与枢轴使用
+  var mates = {};      // either endpoint uuid -> verified feature pair
   var mating = false;
   var bursts = [];    // 落座光环动画
 
@@ -58,6 +59,9 @@
   function topOf(n) {
     while (n.parent && n.parent !== KB.objectsRoot && !n.userData._prevParent) n = n.parent;
     return n;
+  }
+  function isScrew(n) {
+    return !!(n && n.userData && /^screw_/.test(n.userData.kbType.slice(5)));
   }
 
   /* ---------- 可点的孔位圆片 ---------- */
@@ -370,7 +374,7 @@
     if (topOf(dst.node) === top) return false;
     if (window.KBWorkspace && !KBWorkspace.contains(topOf(dst.node))) {
       report(a, b, false, 'receiving part outside workspace');
-      KB.toast(KBWorkspace.message(dst.node));
+      KBErrors.toast(KBWorkspace.message(dst.node));
       return false;
     }
 
@@ -384,7 +388,7 @@
     if (reason) {
       report(a, b, false, reason);
       if (errorsOn()) flash(dst, COLOR_BAD);
-      if (errorsOn()) KB.toast(reason === 'peg-on-peg' ? 'Cannot mate a peg to a peg' : 'The peg is wider than that hole');
+      if (errorsOn()) KBErrors.toast(reason === 'peg-on-peg' ? 'Cannot mate a peg to a peg' : 'The peg is wider than that hole');
       return false;
     }
 
@@ -483,7 +487,7 @@
     if (window.KBWorkspace && !KBWorkspace.contains(top)) {
       top.position.copy(p0); top.quaternion.copy(q0); top.updateMatrixWorld(true);
       report(a, b, false, 'assembly would cross workspace boundary');
-      KB.toast('Move the receiving part further inside the workspace before connecting.');
+      KBErrors.toast('Move the receiving part further inside the workspace before connecting.');
       return false;
     }
     var p1 = top.position.clone(), q1 = top.quaternion.clone();
@@ -504,7 +508,18 @@
     function seat(interrupted) {
       if (!interrupted) {
         mating = true;
-        lastMate = { node: top, point: center.clone(), dir: axisDir.clone().normalize() };
+        // State is emitted by place before snapAttempt, so establish the
+        // observed feature-pair evidence first.
+        // Arrow depth control belongs to the screw even when the learner
+        // clicked the receiving hole first and the snap moved that host.
+        // Otherwise the verified screw pair has no usable hinge at Step 3.
+        var screwNode = isScrew(src.node) ? src.node : isScrew(dst.node) ? dst.node : null;
+        lastMate = { node: screwNode ? topOf(screwNode) : top,
+          a: { node: src.node, id: src.f.id, end: src.end || 0, kind: src.kind },
+          b: { node: dst.node, id: dst.f.id, end: dst.end || 0, kind: dst.kind },
+          point: center.clone(), dir: axisDir.clone().normalize() };
+        mates[src.node.uuid] = lastMate;
+        mates[dst.node.uuid] = lastMate;
         KB.emit('place', top);
         mating = false;
         report(a, b, true);
@@ -575,7 +590,7 @@
     if (!errorsOn()) return;          // errors off: the click just does nothing, no message and no event
     flash(m, COLOR_BAD);
     var msg = typeof reason === 'string' ? reason : 'Not that one \u2014 try again';
-    KB.toast(msg);
+    KBErrors.toast(msg);
     KB.emit('mateRejected', { node: m.node, id: m.f.id, end: m.end, reason: msg });
   }
 
@@ -696,10 +711,21 @@
   }, true);
 
   // 零件被拖动 / gizmo / 点网格移动后,之前的孔轴不再可信
+  function forget(m) {
+    if (!m) return;
+    if (m.a) delete mates[m.a.node.uuid];
+    if (m.b) delete mates[m.b.node.uuid];
+    if (lastMate === m) lastMate = null;
+  }
   KB.on('grab', function (node) {
-    if (mating || !lastMate) return;
-    if (node === lastMate.node || topOf(node) === lastMate.node) lastMate = null;
+    if (mating) return;
+    var top = topOf(node);
+    if (!top) return;
+    Object.keys(mates).map(function (id) { return mates[id]; }).forEach(function (m) {
+      if (topOf(m.a.node) === top || topOf(m.b.node) === top) forget(m);
+    });
   });
+  KB.on('restore', function () { lastMate = null; mates = {}; });
 
   KB.onSelection(function (sel) {
     selection = sel.slice();
@@ -713,11 +739,40 @@
     rebuildMarkers();
   });
 
+  /* ---------- 别的路径落座后登记孔轴 ----------
+     levels.js 按答案位姿落座(levelrules seatCorrect: reference)时不经过 seat(),
+     这里补上 seat() 落座时记的那一份:锁在孔上、←→ 绕轴转、↑↓ 沿轴推拉。
+     mover = 被挪过去的那一头(levels 的 info:{node, id, end, kind}),other = 它装上去的那一头 */
+  function hold(mover, other) {
+    function feature(x) {
+      var spec = KBParts.spec(x.node.userData.kbType.slice(5));
+      var list = spec && (x.kind === 'hole' ? spec.holes : spec.pegs);
+      var raw = list && list.filter(function (f) { return f.id === x.id; })[0];
+      if (!raw) throw new Error('KBMate.hold: ' + x.node.name + ' has no ' + x.kind + ' ' + x.id);
+      return worldFeature({ node: x.node, f: raw, kind: x.kind, end: x.end || 0 });
+    }
+    var a = feature(mover), b = feature(other);
+    // 轴的正方向 = 拔出来的方向(↑),和 seat() 同口径:销沿销尖反方向拔出;套在销上的孔沿销尖方向退出;
+    // 孔对孔沿目标孔轴、朝挪过来的那个零件本体那一侧
+    var dir = a.kind === 'peg' ? a.tip.clone().negate()
+      : b.kind === 'peg' ? b.tip.clone()
+      : (a.body.clone().sub(b.c).dot(b.d) < 0 ? b.d.clone().negate() : b.d.clone());
+    var screwNode = isScrew(mover.node) ? mover.node : isScrew(other.node) ? other.node : null;
+    lastMate = { node: topOf(screwNode || mover.node),
+      a: { node: mover.node, id: mover.id, end: mover.end || 0, kind: mover.kind },
+      b: { node: other.node, id: other.id, end: other.end || 0, kind: other.kind },
+      point: a.c.clone(), dir: dir.normalize() };
+    mates[mover.node.uuid] = lastMate;
+    mates[other.node.uuid] = lastMate;
+    return true;
+  }
+
   /* ---------- 装上之后锁在孔上:拖拽 / 点网格不再移动它,只有方向键沿轴、绕轴;再点一下零件才解锁 ---------- */
   function locked(node) { return !!lastMate && (node === lastMate.node || topOf(node) === lastMate.node); }
-  function release(node) {
+  function release(node, keepEvidence) {
     if (!locked(node)) return false;
-    lastMate = null;
+    if (!keepEvidence) forget(lastMate);
+    else lastMate = null;
     KB.toast('Released from the hole \u2014 free to move');
     return true;
   }
@@ -745,6 +800,9 @@
   window.KBMate = {
     locked: locked,
     release: release,
+    hold: hold,
+    /* 特征(孔 / 销)的世界坐标 —— marks.js 的 AI 指点圆片要用同一套算法, 不能各算一份 */
+    worldFeature: worldFeature,
     /* 教程:聚光要点的孔口 [{node, id, end?}];点击守卫 {arm, mate},返回 true 放行、字符串为拒绝原因 */
     spotlight: function (list) { spot = list || []; rebuildMarkers(); },
     setGuard: function (g) { guard = g || null; },
@@ -757,6 +815,31 @@
     hingeFor: function (node) {
       if (!lastMate || lastMate.node !== node) return null;
       return { point: lastMate.point.clone(), dir: lastMate.dir.clone() };
+    },
+    mateState: function (node) {
+      var m = node && mates[node.uuid];
+      if (!m || !inScene(m.a.node) || !inScene(m.b.node)) return null;
+      var mine = m.a.node === node ? m.a : m.b.node === node ? m.b : null;
+      var host = mine === m.a ? m.b : mine === m.b ? m.a : null;
+      if (!mine || !host) return null;
+      function current(f) {
+        var spec = KBParts.spec(f.node.userData.kbType.slice(5));
+        var list = spec && (f.kind === 'hole' ? spec.holes : spec.pegs);
+        var raw = list && list.filter(function (x) { return x.id === f.id; })[0];
+        return raw ? worldFeature({ node: f.node, f: raw, kind: f.kind, end: f.end }) : null;
+      }
+      var mineNow = current(mine), hostNow = current(host);
+      if (!mineNow || !hostNow || Math.abs(mineNow.d.dot(hostNow.d)) < Math.cos(THREE.MathUtils.degToRad(12))) return null;
+      var axis = mineNow.d.clone().normalize();
+      if (axis.dot(m.dir) < 0) axis.negate();
+      var lateral = mineNow.c.clone().sub(hostNow.c).cross(axis).length();
+      if (lateral > 0.02) return null;
+      var active = m === lastMate && topOf(mine.node) === m.node;
+      var canAdjust = active && (!selection.length || selection.some(function (s) { return topOf(s) === m.node; }));
+      return { active: active, canAdjust: canAdjust,
+        objectId: mine.node.userData.kbId || null, feature: mine.id,
+        hostId: host.node.userData.kbId || null, hostFeature: host.id,
+        hinge: m.point.toArray(), axis: axis.toArray() };
     },
     armed: function () { return armed ? { node: armed.node, id: armed.f.id, end: armed.end } : null; },
     cancel: disarm,

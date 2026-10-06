@@ -1,0 +1,4 @@
+Copied from the moonshot monorepo, wenhel-dev-patchs/feature-mini-simulator/
+at commit 92aa8a630d621f192acb554273c4f6b1ca60dfe6 (2026-09-27).
+
+Its history stayed in that repository; only the files came across.

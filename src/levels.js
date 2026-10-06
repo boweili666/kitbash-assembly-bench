@@ -4,7 +4,8 @@
  *   Level 1  点零件 —— 它自己飞到答案位姿(按步骤顺序,只认现在能做的那一步)
  *   Level 2  点孔 —— 点对了孔,零件自己摆正、插到底,不用再用方向键微调;
  *            点错了孔会被拒绝并说明原因
- *   Level 3  现在的做法:点孔配合,方向键自己调
+ *   Level 3  点孔 —— 点对了和二级一样按答案落座;点错了照插、插完报错。方向键自己调
+ *   二、三级点对 / 点错各怎么处理,写在 levelrules.js 的表里(seatCorrect / wrongMate)
  *
  * 位姿怎么算在 check.js(levelTarget / levelMateTarget),这里只管交互和动画。
  * 教程进行中一律按 Level 3 走 —— 教程教的就是点孔。
@@ -208,7 +209,7 @@
     var lit = window.KBFocus ? KBFocus.lit() : [];
     if (lit.indexOf(node) < 0) return;                       // 只管亮着的那个(该拿的零件)
     var b = KBCheck.level2Base(node);
-    if (b && b.isBase) KB.toast('Now click inside the green workspace to move ' + node.name + ' there');
+    if (b && b.isBase) KBErrors.toast('Now click inside the green workspace to move ' + node.name + ' there');
   });
   KB.onSelection(function (sel) {
     if (level !== 2 || tutorialOn() || !window.KBCheck) return;
@@ -229,7 +230,7 @@
       var clicked = performance.now() - clickAt < 450;
       // 二级里基座放进装配区后镜头一定跟过去:接下来要点的孔就在那儿
       if (b && b.isBase) { if (clicked) placeByClick(node, true); }
-      else if (b && b.baseName) KB.toast('Place ' + b.baseName + ' first \u2014 this part goes into it');
+      else if (b && b.baseName) KBErrors.toast('Place ' + b.baseName + ' first \u2014 this part goes into it');
       else if (clicked) placeByClick(node, true);          // 只贴合、没有孔可点的零件:和一级一样直接到位
       return;
     }
@@ -293,82 +294,45 @@
     });
   }
 
-  /* ---------- Level 2:点对了孔,位姿交给答案 ---------- */
-  /* ---------- 三级:会报错的装配不执行 ----------
-     配合前先问答案:零件不属于这一步、或这两个孔根本对不上 -> 直接拒绝,零件不动;
-     放行的,配合完再看一眼:这个零件报了错(比如装反了)-> 退回原位,错误挂在指引卡片上(红) */
+  /* ---------- 点孔配合:点对了怎么落座、点错了怎么办,按 levelrules.js 的表 ----------
+     点对了 = levelMateTarget 认这一对,而且是当前这一步。
+       reference -> 二级原来那条路:答案位姿 + fly + markLevelPlaced。三级以前点对了也交给
+                    mate.js 的几何配合,它只对齐孔轴,绕轴的转角是零件在料盘里躺着的样子 ——
+                    这就是"螺丝插进去转了 90°"
+       geometry  -> 照旧交给 mate.js
+     点错了(包括"对是对,但那是后面步骤的一对")按 wrongMate:refuse 拒绝并说原因;
+     seat-and-report / seat-and-undo 照几何插上,插完再判 —— 报出来,或者退回原位 */
+  function rule(key) { return KBLevelRules.get(level, key); }
   var pendingCheck = null;
-  function guard3(src, dst) {
-    if (window.KBCheck && KBCheck.showErrors && !KBCheck.showErrors()) return null;   // errors off: no blocking, no undo
-    var r = KBCheck.levelMateTarget(src.node, src.id, dst.node, dst.id, dst.end), rNode = src.node, rId = src.id, rMoves = true;
-    if (r.reason) {
-      var back = KBCheck.levelMateTarget(dst.node, dst.id, src.node, src.id, src.end);
-      if (back.reason) { KBCheck.noteHole(src.node, r.reason); return r.reason; }
-      r = back; rNode = dst.node; rId = dst.id; rMoves = false;
+  function stageCheck(src, dst, undo) {
+    var top = src.node; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
+    pendingCheck = { node: src.node, src: src, dst: dst, top: top, undo: undo,
+                     p: top.position.clone(), q: top.quaternion.clone(), at: performance.now() };
+  }
+  /* 答案怎么看这一对:{r, mover, other} 或 {reason} */
+  function judge(src, dst) {
+    var r = KBCheck.levelMateTarget(src.node, src.id, dst.node, dst.id), mover = src, other = dst;
+    if (r.reason === 'These two parts do not go together') {
+      // 点的顺序反了:先点的零件已经在位(比如装好的楔块组件),该动的是后点的那个(X-Lock)。
+      // 两个零件本来就配在一起,就把没到位的那个装过去
+      var back = KBCheck.levelMateTarget(dst.node, dst.id, src.node, src.id);
+      if (!back.reason) { r = back; mover = dst; other = src; }
     }
+    if (r.reason) return { reason: r.reason };
     var nx = KBCheck.next();
     if (nx && r.slot) {
       var inStep = nx.slots.some(function (t) { return t.ref === r.slot; }) || (nx.base && nx.base.ref === r.slot) || r.slot.step === nx.i;
-      // identical parts in sibling steps (the 4 X-Lock screws, steps A-D): any of their holes is fine,
-      // as long as that step can be done now - only a step that has to wait is "not yet"
-      var res = KBCheck.results(), other = res && res.steps && res.steps[r.slot.step];
-      if (!inStep && other && other.state === 'available') inStep = true;
-      if (!inStep) {
-        var msg = 'Not yet \u2014 this step is \u201c' + nx.name + '\u201d. ' + (r.slot.name || 'That part') + ' comes later.';
-        KBCheck.noteHole(src.node, msg);
-        return msg;
-      }
+      if (!inStep) return { reason: 'Not yet \u2014 this step is \u201c' + nx.name + '\u201d. ' + (r.slot.name || 'That part') + ' comes later.' };
     }
-    KBCheck.noteHole(null);                 // 这一下点对了:之前点错留下的那条先清掉,不然配合完会被它误判
-    var top = src.node; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
-    pendingCheck = { node: src.node, src: src, dst: dst, top: top, p: top.position.clone(), q: top.quaternion.clone(), at: performance.now(),
-                     r: r, rNode: rNode, rId: rId, rMoves: rMoves };
-    return null;                                                // 放行:照常配合
-  }
-  /* Joining pre-built assemblies (wedge + screw onto the X-Lock): how deep the screw goes and how the wedge
-     sits around it can't be judged by eye, so a connection made at the right hole from the right side
-     settles into its reference pose. Other connections keep the arrow-key fine-tuning. */
-  function featureDir(node, id, M) {
-    var spec = KBParts.spec(node.userData.kbType.slice(5)), f = null;
-    (spec.pegs || []).concat(spec.holes || []).forEach(function (x) { if (x.id === id) f = x; });
-    return f ? new THREE.Vector3().fromArray(f.d).transformDirection(M) : null;
-  }
-  function snapAssembly(pc, done) {
-    var r = pc.r, res = KBCheck.results();
-    // the part belongs to a pre-built group of an assembly step that isn't done yet (step 3: each wedge + screw)
-    var st = r && r.slot && res && res.steps ? res.steps.filter(function (x) {
-      return x.assembly && x.state !== 'complete' && (x.assembly.base === r.slot.id ||     // the X-Lock clicked first
-        x.assembly.groups.some(function (g) { return g.indexOf(r.slot.id) >= 0; }));
-    })[0] : null;
-    if (!r || !r.want || !st || !pc.rNode || !pc.rNode.parent) { done(); return; }
-    pc.rNode.updateMatrixWorld(true);
-    var S = pc.rNode.matrixWorld.clone(), Wm = r.want;
-    var a1 = featureDir(pc.rNode, pc.rId, S), a2 = featureDir(pc.rNode, pc.rId, Wm);
-    var far = new THREE.Vector3().setFromMatrixPosition(S).distanceTo(new THREE.Vector3().setFromMatrixPosition(Wm));
-    // a peg has a direction (tip); a hole axis has none, so for a hole only parallel counts
-    var along = String(pc.rId).charAt(0) === 'H' ? Math.abs(a1 ? a1.dot(a2) : 0) : (a1 ? a1.dot(a2) : 0);
-    if (!a1 || !a2 || along < 0.9 || far > 40 * KBParts.unitScale() / 1000) { done(); return; }   // wrong side / far off: let the checks say so
-    var top = pc.rMoves ? pc.top : pc.top;
-    while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
-    top.updateMatrixWorld(true);
-    var M = pc.rMoves ? Wm.clone().multiply(S.clone().invert()) : S.clone().multiply(Wm.clone().invert());
-    var loc = toParentLocal(top, M.multiply(top.matrixWorld.clone()));
-    KB.tween(top, loc.p, loc.q, { duration: 0.35, onDone: function () {
-      KB.emit('place', top); KB.pushSnapshot();
-      // in its reference pose: nothing left to adjust, so the arrow keys can't turn it off again
-      if (window.KBMate && KBMate.release) { KBMate.release(pc.node); KBMate.release(top); }
-      KB.setSelection([]);
-      KB.toast('In place');
-      setTimeout(done, 50);
-    } });
+    return { r: r, mover: mover, other: other };
   }
   KB.on('snapAttempt', function (a) {
     var pc = pendingCheck;
-    if (level !== 3 || !pc || !a || a.object1 !== pc.node) return;
+    if (!pc || !a || a.object1 !== pc.node) return;
     pendingCheck = null;
     if (!a.success) return;
     // 等配合的补间落定、检查跑完,再看这个零件有没有被判错
-    function wait(n) {
+    (function wait(n) {
       if (((KB.tweening && KB.tweening()) || KB.interacting()) && n < 40) { setTimeout(function () { wait(n + 1); }, 100); return; }
       var res = KBCheck.evaluate();
       if (!res || !res.ready) return;
@@ -378,46 +342,53 @@
       [pc.top, dtop].forEach(function (t) { if (t) t.traverse(function (x) { if (KB.isPart(x)) mine[x.uuid] = true; }); });
       var bad = res.issues.filter(function (i) { return i.severity === 'error' && i.key !== 'hole' && i.node && mine[i.node.uuid]; })[0];
       if (!bad) { KBCheck.noteHole(null); return; }
+      if (!pc.undo) {
+        // seat-and-report:零件留在学员插的那个位置上。宿主照常收到 issue,
+        // 由 tutor 在 chat box 里说哪里不对 —— 台子自己不弹字(KBErrors 默认关)
+        KBCheck.noteHole(pc.node, bad.msg);
+        KBErrors.toast('Not like that \u2014 ' + bad.msg);
+        return;
+      }
       if (window.KBMate && KBMate.release) KBMate.release(pc.node);
       if (KBCheck.forgetLastMate) KBCheck.forgetLastMate();
       // 配合当时报了成功,检查判错后撤销:再补一条失败的 handleMatch
       KB.emit('handleMatch', { a: pc.src, b: pc.dst, success: false, error: bad.msg + ' (undone)' });
       KB.tween(pc.top, pc.p, pc.q, { duration: 0.45, onDone: function () { KB.pushSnapshot(); KBCheck.noteHole(pc.node, bad.msg + ' \u2014 undone, try again'); } });
-      KB.toast('Not like that \u2014 ' + bad.msg);
-    }
-    // after mate.js has finished this connection (its own toast and the hole lock), not in the middle of it
-    setTimeout(function () { settle(0); }, 0);
-    function settle(k) {
-      if (((KB.tweening && KB.tweening()) || KB.interacting()) && k < 40) { setTimeout(function () { settle(k + 1); }, 100); return; }
-      snapAssembly(pc, function () { wait(0); });
-    }
+      KBErrors.toast('Not like that \u2014 ' + bad.msg);
+    })(0);
   });
 
   function resolve(src, dst) {
-    if (level === 3 && window.KBCheck) return guard3(src, dst);
-    if (level !== 2 || !window.KBCheck) return null;
-    // 上一个零件还在飞:别放行成"点哪个孔就装哪个孔"(那是三级的装法,误点一下就装进错孔)
+    if (!window.KBCheck) return null;
+    // 上一个零件还在飞:别放行成"点哪个孔就装哪个孔",误点一下就装进错孔
     if (busy) return 'Wait for the part to land, then click again';
-    var r = KBCheck.levelMateTarget(src.node, src.id, dst.node, dst.id), mover = src.node;
-    if (r.reason === 'These two parts do not go together') {
-      // 点的顺序反了:先点的零件已经在位(比如装好的楔块组件),该动的是后点的那个(X-Lock)。
-      // 两个零件本来就配在一起,就把没到位的那个装过去
-      var back = KBCheck.levelMateTarget(dst.node, dst.id, src.node, src.id);
-      if (!back.reason) { r = back; mover = dst.node; }
+    var j = judge(src, dst);
+    if (!j.reason && rule('seatCorrect') === 'reference') {
+      KBCheck.noteHole(null);
+      clearGuide();
+      fly(j.mover.node, j.r, function () {
+        KBCheck.markLevelPlaced(j.mover.node, j.r.slot);
+        // 落座后把孔轴登记给 mate.js:三级的方向键(沿轴推拉、绕轴转)跟几何配合之后一样能用
+        KBMate.hold(j.mover, j.other);
+        KBCheck.evaluate();
+      });
+      return 'handled';
     }
-    if (r.reason) {
-      KBCheck.noteHole(src.node, r.reason);
+    if (!j.reason) {                                   // seatCorrect: geometry
+      KBCheck.noteHole(null);         // 上一次点错留下的那条先清掉,免得配合完被它误判
+      stageCheck(src, dst, rule('wrongMate') === 'seat-and-undo');
+      return null;
+    }
+    var wrong = rule('wrongMate');
+    if (wrong === 'refuse') {
+      KBCheck.noteHole(src.node, j.reason);
       // 点错了孔:源孔还选着,镜头飞回目标孔的特写,直接再点一次就行
       if (guide && guideFor === src.node) setTimeout(function () { if (guide && guideFor === src.node) closeUp(guide); }, 700);
-      return r.reason;
+      return j.reason;
     }
     KBCheck.noteHole(null);
-    clearGuide();
-    fly(mover, r, function () {
-      KBCheck.markLevelPlaced(mover, r.slot);
-      KBCheck.evaluate();
-    });
-    return 'handled';
+    stageCheck(src, dst, wrong === 'seat-and-undo');
+    return null;                                       // 交给 mate.js 照几何插上,插完再判
   }
 
   /* ---------- 切换 ---------- */
@@ -453,7 +424,7 @@
     level = n;
     try { localStorage.setItem(KEY, String(n)); } catch (e) { /* 隐私模式 */ }
     apply();
-    if (!quiet) KB.toast(TIPS[n]);
+    if (!quiet) KBErrors.toast(TIPS[n]);
     KB.emit('levelChange', n);
     if (window.KBCheck) KBCheck.evaluate();
     return level;

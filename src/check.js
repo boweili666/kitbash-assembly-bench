@@ -58,6 +58,8 @@
     KB.toast(showErrors ? 'Error messages on' : 'Error messages off \u2014 no feedback on wrong parts or holes');
   });
   function renderNotice(issues) {
+    // 文字关掉时当作没有问题来画(红闪、点亮这些不是文字,照常)
+    if (window.KBErrors && !KBErrors.shown()) issues = [];
     var errors = issues.filter(function (issue) { return issue.severity === 'error'; });
     var warn = !errors.length;
     if (warn) errors = issues.filter(function (issue) { return issue.severity === 'warn'; });
@@ -85,13 +87,38 @@
     screw_m3x8_socket_cap: 1, knurled_standoff: 1, motor_nut_m5: 1, damper_m2: 1,
     // 桨装上去绕轴转到哪个角度都一样(三叶,自己也是 120° 周期)
     propeller_cw: 1, propeller_ccw: 1 };
+  // 绕自身轴转多少度都一样, 但**翻个面装是错的**: 桨叶有迎角, 倒着装推力反向。
+  // axisAngle 的非螺丝分支取了 |dot|, 翻 180° 读成 0°(完全对齐), 于是倒装的桨
+  // 被判为正确。这里只在**判定**时补一次带符号的判断 —— 挑期望位姿的打分一字
+  // 不改, 因为 L1 / L2 的自动对齐和判定共用那段, 动打分就会把落点带偏。
+  var FLIP_MATTERS = { propeller_cw: 1, propeller_ccw: 1 };
+  // 这一件相对期望位姿是不是翻过来的。只看轴的朝向, 不管绕轴转了多少。
+  function flipped(key, qUser, qWant) {
+    var spec = KBParts.spec(key);
+    var pegs = (spec && spec.pegs) || [];
+    var f = pegs[0] || (spec && spec.holes && spec.holes[0]);
+    if (!f) return false;
+    var d = new THREE.Vector3().fromArray(f.d);
+    var a = d.clone().applyQuaternion(qUser), b = d.clone().applyQuaternion(qWant);
+    return a.dot(b) < 0;
+  }
   var SCREW = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1,
     screw_m3x8_socket_cap: 1 };
   function family(key) { return key.indexOf('screw_') === 0 ? 'screw' : key.indexOf('split_') === 0 ? 'plate' : key; }
   // 暂不区分头型:M3×16 盘头 与 M3×16 杯头 视为同一种零件。
-  // 正反桨同理:任务图只说"把桨装到电机轴上",没说哪条对角线装正桨,
-  // 所以两种桨互相顶替都算对(derive_final_assembly.py 里也写了这件事)
-  var SAME = { screw_m3x16_socket_cap: 'screw_m3x16_pan', propeller_ccw: 'propeller_cw' };
+  //
+  // 这张表只能收"位姿可以互换"的零件。canon 把两种零件算成一种之后,
+  // 摆件和判定都会拿其中一个的**烘好的矩阵**去要求另一个 —— 而 nodeTransform
+  // 把每个网格自己的原点烘进了矩阵。实测:同一个答案位姿走两种 M3×16 螺丝,
+  // 落点差 0 mm(确实可以互换);走正桨和反桨差 23.17 mm。
+  //
+  // 所以正反桨**不能**放进这张表。原先放了(理由是任务图没说哪条对角线装正桨),
+  // 结果是 L1 逐件点过去时,第 43/46 步的槽位烘的是反桨的矩阵,点到的却是正桨,
+  // 零件飞到那个矩阵上 = 偏出电机轴 22.4 mm,而判定量的是"零件矩阵 vs 槽位矩阵",
+  // 差值为 0,于是台子报装配完成而画面上两片桨明显偏着。
+  // 摆件顺序一变、哪片先被点一变,中招的就换一对 —— 上游偶发、我们这条
+  // 跳步 + 逐件点的路子上稳定复现,就是这个原因。
+  var SAME = { screw_m3x16_socket_cap: 'screw_m3x16_pan' };
   function canon(key) { return SAME[key] || key; }
 
   var results = null;
@@ -235,6 +262,9 @@
       var reversed = ang.signed && ang.deg > 90;
       var nearAng = reversed ? 180 - ang.deg : ang.deg;
       var score = d + (reversed ? 0.02 : nearAng / 180 * 0.05);
+      // 翻面有区别的件: 打分照旧(不带符号, 落点不受影响), 但把"翻过来了"单独
+      // 记一笔, 交给 isOk / 问题清单去报。
+      if (FLIP_MATTERS[t.key] && flipped(t.key, _q2, _q)) reversed = true;
       if (!best || score < best.score) best = { score: score, d: d, ang: ang.deg, reversed: reversed, nearAng: nearAng,
         want: new THREE.Matrix4().multiplyMatrices(um.M, expected) };
     }
@@ -267,6 +297,43 @@
     return spec ? new THREE.Vector3(-spec.offset[0] * S, -spec.offset[1] * S, -spec.offset[2] * S) : new THREE.Vector3();
   }
   function isOk(e) { return e.d < POS_TOL && !e.reversed && e.ang < ANG_TOL; }
+
+  function poseOfMatrix(m) {
+    var p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
+    m.decompose(p, q, s);
+    return { position: p.toArray(), quaternion: q.toArray() };
+  }
+  function expectedPair(issue, mate) {
+    return !!(mate && issue.host && issue.features && issue.features.some(function (pair) {
+      return mate.objectId === issue.node.userData.kbId && mate.hostId === issue.host.userData.kbId &&
+        mate.feature === pair[0] && mate.hostFeature === pair[1];
+    }));
+  }
+  function guidanceFor(issue) {
+    if (!issue.node || !issue.host || !issue.features || !issue.features.length) return null;
+    if (!SCREW[issue.node.userData.kbType.slice(5)]) return null;
+    var mate = window.KBMate && KBMate.mateState && KBMate.mateState(issue.node);
+    var base = { expectedFeatures: issue.features || null, mate: mate || null,
+      targetPose: issue.want ? poseOfMatrix(issue.want) : null };
+    if (!expectedPair(issue, mate)) { base.stage = 'hole-match'; return base; }
+    if (!issue.want || !mate || !mate.active) {
+      base.stage = 'paired-inactive';
+      return base;
+    }
+    var now = new THREE.Vector3().setFromMatrixPosition(issue.node.matrixWorld);
+    var goal = new THREE.Vector3().setFromMatrixPosition(issue.want);
+    var axis = new THREE.Vector3().fromArray(mate.axis).normalize();
+    var delta = goal.sub(now), axial = delta.dot(axis);
+    var lateral = delta.sub(axis.multiplyScalar(axial)).length();
+    // The correct feature pair and hinge are verified above. Axial adjustment
+    // intentionally does not require the two entrance planes to coincide.
+    if (!issue.reversed && issue.ang < ANG_TOL && lateral < POS_TOL && Math.abs(axial) >= POS_TOL) {
+      base.stage = 'axis-depth';
+      base.axis = mate.axis;
+      base.axialMm = Math.round(axial / KBParts.unitScale() * 1000 * 10) / 10;
+    }
+    return base;
+  }
 
   /* 「差在哪」:把误差说成人话 —— 高了 / 低了 / 平move,而不是只给一个毫米数 */
   function which(node, want) {
@@ -366,7 +433,17 @@
     });
     var slots = ref.slots.map(function (s) { return { ref: s, part: null, near: [], ok: false, err: null }; });
 
-    // 1) 唯一锚:该类型在答案里只有一个槽、场景里也只有一个零件(X-Lock、前后板、电调……)
+    // 1) A task scene preserves assembly-graph ids. Keep that identity for
+    // repeated screws/wedges too: once an X-Lock becomes the geometric anchor,
+    // re-matching duplicates by proximity can otherwise forget a completed
+    // wedge+screw group merely because its insertion depth is being adjusted.
+    slots.forEach(function (t) {
+      var u = users.filter(function (x) { return x.id && x.id === t.ref.id; })[0];
+      if (u) { t.part = u; u.slot = t; }
+    });
+
+    // 2) Unique-type fallback for practice scenes without task identities
+    // (X-Lock, front/rear plate, ESC, …).
     var slotCount = {}, userCount = {};
     ref.slots.forEach(function (s) { slotCount[s.ckey] = (slotCount[s.ckey] || 0) + 1; });
     users.forEach(function (u) { userCount[u.ckey] = (userCount[u.ckey] || 0) + 1; });
@@ -376,7 +453,7 @@
       t.part = u; u.slot = t;
     });
 
-    // 2) 传播:从已配对的配合件出发,给空槽找相对位姿吻合的同类零件;全局按误差贪心
+    // 3) 传播:从已配对的配合件出发,给空槽找相对位姿吻合的同类零件;全局按误差贪心
     function assignBest(cands) {
       cands.sort(function (a, b) { return a.e.score - b.e.score; });
       var n = 0;
@@ -403,7 +480,7 @@
         });
       });
       if (assignBest(cands)) continue;
-      // 3) 两个都没配对、互为配合的槽(同一步的楔块+螺丝、电机+螺母):枚举零件对,没有锚所以门槛更严
+      // 4) 两个都没配对、互为配合的槽(同一步的楔块+螺丝、电机+螺母):枚举零件对,没有锚所以门槛更严
       var pairCands = [];
       slots.forEach(function (t) {
         if (t.part) return;
@@ -444,6 +521,9 @@
         for (var bi = ai + 1; bi < slots.length; bi++) {
           var ta = slots[ai], tb = slots[bi];
           if (!ta.part || !tb.part || ta.ref.ckey !== tb.ref.ckey) continue;
+          // 第 1 步按 id 认下的不参与对调:料盘里随手摆的位置算出来的误差没有意义,
+          // 对调会把"左楔块"换到右楔块的槽位上,levelMateTarget 随即拒绝点对了的孔
+          if (ta.part.id === ta.ref.id || tb.part.id === tb.ref.id) continue;
           var now = costOf(ta, ta.part) + costOf(tb, tb.part);
           var alt = costOf(ta, tb.part) + costOf(tb, ta.part);
           if (!(alt < now - 1e-6)) continue;
@@ -500,6 +580,16 @@
       t.err = bad.length ? bad[0] : t.near[0];
     });
 
+    // 装配区里是不是只有这一件零件。只数零件, 不数辅助图形。
+    function loneInWorkspace(node) {
+      if (!window.KBWorkspace || !KBWorkspace.contains(node)) return false;
+      var n = 0;
+      KB.objectsRoot.traverse(function (o) {
+        if (KB.isPart(o) && KBWorkspace.contains(o)) n++;
+      });
+      return n === 1;
+    }
+
     // 5) 问题清单
     var issues = [], correct = 0;
     var us = KBParts.unitScale();
@@ -507,11 +597,19 @@
     var pairSeen = {};
     // 同一个零件可能对着好几个候选位置都"不对",只留最贴近的那条,免得刷屏
     var misfits = {};
-    function keepClosest(node, d, msg, severity, host, reversed, ang, kind) {
+    // slotRef = 这条结论是**对着哪个参考槽位**下的(它占了谁的位置 / 该是谁)。
+    // 以前不收, 于是这一批(错零件 / 插错孔 / 差 N 毫米)推出来的 issue 全是 slot: undefined,
+    // 而 state() 的 step 就靠 slot 解析 —— 宿主收到的 step 恒为 null, 而它拿
+    // (objectId, step, kind) 当去重和升级的键: 同一件在两个步骤里出问题会塌成一个键。
+    // 这里不查这个零件"自己的"槽位: 走到这条路上的零件恰恰是**还没配上任何槽位**的
+    // (上面的前置条件就是 u.slot 为空), 所以只有 t.ref 说得清这是哪一步的事。
+    function keepClosest(node, d, msg, severity, host, reversed, ang, kind, features, slotRef) {
       var id = node.uuid;
       if (!misfits[id] || d < misfits[id].d) {
         misfits[id] = { node: node, d: d, msg: msg, severity: severity || 'error', kind: kind || 'hole',
-                        host: host || null, reversed: !!reversed, ang: ang || 0 };
+                        host: host || null, reversed: !!reversed, ang: ang || 0,
+                        // 期望的特征配对 [[自己的特征, 对方的特征], …] —— 宿主据此标出正确的孔
+                        features: features || null, slot: slotRef || null };
       }
     }
     slots.forEach(function (t) {
@@ -547,15 +645,36 @@
         // (Level 3 brings parts into the workspace first) - "backwards" / "off" only for parts actually on it
         if (e.d >= NEAR && !wasMated(t.part.node) && !levelPlaced[t.part.node.uuid]) return;
         pairSeen[pk] = 1;
+        // 接收件与期望的特征配对:宿主要据此标出"正确的孔"(bridge 的 kb:highlight feature)
+        var hostNode = t.err.ms.part ? t.err.ms.part.node : null;
+        var feats = t.err.m.features || null;
+        // Name the part that is ACTUALLY there, not the slot it was matched to.
+        // Slots are matched by geometry among parts of the same type, so a part
+        // nudged a few millimetres can be claimed by its twin's slot -- and the
+        // sentence then tells the trainee to move a part they never touched
+        // ("raise the Right Arm Wedge" about the left one). The slot's name is
+        // still right for the place; only the thing being moved is the object.
+        var whose = (t.part && t.part.node && t.part.node.name) || t.ref.name;
+        // offMm:当前偏差,真毫米。它不参与去重,也不进聊天框 —— 学员推零件时
+        // 这个数一直在变,拿它当"新情况"会让同一条抱怨每秒重印一次。它的用处是
+        // 学员**主动问**"差多少"时的答案,以及日志。
+        // mm(), four lines up, is `w / us * 1000`. This field was shipped
+        // with the raw scene units in it and a name that says millimetres --
+        // 0.6 in `offMm` beside "23.3 mm" in the sentence. Same conversion now.
+        var off = Math.round(e.d / us * 1000 * 10) / 10;
         if (e.reversed) {
           issues.push({ severity: 'error', kind: 'hole', node: t.part.node, slot: t.ref,
-            msg: t.ref.name + ' is inserted backwards into ' + mate.name + ' — the head faces the wrong way' });
+            host: hostNode, features: feats, offMm: off, want: e.want, reversed: e.reversed, ang: e.ang,
+            msg: whose + ' is inserted backwards into ' + mate.name + ' — the head faces the wrong way, ' +
+              mm(e.d) + ' mm from where it belongs' });
         } else if (e.d >= POS_TOL) {
           issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref, want: e.want,
-            msg: t.ref.name + ' is ' + mm(e.d) + ' mm off its place on ' + mate.name + which(t.part.node, e.want) });
+            host: hostNode, features: feats, offMm: off, reversed: e.reversed, ang: e.ang,
+            msg: whose + ' is ' + mm(e.d) + ' mm off its place on ' + mate.name + which(t.part.node, e.want) });
         } else {
           issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref,
-            msg: t.ref.name + ' is tilted ' + e.ang.toFixed(0) + '° on ' + mate.name });
+            host: hostNode, features: feats, offMm: off, want: e.want, reversed: e.reversed, ang: e.ang,
+            msg: whose + ' is tilted ' + e.ang.toFixed(0) + '° on ' + mate.name });
         }
         return;
       }
@@ -594,7 +713,7 @@
       if (wrong) {
         keepClosest(wrong.u.node, wrong.d,
           'Wrong part on ' + wrong.m.slot.name + ': found ' + wrong.u.node.name + ', expected ' + t.ref.name,
-          'error', null, false, 0, 'pick');
+          'error', null, false, 0, 'pick', null, t.ref);
         return;
       }
       // 插错孔:型号对得上的零件确实装在装配区里了,只是离它该在的位置太远,
@@ -632,23 +751,23 @@
           // 真的按答案配好了、只是整组还在装配区外 —— 让人搬进去
           keepClosest(misplaced.u.node, misplaced.d,
             misplaced.u.node.name + ' is assembled outside the workspace — move it inside to be checked',
-            'hint', misplaced.host.node, false, 0, 'hint');
+            'hint', misplaced.host.node, false, 0, 'hint', misplaced.m.features, t.ref);
         } else if (!me.reversed && misplaced.d < NEAR && me.nearAng >= ANG_TOL) {
           keepClosest(misplaced.u.node, misplaced.d,
             misplaced.u.node.name + ' is tilted ' + me.nearAng.toFixed(0) + '° in ' + misplaced.m.slot.name,
-            'error', misplaced.host.node, false, me.nearAng, 'align');
+            'error', misplaced.host.node, false, me.nearAng, 'align', misplaced.m.features, t.ref);
         } else if (me.reversed) {
           keepClosest(misplaced.u.node, misplaced.d,
             misplaced.u.node.name + ' is inserted backwards into ' + misplaced.m.slot.name +
-            ' — the head faces the wrong way', 'error', misplaced.host.node, true);
+            ' — the head faces the wrong way', 'error', misplaced.host.node, true, 0, 'hole', misplaced.m.features, t.ref);
         } else if (misplaced.d < NEAR) {
           keepClosest(misplaced.u.node, misplaced.d,
             misplaced.u.node.name + ' is ' + mm(misplaced.d) + ' mm off its place on ' +
-            misplaced.m.slot.name + ' (expected ' + t.ref.name + ')', 'error', misplaced.host.node, false, 0, 'align');
+            misplaced.m.slot.name + ' (expected ' + t.ref.name + ')', 'error', misplaced.host.node, false, 0, 'align', misplaced.m.features, t.ref);
         } else {
           keepClosest(misplaced.u.node, misplaced.d,
             misplaced.u.node.name + ' is in the wrong hole on ' + misplaced.m.slot.name +
-            ' — ' + mm(misplaced.d) + ' mm from where ' + t.ref.name + ' belongs', 'error', misplaced.host.node);
+            ' — ' + mm(misplaced.d) + ' mm from where ' + t.ref.name + ' belongs', 'error', misplaced.host.node, false, 0, 'hole', misplaced.m.features, t.ref);
         }
       }
     });
@@ -666,7 +785,9 @@
           if (meScrew === otherScrew && (hostIssue.d + hostIssue.ang * 0.01) > (it.d + it.ang * 0.01)) return;
         }
       }
-      issues.push({ severity: it.severity, kind: it.kind, node: it.node, slot: it.slot, msg: it.msg });
+      issues.push({ severity: it.severity, kind: it.kind, node: it.node, slot: it.slot, msg: it.msg,
+                    host: it.host, features: it.features, want: it.want || null, reversed: it.reversed, ang: it.ang,
+                    offMm: it.d != null ? Math.round(it.d / us * 1000 * 10) / 10 : null });
     });
 
     if (lastPick) {
@@ -720,7 +841,11 @@
           var source = slots[ref.byId[id].i];
           var e = source.part && baseSlot.part ? relError(source.ref, source.part, baseSlot.ref, baseSlot.part) : null;
           var inside = source.part && baseSlot.part && (!window.KBWorkspace || (KBWorkspace.contains(source.part.node) && KBWorkspace.contains(baseSlot.part.node)));
-          var link = e ? { m: { slot: baseSlot.ref, kind: 'feature' }, ms: baseSlot, e: e } : null;
+          // 这一对配合的 feature id:没有它,"装错孔了"只能说出哪件错、说不出哪个孔。
+          // 其余分支从 mates 里拿,这里以前直接造了个没有 features 的 m。
+          var pair = (source.ref.mates || []).filter(function (m) { return m.slot === baseSlot.ref; })[0];
+          var link = e ? { m: { slot: baseSlot.ref, kind: 'feature',
+            features: (pair && pair.features) || null }, ms: baseSlot, e: e } : null;
           return { ref: source.ref, part: source.part, near: link && e.d < NEAR * 2 ? [link] : [],
             ok: !!(source.ok && inside && e && isOk(e)), err: link };
         });
@@ -728,13 +853,22 @@
           if (t.ok || !t.part) return;
           var msg = !baseSlot.part ? 'Bring the X-Lock into the workspace first.' :
             !t.near.length ? 'Attach ' + t.ref.name + ' to its side of the X-Lock.' :
-            t.err.e.reversed ? t.ref.name + ' is facing the wrong direction on the X-Lock.' :
+            // 装反时也要报当前偏差:方向说法把距离盖掉了,学员看不到自己差多少,
+            // 追问第二次得到的还是同一句话。
+            t.err.e.reversed ? t.ref.name + ' is facing the wrong direction on the X-Lock — ' +
+              mm(t.err.e.d) + ' mm from where it belongs' :
             t.err.e.d >= POS_TOL ? t.ref.name + ' is ' + mm(t.err.e.d) + ' mm off its place on the X-Lock.' :
             t.err.e.ang >= ANG_TOL ? t.ref.name + ' is tilted ' + t.err.e.ang.toFixed(0) + '° on the X-Lock.' :
             'Finish preparing ' + t.ref.name + ' and keep it fully inside the workspace.';
           issues.push({ severity: (!baseSlot.part || !t.near.length) ? 'hint' : 'error',
             kind: (!baseSlot.part || !t.near.length) ? 'hint' : t.err.e.reversed ? 'hole' : 'align',
-            hint: !t.near.length, node: t.part.node, step: st, msg: msg });
+            hint: !t.near.length, node: t.part.node, step: st, msg: msg,
+            // 接收件和 feature 对:主机端靠这两个才能把孔标绿。
+            host: baseSlot.part ? baseSlot.part.node : null,
+            features: (t.err && t.err.m.features) || null, want: t.err && t.err.e.want,
+            reversed: !!(t.err && t.err.e.reversed), ang: t.err && t.err.e.ang,
+            // 当前偏差(真毫米),被问到时才用。
+            offMm: t.err ? Math.round(t.err.e.d / KBParts.unitScale() * 1000 * 10) / 10 : null });
         });
       }
       var okN = ss.filter(function (x) { return x.ok; }).length;
@@ -747,6 +881,13 @@
     steps.forEach(function (s) {
       var pre = s.requires.every(function (r) { return steps[r].state === 'complete'; });
       s.state = s.complete ? (pre ? 'complete' : 'premature') : (pre ? 'available' : 'blocked');
+    });
+    // Assembly targets are calculated before their prerequisite state is
+    // known. A loose, correctly prepared subassembly must not be presented
+    // as an instruction to attach it to a blocked future step. Actual
+    // out-of-order contact is reported separately below.
+    issues = issues.filter(function (i) {
+      return !(i.kind === 'hint' && i.step && steps[i.step.i] && steps[i.step.i].state === 'blocked');
     });
     // 乱序提示:premature,或 blocked 却已经开始装(零件挨到了配合件上)—— 后者就是
     // "开始往错的地方插"的时刻;只是抓起、还没挨上不算
@@ -769,18 +910,20 @@
     }
     // 按难度只报该报的:
     //   一级 —— 只有"零件点错了";
-    //   二级 —— 零件点错了 / 孔点错了;
+    //   二级 —— 零件点错了 / 孔点错了 / 还没对齐的(降成 warn, patch 10);
     //   三级 —— 上面两种还是 error,零件和孔都对、只是还没对齐的,降成 warn
+    // 二级的设定是"点对孔就自动摆正, 理论上不会偏", 可组件整体越界 / 点完孔被碰撞推开时
+    // 真的会偏 —— 以前二级把 align 整条滤掉, 学员看不到任何提示, 是静默失败
     var lv = window.KBLevel ? KBLevel.get() : 3;
     issues = issues.filter(function (i) {
       var k = i.kind || 'hole';
       if (k === 'hint') return true;
       if (!showErrors) return false;
       if (lv === 1) return k === 'pick';
-      if (lv === 2) return k === 'pick' || k === 'hole';
+      if (lv === 2) return k === 'pick' || k === 'hole' || k === 'align';
       return true;
     });
-    if (lv === 3) issues.forEach(function (i) {
+    if (lv >= 2) issues.forEach(function (i) {
       if (i.kind === 'align' && i.severity === 'error') { i.severity = 'warn'; i.msg = 'Not aligned yet: ' + i.msg; }
     });
     var RANK = { error: 0, warn: 1, hint: 2 };
@@ -816,7 +959,20 @@
           ok: t.ok, by: t.part ? t.part.id : null };
       }),
       issues: results.issues.map(function (i) {
-        return { severity: i.severity, message: i.msg, objectId: (i.node && i.node.userData.kbId) || null,
+        // kind travels too: the host decides where to show a problem from it.
+        // A wrong hole is shown by playing the step; a wrong part by lighting
+        // it up in the build. Without kind the host can only guess.
+        return { severity: i.severity, kind: i.kind || 'hole', message: i.msg,
+          objectId: (i.node && i.node.userData.kbId) || null,
+          // 零件在装配区里吗。severity 分不出"还没搬进来"和"搬进来了但没装上",
+          // 两者都是 hint,可前者不该被标错、后者该被标错。这一位就是那个区别。
+          inWorkspace: i.node ? KBWorkspace.contains(i.node) : null,
+          // 接收件和期望的特征配对:没有这两个, "装错孔了"只能说出哪件错, 说不出哪个孔
+          hostId: (i.host && i.host.userData.kbId) || null,
+          features: i.features || null,
+          guidance: guidanceFor(i),
+          // 当前偏差(真毫米,一位小数)。只在被问到时用,不参与去重、不进聊天框。
+          offMm: i.offMm != null ? i.offMm : null,
           step: i.step ? i.step.id : (i.slot ? stepId(i.slot.step) : null) };
       }),
       next: (function () { var n = next(); return n ? n.id : null; })(),
@@ -1188,7 +1344,7 @@
       bad.forEach(putBack);
     }
     var list = Object.keys(final).map(function (k) { return final[k]; });
-    if (!list.length) { KB.toast(whyNothingSnapped()); return 0; }
+    if (!list.length) { KBErrors.toast(whyNothingSnapped()); return 0; }
     list.forEach(function (pl) {                      // 放回原处,交给补间飞过去
       var h = home[pl.node.uuid];
       pl.node.position.copy(h.pos);
@@ -1215,7 +1371,7 @@
     selection.forEach(function (node) {
       node.traverse(function (o) { if (KB.isPart(o) && snapIntoPlace(o)) n += 1; });
     });
-    if (!n) KB.toast('Not close enough to snap \u2014 move it nearer to where it belongs');
+    if (!n) KBErrors.toast('Not close enough to snap \u2014 move it nearer to where it belongs');
   });
   KB.on('grab', hideGhost);   // 零件一动,旧虚影就过时了
   KB.onChange(function () {
@@ -1501,16 +1657,17 @@
     var sMine = slotForNode(srcNode), dMine = slotForNode(dstNode);
     // 同型号还没装好的位置都算候选(包括检查暂时把这个零件归过去的那个)。只看"归过去的那个"的话,
     // 对称的板子会把别的孔位映射到点的孔上:零件装对了孔,却被记成另一颗螺丝,随后报"插错孔"
-    // pre-built groups of an assembly step that isn't done yet are interchangeable (the two wedge + screw groups
-    // go on either side of the X-Lock): their positions stay candidates even while held by the twin part
-    var openGroup = function (t) {
-      return results.steps.some(function (x) { return x.assembly && x.state !== 'complete' && x.assembly.groups.some(function (g) { return g.indexOf(t.ref.id) >= 0; }); });
-    };
-    var srcSlots = sMine && sMine.ok && staged[srcNode.uuid] && !(window.KBLevel && KBLevel.get() === 3) ? [sMine] : sMine && sMine.ok && !openGroup(sMine) ? [] : results.slots.filter(function (t) {
-      return t.ref.ckey === canon(sKey) && (!t.ok || openGroup(t)) && (!t.part || t.part.node === srcNode || openGroup(t));
+    var nxt = next(), curStep = nxt ? nxt.i : -1;
+    // 装好了的零件只有"之后要整组装到基座上"的才还能挪:一二级靠暂放(staged)认出来;
+    // 三级不暂放(stageFor 只管一二级),就认"当前这一步是整组装配、它在要装的组里"
+    var movable = sMine && sMine.ok && (staged[srcNode.uuid] ||
+      (window.KBLevel && KBLevel.get() > 2 && nxt && nxt.assembly &&
+       [].concat.apply([], nxt.assembly.groups).indexOf(sMine.ref.id) >= 0));
+    var srcSlots = movable ? [sMine] : sMine && sMine.ok ? [] : results.slots.filter(function (t) {
+      return t.ref.ckey === canon(sKey) && !t.ok && (!t.part || t.part.node === srcNode);
     });
     var dstSlots = dMine ? [dMine] : results.slots.filter(function (t) { return t.ref.ckey === canon(dKey); });
-    var paired = false, best = null, open = openSteps(), nxt = next(), curStep = nxt ? nxt.i : -1;
+    var paired = false, best = null, open = openSteps();
     var hitTol = 3 * KBParts.unitScale() / 1000;                // 孔位偏 3 mm 以内算点对了孔
     srcSlots.forEach(function (s) {
       dstSlots.forEach(function (d) {
@@ -1775,7 +1932,7 @@
     if (warnedFor === tag) return;                   // 弹窗同一步同一个零件只说一次
     warnedFor = tag;
     if (!showErrors) return;          // errors off: no toast and no pickWarn event
-    KB.toast(msg);
+    KBErrors.toast(msg);
     KB.emit('pickWarn', { objectId: node.userData.kbId || null, name: node.name,
       key: node.userData.kbType.slice(5), step: nx.i, stepName: nx.name,
       belongsToStep: mine ? mine.step : null, message: msg });
@@ -1808,6 +1965,13 @@
       return showErrors;
     },
     snapIntoPlace: snapIntoPlace,
+    /* 场面被整个换掉了 —— 忘掉上一份判定。
+       evaluate() 有两层不重算: 签名没变就跳过, 零件还在飞就推迟 200ms 再说。
+       两层都是为了省算力, 而换场景恰好同时踩中它们: 上一次演示的动画还没停,
+       于是 evaluate 直接返回, 留着上一个场面的结论 —— "前十步都装好了"。
+       照着那份结论, 演示认为没什么要铺的, 直接去演第十步, 而台子上其实
+       是一盒散件。宿主换完场景必须说一声。 */
+    invalidate: function () { lastSig = ''; results = null; },
     levelTarget: levelTarget,
     canon: canon,
     /* 二级点错孔:记一条 error(null 清掉) */

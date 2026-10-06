@@ -52,7 +52,7 @@
       newButton: true,            // "New": all the parts back in the tray
       trayButton: true,           // jump between workspace and tray
       errorsButton: true,         // dev toolbar error switch (never shown on the public site)
-      debugButton: null,          // "Steps" jump-to-step list: null = shown except inside a host page (there ?debug=1); true / false = force
+      debugButton: null,          // "Steps" jump-to-step list (stepdebug.js): null = its own default (?debugSteps=1); true / false = force
       checksButton: false,        // the old Checks shield
       hintsBar: false,            // the old bottom hints bar
       answerBar: false            // the old bottom ghost playback bar
@@ -96,10 +96,15 @@
     var off = Object.keys(UI).filter(function (k) { return cfg.ui[k] === false; }).map(function (k) { return UI[k]; });
     style.textContent = off.length ? off.join(', ') + ' { display: none !important; }' : '';
   }
+  function applySteps() {           // the Steps jump list lives in stepdebug.js, which loads after this file
+    var on = cfg.ui.debugButton;
+    if ((on === true || on === false) && window.KBStepDebug && KBStepDebug.show) KBStepDebug.show(on);
+  }
   function set(partial, source) {
     merge(cfg, partial);
     version++;
     applyUi();
+    applySteps();
     KB.emit('config', { source: source || 'api', config: clone(cfg) });
     return clone(cfg);
   }
