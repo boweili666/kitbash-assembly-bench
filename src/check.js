@@ -265,6 +265,43 @@
   }
   function isOk(e) { return e.d < POS_TOL && !e.reversed && e.ang < ANG_TOL; }
 
+  function poseOfMatrix(m) {
+    var p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
+    m.decompose(p, q, s);
+    return { position: p.toArray(), quaternion: q.toArray() };
+  }
+  function expectedPair(issue, mate) {
+    return !!(mate && issue.host && issue.features && issue.features.some(function (pair) {
+      return mate.objectId === issue.node.userData.kbId && mate.hostId === issue.host.userData.kbId &&
+        mate.feature === pair[0] && mate.hostFeature === pair[1];
+    }));
+  }
+  function guidanceFor(issue) {
+    if (!issue.node || !issue.host || !issue.features || !issue.features.length) return null;
+    if (!SCREW[issue.node.userData.kbType.slice(5)]) return null;
+    var mate = window.KBMate && KBMate.mateState && KBMate.mateState(issue.node);
+    var base = { expectedFeatures: issue.features || null, mate: mate || null,
+      targetPose: issue.want ? poseOfMatrix(issue.want) : null };
+    if (!expectedPair(issue, mate)) { base.stage = 'hole-match'; return base; }
+    if (!issue.want || !mate || !mate.active) {
+      base.stage = 'paired-inactive';
+      return base;
+    }
+    var now = new THREE.Vector3().setFromMatrixPosition(issue.node.matrixWorld);
+    var goal = new THREE.Vector3().setFromMatrixPosition(issue.want);
+    var axis = new THREE.Vector3().fromArray(mate.axis).normalize();
+    var delta = goal.sub(now), axial = delta.dot(axis);
+    var lateral = delta.sub(axis.multiplyScalar(axial)).length();
+    // The correct feature pair and hinge are verified above. Axial adjustment
+    // intentionally does not require the two entrance planes to coincide.
+    if (!issue.reversed && issue.ang < ANG_TOL && lateral < POS_TOL && Math.abs(axial) >= POS_TOL) {
+      base.stage = 'axis-depth';
+      base.axis = mate.axis;
+      base.axialMm = Math.round(axial / KBParts.unitScale() * 1000 * 10) / 10;
+    }
+    return base;
+  }
+
   /* 「差在哪」:把误差说成人话 —— 高了 / 低了 / 平move,而不是只给一个毫米数 */
   function which(node, want) {
     if (!want) return '';
@@ -363,7 +400,17 @@
     });
     var slots = ref.slots.map(function (s) { return { ref: s, part: null, near: [], ok: false, err: null }; });
 
-    // 1) 唯一锚:该类型在答案里只有一个槽、场景里也只有一个零件(X-Lock、前后板、电调……)
+    // 1) A task scene preserves assembly-graph ids. Keep that identity for
+    // repeated screws/wedges too: once an X-Lock becomes the geometric anchor,
+    // re-matching duplicates by proximity can otherwise forget a completed
+    // wedge+screw group merely because its insertion depth is being adjusted.
+    slots.forEach(function (t) {
+      var u = users.filter(function (x) { return x.id && x.id === t.ref.id; })[0];
+      if (u) { t.part = u; u.slot = t; }
+    });
+
+    // 2) Unique-type fallback for practice scenes without task identities
+    // (X-Lock, front/rear plate, ESC, …).
     var slotCount = {}, userCount = {};
     ref.slots.forEach(function (s) { slotCount[s.ckey] = (slotCount[s.ckey] || 0) + 1; });
     users.forEach(function (u) { userCount[u.ckey] = (userCount[u.ckey] || 0) + 1; });
@@ -373,7 +420,7 @@
       t.part = u; u.slot = t;
     });
 
-    // 2) 传播:从已配对的配合件出发,给空槽找相对位姿吻合的同类零件;全局按误差贪心
+    // 3) 传播:从已配对的配合件出发,给空槽找相对位姿吻合的同类零件;全局按误差贪心
     function assignBest(cands) {
       cands.sort(function (a, b) { return a.e.score - b.e.score; });
       var n = 0;
@@ -400,7 +447,7 @@
         });
       });
       if (assignBest(cands)) continue;
-      // 3) 两个都没配对、互为配合的槽(同一步的楔块+螺丝、电机+螺母):枚举零件对,没有锚所以门槛更严
+      // 4) 两个都没配对、互为配合的槽(同一步的楔块+螺丝、电机+螺母):枚举零件对,没有锚所以门槛更严
       var pairCands = [];
       slots.forEach(function (t) {
         if (t.part) return;
@@ -569,21 +616,25 @@
         // ("raise the Right Arm Wedge" about the left one). The slot's name is
         // still right for the place; only the thing being moved is the object.
         var whose = (t.part && t.part.node && t.part.node.name) || t.ref.name;
-        // offMm:当前偏差,主机端据此去重 —— 同一件同一孔、距离变了就是新情况,
-        // 不是同一条提示的重复。
-        var off = Math.round(e.d * 10) / 10;
+        // offMm:当前偏差,真毫米。它不参与去重,也不进聊天框 —— 学员推零件时
+        // 这个数一直在变,拿它当"新情况"会让同一条抱怨每秒重印一次。它的用处是
+        // 学员**主动问**"差多少"时的答案,以及日志。
+        // mm(), four lines up, is `w / us * 1000`. This field was shipped
+        // with the raw scene units in it and a name that says millimetres --
+        // 0.6 in `offMm` beside "23.3 mm" in the sentence. Same conversion now.
+        var off = Math.round(e.d / us * 1000 * 10) / 10;
         if (e.reversed) {
           issues.push({ severity: 'error', kind: 'hole', node: t.part.node, slot: t.ref,
-            host: hostNode, features: feats, offMm: off,
+            host: hostNode, features: feats, offMm: off, want: e.want, reversed: e.reversed, ang: e.ang,
             msg: whose + ' is inserted backwards into ' + mate.name + ' — the head faces the wrong way, ' +
               mm(e.d) + ' mm from where it belongs' });
         } else if (e.d >= POS_TOL) {
           issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref, want: e.want,
-            host: hostNode, features: feats, offMm: off,
+            host: hostNode, features: feats, offMm: off, reversed: e.reversed, ang: e.ang,
             msg: whose + ' is ' + mm(e.d) + ' mm off its place on ' + mate.name + which(t.part.node, e.want) });
         } else {
           issues.push({ severity: 'error', kind: 'align', node: t.part.node, slot: t.ref,
-            host: hostNode, features: feats, offMm: off,
+            host: hostNode, features: feats, offMm: off, want: e.want, reversed: e.reversed, ang: e.ang,
             msg: whose + ' is tilted ' + e.ang.toFixed(0) + '° on ' + mate.name });
         }
         return;
@@ -696,8 +747,8 @@
         }
       }
       issues.push({ severity: it.severity, kind: it.kind, node: it.node, slot: it.slot, msg: it.msg,
-                    host: it.host, features: it.features,
-                    offMm: it.d != null ? Math.round(it.d * 10) / 10 : null });
+                    host: it.host, features: it.features, want: it.want || null, reversed: it.reversed, ang: it.ang,
+                    offMm: it.d != null ? Math.round(it.d / us * 1000 * 10) / 10 : null });
     });
 
     if (lastPick) {
@@ -775,9 +826,10 @@
             hint: !t.near.length, node: t.part.node, step: st, msg: msg,
             // 接收件和 feature 对:主机端靠这两个才能把孔标绿。
             host: baseSlot.part ? baseSlot.part.node : null,
-            features: (t.err && t.err.m.features) || null,
-            // 当前偏差,给主机端做去重用:同一件同一孔、距离变了就是新情况。
-            offMm: t.err ? Math.round(t.err.e.d * 10) / 10 : null });
+            features: (t.err && t.err.m.features) || null, want: t.err && t.err.e.want,
+            reversed: !!(t.err && t.err.e.reversed), ang: t.err && t.err.e.ang,
+            // 当前偏差(真毫米),被问到时才用。
+            offMm: t.err ? Math.round(t.err.e.d / KBParts.unitScale() * 1000 * 10) / 10 : null });
         });
       }
       var okN = ss.filter(function (x) { return x.ok; }).length;
@@ -790,6 +842,13 @@
     steps.forEach(function (s) {
       var pre = s.requires.every(function (r) { return steps[r].state === 'complete'; });
       s.state = s.complete ? (pre ? 'complete' : 'premature') : (pre ? 'available' : 'blocked');
+    });
+    // Assembly targets are calculated before their prerequisite state is
+    // known. A loose, correctly prepared subassembly must not be presented
+    // as an instruction to attach it to a blocked future step. Actual
+    // out-of-order contact is reported separately below.
+    issues = issues.filter(function (i) {
+      return !(i.kind === 'hint' && i.step && steps[i.step.i] && steps[i.step.i].state === 'blocked');
     });
     // 乱序提示:premature,或 blocked 却已经开始装(零件挨到了配合件上)—— 后者就是
     // "开始往错的地方插"的时刻;只是抓起、还没挨上不算
@@ -871,8 +930,8 @@
           // 接收件和期望的特征配对:没有这两个, "装错孔了"只能说出哪件错, 说不出哪个孔
           hostId: (i.host && i.host.userData.kbId) || null,
           features: i.features || null,
-          // 当前偏差(mm,一位小数)。主机端只按件/步/种类去重时,同一条 align 距离
-          // 从 25 mm 变到 6 mm 不会再提示 —— 学员动了,诊断却没跟着动。
+          guidance: guidanceFor(i),
+          // 当前偏差(真毫米,一位小数)。只在被问到时用,不参与去重、不进聊天框。
           offMm: i.offMm != null ? i.offMm : null,
           step: i.step ? i.step.id : (i.slot ? stepId(i.slot.step) : null) };
       }),

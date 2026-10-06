@@ -42,6 +42,7 @@
   var armed = null;   // 已选中的源特征(marker)
   var hover = null;
   var lastMate = null; // {node(顶层节点), point, dir} 最近一次装配的轴,供 ←/→ 与枢轴使用
+  var mates = {};      // either endpoint uuid -> verified feature pair
   var mating = false;
   var bursts = [];    // 落座光环动画
 
@@ -57,6 +58,9 @@
   function topOf(n) {
     while (n.parent && n.parent !== KB.objectsRoot && !n.userData._prevParent) n = n.parent;
     return n;
+  }
+  function isScrew(n) {
+    return !!(n && n.userData && /^screw_/.test(n.userData.kbType.slice(5)));
   }
 
   /* ---------- 可点的孔位圆片 ---------- */
@@ -476,7 +480,18 @@
     function seat(interrupted) {
       if (!interrupted) {
         mating = true;
-        lastMate = { node: top, point: center.clone(), dir: axisDir.clone().normalize() };
+        // State is emitted by place before snapAttempt, so establish the
+        // observed feature-pair evidence first.
+        // Arrow depth control belongs to the screw even when the learner
+        // clicked the receiving hole first and the snap moved that host.
+        // Otherwise the verified screw pair has no usable hinge at Step 3.
+        var screwNode = isScrew(src.node) ? src.node : isScrew(dst.node) ? dst.node : null;
+        lastMate = { node: screwNode ? topOf(screwNode) : top,
+          a: { node: src.node, id: src.f.id, end: src.end || 0, kind: src.kind },
+          b: { node: dst.node, id: dst.f.id, end: dst.end || 0, kind: dst.kind },
+          point: center.clone(), dir: axisDir.clone().normalize() };
+        mates[src.node.uuid] = lastMate;
+        mates[dst.node.uuid] = lastMate;
         KB.emit('place', top);
         mating = false;
         report(a, b, true);
@@ -663,10 +678,21 @@
   }, true);
 
   // 零件被拖动 / gizmo / 点网格移动后,之前的孔轴不再可信
+  function forget(m) {
+    if (!m) return;
+    if (m.a) delete mates[m.a.node.uuid];
+    if (m.b) delete mates[m.b.node.uuid];
+    if (lastMate === m) lastMate = null;
+  }
   KB.on('grab', function (node) {
-    if (mating || !lastMate) return;
-    if (node === lastMate.node || topOf(node) === lastMate.node) lastMate = null;
+    if (mating) return;
+    var top = topOf(node);
+    if (!top) return;
+    Object.keys(mates).map(function (id) { return mates[id]; }).forEach(function (m) {
+      if (topOf(m.a.node) === top || topOf(m.b.node) === top) forget(m);
+    });
   });
+  KB.on('restore', function () { lastMate = null; mates = {}; });
 
   KB.onSelection(function (sel) {
     selection = sel.slice();
@@ -682,9 +708,10 @@
 
   /* ---------- 装上之后锁在孔上:拖拽 / 点网格不再移动它,只有方向键沿轴、绕轴;再点一下零件才解锁 ---------- */
   function locked(node) { return !!lastMate && (node === lastMate.node || topOf(node) === lastMate.node); }
-  function release(node) {
+  function release(node, keepEvidence) {
     if (!locked(node)) return false;
-    lastMate = null;
+    if (!keepEvidence) forget(lastMate);
+    else lastMate = null;
     KB.toast('Released from the hole \u2014 free to move');
     return true;
   }
@@ -726,6 +753,31 @@
     hingeFor: function (node) {
       if (!lastMate || lastMate.node !== node) return null;
       return { point: lastMate.point.clone(), dir: lastMate.dir.clone() };
+    },
+    mateState: function (node) {
+      var m = node && mates[node.uuid];
+      if (!m || !inScene(m.a.node) || !inScene(m.b.node)) return null;
+      var mine = m.a.node === node ? m.a : m.b.node === node ? m.b : null;
+      var host = mine === m.a ? m.b : mine === m.b ? m.a : null;
+      if (!mine || !host) return null;
+      function current(f) {
+        var spec = KBParts.spec(f.node.userData.kbType.slice(5));
+        var list = spec && (f.kind === 'hole' ? spec.holes : spec.pegs);
+        var raw = list && list.filter(function (x) { return x.id === f.id; })[0];
+        return raw ? worldFeature({ node: f.node, f: raw, kind: f.kind, end: f.end }) : null;
+      }
+      var mineNow = current(mine), hostNow = current(host);
+      if (!mineNow || !hostNow || Math.abs(mineNow.d.dot(hostNow.d)) < Math.cos(THREE.MathUtils.degToRad(12))) return null;
+      var axis = mineNow.d.clone().normalize();
+      if (axis.dot(m.dir) < 0) axis.negate();
+      var lateral = mineNow.c.clone().sub(hostNow.c).cross(axis).length();
+      if (lateral > 0.02) return null;
+      var active = m === lastMate && topOf(mine.node) === m.node;
+      var canAdjust = active && (!selection.length || selection.some(function (s) { return topOf(s) === m.node; }));
+      return { active: active, canAdjust: canAdjust,
+        objectId: mine.node.userData.kbId || null, feature: mine.id,
+        hostId: host.node.userData.kbId || null, hostFeature: host.id,
+        hinge: m.point.toArray(), axis: axis.toArray() };
     },
     armed: function () { return armed ? { node: armed.node, id: armed.f.id, end: armed.end } : null; },
     cancel: disarm,

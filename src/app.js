@@ -241,6 +241,7 @@
   }
 
   function loadSceneData(data, keepCamera) {
+    emit('restore');
     clearSceneObjects();
     (data.objects || []).forEach(function (d) {
       var n = buildNode(d);
@@ -740,7 +741,7 @@
     group.name = name || 'Assembly';
     objectsRoot.add(group); group.updateMatrixWorld(true);
     roots.forEach(function (n) {
-      if (window.KBMate) KBMate.release(n);
+      if (window.KBMate) KBMate.release(n, true);
       group.attach(n);
     });
     if (selected) setSelection([group]);
@@ -1298,6 +1299,11 @@
     if (ctrl && e.code === 'KeyG' && e.shiftKey) { e.preventDefault(); ungroupSelection(); return; }
     if (ctrl && e.code === 'KeyG') { e.preventDefault(); groupSelection(); return; }
     if (ctrl) return;
+    // mate.js owns every arrow key while this selection is locked to a
+    // verified hole. Letting the editor's world-Y nudge run first moves the
+    // screw off its hinge before mate.js can slide it along the hole axis.
+    if (/^Arrow/.test(e.code) && window.KBMate &&
+        selection.some(function (node) { return KBMate.locked(node); })) return;
     switch (e.code) {
       case 'KeyW': if (expert) setMode('translate'); break;
       case 'KeyE': if (expert) setMode('rotate'); break;
