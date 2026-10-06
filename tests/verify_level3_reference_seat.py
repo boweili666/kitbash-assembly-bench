@@ -28,7 +28,7 @@ Cases, each on a fresh page:
   l2-correct     L2, same pair as l3-correct: reference seat, Step 1 complete.
   l2-later       L2, same pair as l3-later: refused, the screw does not move.
 
-    python tests/verify_level3_reference_seat.py [--root DIR] [--case NAME ...]
+    python tests/verify_level3_reference_seat.py (--root DIR | --url PAGE) [--case NAME ...] [--shots DIR]
 """
 import argparse
 import functools
@@ -141,7 +141,7 @@ def serve(root):
 
 def open_bench(browser, base, level):
     page = browser.new_page(viewport={"width": 1280, "height": 800})
-    page.goto(f"{base}/index.html?tools=1&level={level}")
+    page.goto(f"{base}?tools=1&level={level}")
     page.wait_for_function("() => window.KB && KBParts && KBParts.ready() && KBCheck && KBCheck.ref() && window.KBMate",
                            timeout=120000)
     page.evaluate(f"() => {{ try {{ localStorage.clear(); }} catch (e) {{}} KBLevel.set({level}, true); }}")
@@ -430,11 +430,18 @@ def run(browser, base, name, shots):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--root", required=True, help="bench directory to serve (index.html + src/)")
+    where = ap.add_mutually_exclusive_group(required=True)
+    where.add_argument("--root", help="bench directory to serve on localhost (index.html + src/)")
+    where.add_argument("--url", help="a deployed bench page, e.g. .../uav_simulator_v1b/simulator/kitbash-standalone.html")
     ap.add_argument("--case", action="append", choices=CASES)
     ap.add_argument("--shots", help="directory for the l3-xlock screenshots (optional)")
     args = ap.parse_args()
-    server, base = serve(Path(args.root).resolve())
+    server = None
+    if args.root:
+        server, base = serve(Path(args.root).resolve())
+        base += "/index.html"
+    else:
+        base = args.url
     failed = 0
     try:
         with sync_playwright() as pw:
@@ -447,7 +454,8 @@ def main():
                     print(f"FAIL {name}: {str(exc).splitlines()[0][:300]}")
             browser.close()
     finally:
-        server.shutdown()
+        if server:
+            server.shutdown()
     sys.exit(1 if failed else 0)
 
 
