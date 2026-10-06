@@ -223,9 +223,14 @@
     timer = 0;
     if (!on || paused || finished || holding) return;
     if (KB.interacting() || (KB.tweening && KB.tweening()) || KBLevel.busy()) { later(200); return; }
-    KBCheck.evaluate();
+    var res = KBCheck.evaluate();
+    if (!res || !res.ready || !res.steps.length) { later(300); return; }     // checks catching up (e.g. a scene just loaded)
     var st = KBCheck.next();
-    if (!st) { finish('done'); return; }
+    if (!st) {
+      // only a finished build ends the demo; "no next step" for a moment is just the checks catching up
+      if (res.stepsSettled === res.steps.length) finish('done'); else giveUp(null);
+      return;
+    }
     var nodes = window.KBFocus ? KBFocus.partsToMove(st) : [];
 
     // steps outside the selection: assembled instantly (before it), or the demo ends (after it)
@@ -294,7 +299,7 @@
   }
   // nothing in this step can be placed: wait a little (grouping / checks catching up), then stop instead of spinning
   function giveUp(st) {
-    if (++stuck > 8) { finish('stuck', st); return; }
+    if (++stuck > 12) { finish('stuck', st); return; }
     later(400);
   }
   function finish(reason, st) {
@@ -442,6 +447,7 @@
     pause: function (p) { if (on && !finished && opt.autoplay && !!p !== paused) togglePause(); return paused; },
     finished: function () { return finished; },
     setKit: function (fn) { kitLoader = typeof fn === 'function' ? fn : null; },
+    freshKit: function () { if (kitLoader) kitLoader(); else KB.loadKit(); },   // debug.js: start over from the kit
     options: function () { return Object.assign({}, opt); },
     defaults: function () { return Object.assign({}, DEFAULTS); },
     state: function () {

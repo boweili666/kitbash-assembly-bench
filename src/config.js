@@ -52,6 +52,7 @@
       newButton: true,            // "New": all the parts back in the tray
       trayButton: true,           // jump between workspace and tray
       errorsButton: true,         // dev toolbar error switch (never shown on the public site)
+      debugButton: null,          // "Steps" jump-to-step list: null = shown except inside a host page (there ?debug=1); true / false = force
       checksButton: false,        // the old Checks shield
       hintsBar: false,            // the old bottom hints bar
       answerBar: false            // the old bottom ghost playback bar

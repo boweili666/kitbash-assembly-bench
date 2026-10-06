@@ -44,7 +44,7 @@
   },
 
   "ui": {
-    "_help": "true = shown, false = hidden.",
+    "_help": "true = shown, false = hidden. debugButton: null = the Steps jump list is shown except inside a host page (there only with ?debug=1); true / false = force it.",
     "guideCard": true,
     "celebration": true,
     "levelButtons": true,
@@ -55,6 +55,7 @@
     "newButton": true,
     "trayButton": true,
     "errorsButton": true,
+    "debugButton": null,
     "checksButton": false,
     "hintsBar": false,
     "answerBar": false

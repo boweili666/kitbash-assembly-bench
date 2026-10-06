@@ -300,15 +300,19 @@
   var pendingCheck = null;
   function guard3(src, dst) {
     if (window.KBCheck && KBCheck.showErrors && !KBCheck.showErrors()) return null;   // errors off: no blocking, no undo
-    var r = KBCheck.levelMateTarget(src.node, src.id, dst.node, dst.id);
+    var r = KBCheck.levelMateTarget(src.node, src.id, dst.node, dst.id, dst.end), rNode = src.node, rId = src.id, rMoves = true;
     if (r.reason) {
-      var back = KBCheck.levelMateTarget(dst.node, dst.id, src.node, src.id);
+      var back = KBCheck.levelMateTarget(dst.node, dst.id, src.node, src.id, src.end);
       if (back.reason) { KBCheck.noteHole(src.node, r.reason); return r.reason; }
-      r = back;
+      r = back; rNode = dst.node; rId = dst.id; rMoves = false;
     }
     var nx = KBCheck.next();
     if (nx && r.slot) {
       var inStep = nx.slots.some(function (t) { return t.ref === r.slot; }) || (nx.base && nx.base.ref === r.slot) || r.slot.step === nx.i;
+      // identical parts in sibling steps (the 4 X-Lock screws, steps A-D): any of their holes is fine,
+      // as long as that step can be done now - only a step that has to wait is "not yet"
+      var res = KBCheck.results(), other = res && res.steps && res.steps[r.slot.step];
+      if (!inStep && other && other.state === 'available') inStep = true;
       if (!inStep) {
         var msg = 'Not yet \u2014 this step is \u201c' + nx.name + '\u201d. ' + (r.slot.name || 'That part') + ' comes later.';
         KBCheck.noteHole(src.node, msg);
@@ -317,8 +321,46 @@
     }
     KBCheck.noteHole(null);                 // 这一下点对了:之前点错留下的那条先清掉,不然配合完会被它误判
     var top = src.node; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
-    pendingCheck = { node: src.node, src: src, dst: dst, top: top, p: top.position.clone(), q: top.quaternion.clone(), at: performance.now() };
+    pendingCheck = { node: src.node, src: src, dst: dst, top: top, p: top.position.clone(), q: top.quaternion.clone(), at: performance.now(),
+                     r: r, rNode: rNode, rId: rId, rMoves: rMoves };
     return null;                                                // 放行:照常配合
+  }
+  /* Joining pre-built assemblies (wedge + screw onto the X-Lock): how deep the screw goes and how the wedge
+     sits around it can't be judged by eye, so a connection made at the right hole from the right side
+     settles into its reference pose. Other connections keep the arrow-key fine-tuning. */
+  function featureDir(node, id, M) {
+    var spec = KBParts.spec(node.userData.kbType.slice(5)), f = null;
+    (spec.pegs || []).concat(spec.holes || []).forEach(function (x) { if (x.id === id) f = x; });
+    return f ? new THREE.Vector3().fromArray(f.d).transformDirection(M) : null;
+  }
+  function snapAssembly(pc, done) {
+    var r = pc.r, res = KBCheck.results();
+    // the part belongs to a pre-built group of an assembly step that isn't done yet (step 3: each wedge + screw)
+    var st = r && r.slot && res && res.steps ? res.steps.filter(function (x) {
+      return x.assembly && x.state !== 'complete' && (x.assembly.base === r.slot.id ||     // the X-Lock clicked first
+        x.assembly.groups.some(function (g) { return g.indexOf(r.slot.id) >= 0; }));
+    })[0] : null;
+    if (!r || !r.want || !st || !pc.rNode || !pc.rNode.parent) { done(); return; }
+    pc.rNode.updateMatrixWorld(true);
+    var S = pc.rNode.matrixWorld.clone(), Wm = r.want;
+    var a1 = featureDir(pc.rNode, pc.rId, S), a2 = featureDir(pc.rNode, pc.rId, Wm);
+    var far = new THREE.Vector3().setFromMatrixPosition(S).distanceTo(new THREE.Vector3().setFromMatrixPosition(Wm));
+    // a peg has a direction (tip); a hole axis has none, so for a hole only parallel counts
+    var along = String(pc.rId).charAt(0) === 'H' ? Math.abs(a1 ? a1.dot(a2) : 0) : (a1 ? a1.dot(a2) : 0);
+    if (!a1 || !a2 || along < 0.9 || far > 40 * KBParts.unitScale() / 1000) { done(); return; }   // wrong side / far off: let the checks say so
+    var top = pc.rMoves ? pc.top : pc.top;
+    while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
+    top.updateMatrixWorld(true);
+    var M = pc.rMoves ? Wm.clone().multiply(S.clone().invert()) : S.clone().multiply(Wm.clone().invert());
+    var loc = toParentLocal(top, M.multiply(top.matrixWorld.clone()));
+    KB.tween(top, loc.p, loc.q, { duration: 0.35, onDone: function () {
+      KB.emit('place', top); KB.pushSnapshot();
+      // in its reference pose: nothing left to adjust, so the arrow keys can't turn it off again
+      if (window.KBMate && KBMate.release) { KBMate.release(pc.node); KBMate.release(top); }
+      KB.setSelection([]);
+      KB.toast('In place');
+      setTimeout(done, 50);
+    } });
   }
   KB.on('snapAttempt', function (a) {
     var pc = pendingCheck;
@@ -326,19 +368,29 @@
     pendingCheck = null;
     if (!a.success) return;
     // 等配合的补间落定、检查跑完,再看这个零件有没有被判错
-    (function wait(n) {
+    function wait(n) {
       if (((KB.tweening && KB.tweening()) || KB.interacting()) && n < 40) { setTimeout(function () { wait(n + 1); }, 100); return; }
       var res = KBCheck.evaluate();
       if (!res || !res.ready) return;
-      var mine = {}; pc.top.traverse(function (x) { if (KB.isPart(x)) mine[x.uuid] = true; });
+      // the part that moved and the one it went into: a screw put in backwards is reported on the screw,
+      // whichever of the two was clicked first
+      var mine = {}, dtop = pc.dst && pc.dst.node; while (dtop && dtop.parent && dtop.parent !== KB.objectsRoot) dtop = dtop.parent;
+      [pc.top, dtop].forEach(function (t) { if (t) t.traverse(function (x) { if (KB.isPart(x)) mine[x.uuid] = true; }); });
       var bad = res.issues.filter(function (i) { return i.severity === 'error' && i.key !== 'hole' && i.node && mine[i.node.uuid]; })[0];
       if (!bad) { KBCheck.noteHole(null); return; }
       if (window.KBMate && KBMate.release) KBMate.release(pc.node);
+      if (KBCheck.forgetLastMate) KBCheck.forgetLastMate();
       // 配合当时报了成功,检查判错后撤销:再补一条失败的 handleMatch
       KB.emit('handleMatch', { a: pc.src, b: pc.dst, success: false, error: bad.msg + ' (undone)' });
       KB.tween(pc.top, pc.p, pc.q, { duration: 0.45, onDone: function () { KB.pushSnapshot(); KBCheck.noteHole(pc.node, bad.msg + ' \u2014 undone, try again'); } });
       KB.toast('Not like that \u2014 ' + bad.msg);
-    })(0);
+    }
+    // after mate.js has finished this connection (its own toast and the hole lock), not in the middle of it
+    setTimeout(function () { settle(0); }, 0);
+    function settle(k) {
+      if (((KB.tweening && KB.tweening()) || KB.interacting()) && k < 40) { setTimeout(function () { settle(k + 1); }, 100); return; }
+      snapAssembly(pc, function () { wait(0); });
+    }
   });
 
   function resolve(src, dst) {

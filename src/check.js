@@ -543,6 +543,9 @@
         var e = t.err.e, mate = t.err.m.slot;
         var pk = Math.min(t.ref.i, mate.i) + '|' + Math.max(t.ref.i, mate.i);
         if (pairSeen[pk]) return;
+        // a part that was never connected and lies well away from its place is simply not placed yet
+        // (Level 3 brings parts into the workspace first) - "backwards" / "off" only for parts actually on it
+        if (e.d >= NEAR && !wasMated(t.part.node) && !levelPlaced[t.part.node.uuid]) return;
         pairSeen[pk] = 1;
         if (e.reversed) {
           issues.push({ severity: 'error', kind: 'hole', node: t.part.node, slot: t.ref,
@@ -623,8 +626,8 @@
         // 装配区外的零件只有一种说法:"你按答案装好了,但装在区外"。
         // 其余(装反 / 插错孔 / 差几毫米)一律不对区外的零件下结论 ——
         // 料盘里螺丝和立柱本来就一排排挨着、方向相反,照着几何去套必然误判
-        if (misplaced.outside && !isOk(me) && !wasMated(misplaced.u.node)) {
-          /* 躺在料盘里、从没被配过的零件:不作声 */
+        if (!isOk(me) && !wasMated(misplaced.u.node) && (misplaced.outside || misplaced.d >= NEAR)) {
+          /* never connected, and in the tray or still well away from it: just lying there, say nothing */
         } else if (misplaced.outside && isOk(me)) {
           // 真的按答案配好了、只是整组还在装配区外 —— 让人搬进去
           keepClosest(misplaced.u.node, misplaced.d,
@@ -1081,6 +1084,42 @@
     return null;
   }
 
+  // Assembly steps (wedge + screw groups onto the X-Lock): a group that is close to its place on the base
+  // (by angle and distance, measured against the base) snaps in as a whole. The wedge turns freely around its
+  // screw, so its own slot says "ok" while it is still turned the wrong way on the X-Lock.
+  function snapAssemblyNear(node) {
+    if (snapping || !node || !KB.tween || !(window.KBParts && KBParts.ready())) return false;
+    evaluate();
+    if (!results || !results.ready) return false;
+    var root = node; while (root.parent && root.parent !== KB.objectsRoot) root = root.parent;
+    var lim = SNAP_POS_MM * KBParts.unitScale() / 1000, hit = null;
+    results.steps.forEach(function (st) {
+      if (hit || !st.assembly || st.state === 'complete') return;
+      st.slots.forEach(function (t) {
+        if (hit || t.ok || !t.part || !t.err || !t.err.e || !t.err.e.want) return;
+        var top = t.part.node; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
+        var e = t.err.e;
+        if (top !== root || e.reversed || e.nearAng > SNAP_ANG || e.d > lim) return;
+        hit = { node: t.part.node, want: e.want };
+      });
+    });
+    if (!hit) return false;
+    hit.node.updateMatrixWorld(true); root.updateMatrixWorld(true);
+    var m = hit.want.clone().multiply(hit.node.matrixWorld.clone().invert()).multiply(root.matrixWorld.clone());
+    if (root.parent) { root.parent.updateMatrixWorld(true); m.premultiply(root.parent.matrixWorld.clone().invert()); }
+    var p = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+    m.decompose(p, q, sc);
+    snapping = true;
+    KB.tween(root, p, q, { duration: 0.3, onDone: function () {
+      snapping = false;
+      KB.pushSnapshot();
+      evaluate();
+      if (window.KBMate && KBMate.release) KBMate.release(root);   // in place: nothing left to adjust
+      KB.setSelection([]);
+      KB.toast('Snapped into place');
+    } });
+    return true;
+  }
   function snapIntoPlace(node) {
     if (snapping || !node || !KB.isPart(node) || !KB.tween) return false;   // autoSnap 只管"放下即吸",手动 S 不受它限制
     if (!(window.KBParts && KBParts.ready())) return false;
@@ -1162,7 +1201,7 @@
   var evalTimer = 0;
   // 放下即吸:离正确位姿 10 mm / 25° 以内就吸过去(比"判到位"的 3.2 mm / 12° 宽)。教程练习的零件不在答案里,不吸
   KB.on('place', function (node) {
-    if (autoSnap && !(window.KBTutorial && KBTutorial.active())) setTimeout(function () { snapIntoPlace(node); }, 0);
+    if (autoSnap && !(window.KBTutorial && KBTutorial.active())) setTimeout(function () { if (!snapAssemblyNear(node)) snapIntoPlace(node); }, 0);
   });
   /* S:把选中的零件归位(离正确位置够近才吸,够不着就说一声) */
   var selection = [];
@@ -1288,6 +1327,17 @@
     // 不用等这一步所有零件都到齐(比如电机的四颗螺丝,装好一颗就和机臂连在一起)。
     // 暂放在一边的组件不和别的并;装配区外的不并
     evaluate();
+    // only whole groups that are entirely right: a screw that is in place (it may turn freely) must not pull its
+    // wedge into the X-Lock group while the wedge itself is still turned the wrong way - then it can't be fixed
+    var allOk = function (root) {
+      var good = true;
+      root.traverse(function (n) {
+        if (!good || !KB.isPart(n)) return;
+        var t = results.slots.filter(function (x) { return x.part && x.part.node === n; })[0];
+        if (t && !t.ok) good = false;
+      });
+      return good;
+    };
     var merged = true, guard = 0;
     while (merged && guard++ < 80) {
       merged = false;
@@ -1300,6 +1350,7 @@
           if (!ms.part || !ms.ok || staged[ms.part.node.uuid] || !close(link.e)) return false;
           var rb = top(ms.part.node);
           if (ra === rb || (window.KBWorkspace && !KBWorkspace.contains(rb))) return false;
+          if (!allOk(ra) || !allOk(rb)) return false;
           var st = ref.steps[Math.max(t.ref.step, ms.ref.step)];
           if (!KB.groupNodes([ra, rb], st ? st.name : 'Assembly')) return false;
           count++; merged = true; evaluate();
@@ -1437,7 +1488,7 @@
     var all = ((spec && spec.holes) || []).concat((spec && spec.pegs) || []);
     return all.filter(function (f) { return f.id === id; })[0] || null;
   }
-  function levelMateTarget(srcNode, srcId, dstNode, dstId) {
+  function levelMateTarget(srcNode, srcId, dstNode, dstId, dstEnd) {   // dstEnd: the clicked mouth of the hole (1 / -1), optional
     evaluate();
     if (!results || !results.ready) return { reason: 'Parts are still loading' };
     var sKey = srcNode.userData.kbType.slice(5), dKey = dstNode.userData.kbType.slice(5);
@@ -1450,8 +1501,13 @@
     var sMine = slotForNode(srcNode), dMine = slotForNode(dstNode);
     // 同型号还没装好的位置都算候选(包括检查暂时把这个零件归过去的那个)。只看"归过去的那个"的话,
     // 对称的板子会把别的孔位映射到点的孔上:零件装对了孔,却被记成另一颗螺丝,随后报"插错孔"
-    var srcSlots = sMine && sMine.ok && staged[srcNode.uuid] ? [sMine] : sMine && sMine.ok ? [] : results.slots.filter(function (t) {
-      return t.ref.ckey === canon(sKey) && !t.ok && (!t.part || t.part.node === srcNode);
+    // pre-built groups of an assembly step that isn't done yet are interchangeable (the two wedge + screw groups
+    // go on either side of the X-Lock): their positions stay candidates even while held by the twin part
+    var openGroup = function (t) {
+      return results.steps.some(function (x) { return x.assembly && x.state !== 'complete' && x.assembly.groups.some(function (g) { return g.indexOf(t.ref.id) >= 0; }); });
+    };
+    var srcSlots = sMine && sMine.ok && staged[srcNode.uuid] && !(window.KBLevel && KBLevel.get() === 3) ? [sMine] : sMine && sMine.ok && !openGroup(sMine) ? [] : results.slots.filter(function (t) {
+      return t.ref.ckey === canon(sKey) && (!t.ok || openGroup(t)) && (!t.part || t.part.node === srcNode || openGroup(t));
     });
     var dstSlots = dMine ? [dMine] : results.slots.filter(function (t) { return t.ref.ckey === canon(dKey); });
     var paired = false, best = null, open = openSteps(), nxt = next(), curStep = nxt ? nxt.i : -1;
@@ -1468,10 +1524,18 @@
           if (Math.abs(aS.dot(aD)) < Math.cos(THREE.MathUtils.degToRad(20))) return;
           var off = cS.clone().sub(cD);
           var radial = off.clone().sub(aD.clone().multiplyScalar(off.dot(aD))).length();
+          // a peg into a hole clicked at one mouth goes in from that side: prefer the position whose tip points
+          // into that mouth (two wedge screws share the X-Lock's cross hole, one from each side)
+          var side = 0;
+          if (dstEnd && String(srcId).charAt(0) === 'P' && String(dstId).charAt(0) === 'H') {
+            var bb = KBParts.spec(sKey).bbox, body = new THREE.Vector3((bb.min[0] + bb.max[0]) / 2, (bb.min[1] + bb.max[1]) / 2, (bb.min[2] + bb.max[2]) / 2).applyMatrix4(want);
+            var tipS = aS.clone().multiplyScalar(cS.clone().sub(body).dot(aS) < 0 ? -1 : 1);
+            if (tipS.dot(aD) * dstEnd > 0) side = 0.5;
+          }
           // 先看是不是现在这一步的位置(绝对优先),再看能不能做、贴合多少、要不要经过对称映射。
           // 只按贴合比:采来的位姿有一两毫米误差,对称那一侧的别的零件位置可能"更贴",
           // 零件装对了孔却被记成另一个编号,后面的步骤全乱
-          var score = (s.ref.step === curStep ? 0 : open[s.ref.step] ? 1 : 2) + radial + (si ? 0.01 : 0);
+          var score = (s.ref.step === curStep ? 0 : open[s.ref.step] ? 1 : 2) + side + radial + (si ? 0.01 : 0);
           if (radial > hitTol) return;                     // 孔位偏 3 mm 以上:不是这个孔,不参与挑选
           if (!best || score < best.score) best = { s: s, want: want, radial: radial, score: score };
         });
@@ -1652,13 +1716,13 @@
   /* ---------- 用户真的配上去过的零件 ----------
      料盘里的零件从没被配过,拿这个当门槛,装配区外也能放心判错,
      不会再把托盘里挨着摆的螺丝和立柱说成"装反了" */
-  var userMated = Object.create(null);
+  var userMated = Object.create(null), lastMated = [];
   KB.on('snapAttempt', function (a) {
     if (!a || !a.success) return;
+    lastMated = [];                       // what this connection newly marked, so an undo can take it back
     [a.object1, a.object2].forEach(function (n) {
       var top = n && (KB.topOf ? KB.topOf(n) : n);
-      if (top && top.uuid) userMated[top.uuid] = true;
-      if (n && n.uuid) userMated[n.uuid] = true;
+      [top, n].forEach(function (x) { if (x && x.uuid && !userMated[x.uuid]) { userMated[x.uuid] = true; lastMated.push(x.uuid); } });
     });
   });
   function wasMated(node) {
@@ -1726,6 +1790,8 @@
 
   window.KBCheck = {
     groupReadySteps: groupReadySteps,
+    // Level 3 undid the last connection: those parts count as never connected again
+    forgetLastMate: function () { lastMated.forEach(function (u) { delete userMated[u]; }); lastMated = []; },
     evaluate: function () { evaluate(); return results; },
     diagnose: diagnose,
     /* 落位吸附开关:放下时离正确位置 10 mm / 25° 以内就吸到参考位姿 */

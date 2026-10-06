@@ -453,6 +453,33 @@
       }
       if (off > 0) center.addScaledVector(b.tip, off);
     }
+    if (a.kind === 'peg' && b.kind === 'hole' && window.KBCollide) {
+      // The peg sticks out of a part it already goes through (wedge + screw into the X-Lock): that carrying
+      // part stops at the receiving part's face, so back out along the hole until nothing else collides.
+      // A lone screw has no carrier and stays fully seated.
+      var carriers = partsUnder(top, []).filter(function (n) { return n !== a.owner; });
+      if (carriers.length) {
+        var against = partsUnder(topOf(dst.node), []);
+        var tolP = 0.5 * (KBParts.unitScale() / 1000);
+        var free = function () {
+          for (var i = 0; i < carriers.length; i++) {
+            var boxC = new THREE.Box3().expandByObject(carriers[i]);
+            for (var j = 0; j < against.length; j++) {
+              if (!boxC.intersectsBox(new THREE.Box3().expandByObject(against[j]))) continue;
+              if (KBCollide.penetration(carriers[i], against[j]) > tolP) return false;
+            }
+          }
+          return true;
+        };
+        var stepP = 0.5 * (KBParts.unitScale() / 1000), back = 0;
+        while (!free() && back < a.depth) {
+          back = Math.min(a.depth, back + stepP);
+          top.position.copy(p0); top.quaternion.copy(q0); top.updateMatrixWorld(true);
+          applyWorld(top, q, deltaTo(center.clone().addScaledVector(side, back)));
+        }
+        if (back > 0) center.addScaledVector(side, back);
+      }
+    }
     if (window.KBWorkspace && !KBWorkspace.contains(top)) {
       top.position.copy(p0); top.quaternion.copy(q0); top.updateMatrixWorld(true);
       report(a, b, false, 'assembly would cross workspace boundary');
