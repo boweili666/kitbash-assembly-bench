@@ -1,6 +1,9 @@
 # Changelog
 
-**Branch:** `wenhel/simulator` on `git@gitlab.com:wenhel-cmu/aristos-dev.git`
+**Branch:** `clean-deliver-simulator` -- bowei's `ca69f1e` (2026-09-25) and our commits on top of it,
+so it continues his history and merges into his repository as a fast-forward.
+(The same commits were first made on `wenhel/simulator`, where his history was not carried;
+the commit ids quoted below are those originals.)
 
 ## What was taken, and from where
 
@@ -10,9 +13,7 @@
 | Its head when we took it | **`ca69f1e`** — "Rebuild the bundles", boweili666, 2026-09-25 |
 | Taken on | **2026-09-27** |
 
-Upstream history is **not** carried on this branch. The first commit here is
-that tree with no parent. To see what came before it, fetch the upstream
-repository and look at `ca69f1e`.
+On this branch his history is carried: the first commit after `ca69f1e` is ours.
 
 ## What we changed since
 
