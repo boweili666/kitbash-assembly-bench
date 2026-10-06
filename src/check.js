@@ -488,6 +488,9 @@
         for (var bi = ai + 1; bi < slots.length; bi++) {
           var ta = slots[ai], tb = slots[bi];
           if (!ta.part || !tb.part || ta.ref.ckey !== tb.ref.ckey) continue;
+          // 第 1 步按 id 认下的不参与对调:料盘里随手摆的位置算出来的误差没有意义,
+          // 对调会把"左楔块"换到右楔块的槽位上,levelMateTarget 随即拒绝点对了的孔
+          if (ta.part.id === ta.ref.id || tb.part.id === tb.ref.id) continue;
           var now = costOf(ta, ta.part) + costOf(tb, tb.part);
           var alt = costOf(ta, tb.part) + costOf(tb, ta.part);
           if (!(alt < now - 1e-6)) continue;
@@ -1566,11 +1569,17 @@
     var sMine = slotForNode(srcNode), dMine = slotForNode(dstNode);
     // 同型号还没装好的位置都算候选(包括检查暂时把这个零件归过去的那个)。只看"归过去的那个"的话,
     // 对称的板子会把别的孔位映射到点的孔上:零件装对了孔,却被记成另一颗螺丝,随后报"插错孔"
-    var srcSlots = sMine && sMine.ok && staged[srcNode.uuid] ? [sMine] : sMine && sMine.ok ? [] : results.slots.filter(function (t) {
+    var nxt = next(), curStep = nxt ? nxt.i : -1;
+    // 装好了的零件只有"之后要整组装到基座上"的才还能挪:一二级靠暂放(staged)认出来;
+    // 三级不暂放(stageFor 只管一二级),就认"当前这一步是整组装配、它在要装的组里"
+    var movable = sMine && sMine.ok && (staged[srcNode.uuid] ||
+      (window.KBLevel && KBLevel.get() > 2 && nxt && nxt.assembly &&
+       [].concat.apply([], nxt.assembly.groups).indexOf(sMine.ref.id) >= 0));
+    var srcSlots = movable ? [sMine] : sMine && sMine.ok ? [] : results.slots.filter(function (t) {
       return t.ref.ckey === canon(sKey) && !t.ok && (!t.part || t.part.node === srcNode);
     });
     var dstSlots = dMine ? [dMine] : results.slots.filter(function (t) { return t.ref.ckey === canon(dKey); });
-    var paired = false, best = null, open = openSteps(), nxt = next(), curStep = nxt ? nxt.i : -1;
+    var paired = false, best = null, open = openSteps();
     var hitTol = 3 * KBParts.unitScale() / 1000;                // 孔位偏 3 mm 以内算点对了孔
     srcSlots.forEach(function (s) {
       dstSlots.forEach(function (d) {

@@ -1,7 +1,7 @@
 /* ============================================================
- * Settings 面板 —— 把十二个开关从控制台搬到界面上
+ * Settings 面板 —— 把十一个开关从控制台搬到界面上
  *
- * 这十二个开关以前只有控制台入口, 等于"做了等于没做": 每试一种行为都得有人
+ * 这十一个开关以前只有控制台入口, 等于"做了等于没做": 每试一种行为都得有人
  * 去敲一行 KBFocus.pointAtL3(true)。搬上来之后任何一档都能自己调成想要的样子。
  *
  * 面板是**一张待提交的表单**, 不是一排实时开关。三种状态必须分清:
@@ -16,7 +16,7 @@
  *
  * 齿轮**默认就在**工具栏上。原先它藏在 ?settings=1 后面, 而宿主加载台子的 URL 不带
  * 这个参数 —— 于是这个面板等于不存在, 要用它只能手敲控制台。藏它是错的决定:
- * 这十二个开关正是用来现场调行为的, 看不见就等于没做。
+ * 这十一个开关正是用来现场调行为的, 看不见就等于没做。
  * ?settings=0 或 KB.settings(false) 可以把它收掉。
  *
  * 样式全部写在这里(内联), 不碰 app.css: 那个文件没有别的 patch 动,
@@ -28,7 +28,7 @@
   var KB = window.KB;
   var STORE_KEY = 'kb.settings';
 
-  /* ---------- 十二个开关: 分组、出厂值、影响哪些档 ----------
+  /* ---------- 十一个开关: 分组、出厂值、影响哪些档(三级点孔怎么落座不在这里, 在 levelrules.js 的表里) ----------
    * get / set 一律直接走模块自己的口, 这里不缓存 —— live 只有一个来源。
    * 有的模块 getter 和 setter 不是同一个函数(KBErrors.shown / KBErrors.set,
    * KBStepDebug.shown / KBStepDebug.show), 所以两个都写出来。 */
@@ -68,11 +68,6 @@
         label: 'The yellow play bar',
         get: function () { return KBAnswer.showBar(); },
         set: function (v) { KBAnswer.showBar(v); } } ] },
-    { name: 'Interaction', rows: [
-      { key: 'freeInsert', type: 'bool', factory: true, levels: 'level 3',
-        label: 'Level 3 accepts any hole and never undoes the part',
-        get: function () { return KBLevel.freeInsert(); },
-        set: function (v) { KBLevel.freeInsert(v); } } ] },
     { name: 'Parts tray', rows: [
       { key: 'trayByStep', type: 'bool', factory: true, levels: 'every level',
         label: 'Order the tray by the step that first needs a part',
@@ -250,7 +245,7 @@
     b.id = 'btnSettings';
     b.className = 'tool';
     b.type = 'button';
-    b.title = 'Settings: the twelve switches, as a form you Save';
+    b.title = 'Settings: the eleven switches, as a form you Save';
     b.innerHTML = '<svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
                   'stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="2.6"/>' +
                   '<path d="M10 2.6v2M10 15.4v2M2.6 10h2M15.4 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4' +

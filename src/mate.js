@@ -706,6 +706,34 @@
     rebuildMarkers();
   });
 
+  /* ---------- 别的路径落座后登记孔轴 ----------
+     levels.js 按答案位姿落座(levelrules seatCorrect: reference)时不经过 seat(),
+     这里补上 seat() 落座时记的那一份:锁在孔上、←→ 绕轴转、↑↓ 沿轴推拉。
+     mover = 被挪过去的那一头(levels 的 info:{node, id, end, kind}),other = 它装上去的那一头 */
+  function hold(mover, other) {
+    function feature(x) {
+      var spec = KBParts.spec(x.node.userData.kbType.slice(5));
+      var list = spec && (x.kind === 'hole' ? spec.holes : spec.pegs);
+      var raw = list && list.filter(function (f) { return f.id === x.id; })[0];
+      if (!raw) throw new Error('KBMate.hold: ' + x.node.name + ' has no ' + x.kind + ' ' + x.id);
+      return worldFeature({ node: x.node, f: raw, kind: x.kind, end: x.end || 0 });
+    }
+    var a = feature(mover), b = feature(other);
+    // 轴的正方向 = 拔出来的方向(↑),和 seat() 同口径:销沿销尖反方向拔出;套在销上的孔沿销尖方向退出;
+    // 孔对孔沿目标孔轴、朝挪过来的那个零件本体那一侧
+    var dir = a.kind === 'peg' ? a.tip.clone().negate()
+      : b.kind === 'peg' ? b.tip.clone()
+      : (a.body.clone().sub(b.c).dot(b.d) < 0 ? b.d.clone().negate() : b.d.clone());
+    var screwNode = isScrew(mover.node) ? mover.node : isScrew(other.node) ? other.node : null;
+    lastMate = { node: topOf(screwNode || mover.node),
+      a: { node: mover.node, id: mover.id, end: mover.end || 0, kind: mover.kind },
+      b: { node: other.node, id: other.id, end: other.end || 0, kind: other.kind },
+      point: a.c.clone(), dir: dir.normalize() };
+    mates[mover.node.uuid] = lastMate;
+    mates[other.node.uuid] = lastMate;
+    return true;
+  }
+
   /* ---------- 装上之后锁在孔上:拖拽 / 点网格不再移动它,只有方向键沿轴、绕轴;再点一下零件才解锁 ---------- */
   function locked(node) { return !!lastMate && (node === lastMate.node || topOf(node) === lastMate.node); }
   function release(node, keepEvidence) {
@@ -739,6 +767,7 @@
   window.KBMate = {
     locked: locked,
     release: release,
+    hold: hold,
     /* 特征(孔 / 销)的世界坐标 —— marks.js 的 AI 指点圆片要用同一套算法, 不能各算一份 */
     worldFeature: worldFeature,
     /* 教程:聚光要点的孔口 [{node, id, end?}];点击守卫 {arm, mate},返回 true 放行、字符串为拒绝原因 */
