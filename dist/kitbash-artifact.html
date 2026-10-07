@@ -1565,7 +1565,7 @@ body.demo-mode #debugSteps { display: none !important; }
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-10-06 21:43';  /* build.py replaces this with the build time */</script>
+<script>window.KB_BUILD = '2026-10-06 22:07';  /* build.py replaces this with the build time */</script>
 <script>
 /**
  * @license
@@ -13965,8 +13965,8 @@ KBWorkspace.overview();
     var moveTarget, guide, storySteps, storyNote, playButton, startQuaternion;
     var cameraCenter, cameraDirection, cameraDistance, joinedCenter, joinedDistance;
     var elapsed = 0, tickTime = 0, userPaused = false;
-    function isStory() { return configuration && /^(mateArm|mateScrew)$/.test(configuration.tag); }
-    var startPosition, endPosition, endQuaternion, axis, pivot, configuration;
+    function isStory() { return configuration && /^(mateTurn|matePeg)$/.test(configuration.tag); }
+    var startPosition, endPosition, endQuaternion, axis, pivot, configuration, targetTop = true;
     var frame = 0, lastDraw = 0, paused = false, active = false;
     var width = 0, height = 0;
     var ownedMaterials = [], ownedGeometries = [];
@@ -14024,14 +14024,14 @@ KBWorkspace.overview();
         source.position.copy(endPosition);
         source.quaternion.copy(endQuaternion);
         var tag = configuration.tag;
-        if (tag === 'select' || tag === 'armScrew')
+        if (tag === 'select' || tag === 'armPeg')
             source.position.copy(startPosition);
         if (tag === 'move')
             source.position.lerpVectors(startPosition, endPosition, smooth((t - .3) / .4));
         if (isStory()) {
             source.quaternion.copy(startQuaternion).slerp(endQuaternion, smooth((t - .36) / .16));
             source.position.lerpVectors(startPosition, endPosition, smooth((t - .54) / .23));
-            if (tag === 'mateArm' && t > .84) {
+            if (tag === 'mateTurn' && t > .84) {
                 var turn = new THREE.Quaternion().setFromAxisAngle(axis, Math.sin(smooth((t - .84) / .12) * Math.PI * 2) * Math.PI / 12);
                 source.position.sub(pivot).applyQuaternion(turn).add(pivot);
                 source.quaternion.premultiply(turn);
@@ -14061,7 +14061,7 @@ KBWorkspace.overview();
         var angle = Math.min(camera.fov * Math.PI / 360, Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect));
         var distance = radius / Math.sin(angle) * 1.08;
         var direction = configuration.course === 0 ? new THREE.Vector3(1.25, 1.6, 2.2) : new THREE.Vector3(2.6, 1.4, 1.3);
-        if (isStory() && configuration.tag === 'mateArm' && configuration.target.end === -1)
+        if (isStory() && configuration.tag === 'mateTurn' && !targetTop)
             direction.y *= -1;
         cameraCenter = center;
         cameraDirection = direction.normalize();
@@ -14113,19 +14113,19 @@ KBWorkspace.overview();
         var tag = configuration.tag;
         var clicking = isStory() ? t < .36 : tag !== 'turn' && tag !== 'slide' && tag !== 'complete';
         cursor.hidden = !clicking;
-        var second = markerB && (tag === 'mateArm' || tag === 'mateScrew') && t > .23;
+        var second = markerB && (tag === 'mateTurn' || tag === 'matePeg') && t > .23;
         if (clicking) {
             anchor(cursor, tag === 'move' ? moveTarget : second ? markerB : markerA, 0, 0);
             cursor.classList.toggle('press', (t > .18 && t < .27) || (second && t > .29 && t < .35));
         }
         caption.textContent = tag === 'turn' ? '← / →  Rotate around the hole' : tag === 'slide' ? '↑ / ↓  Slide along the hole' :
-            tag === 'move' ? 'Click the grid to move the arm' : tag === 'complete' ? 'Same parts. Same connections.' :
-                second ? '2 · Click the receiving hole' : tag === 'select' ? 'Click the arm to select it' : '1 · Click the highlighted connector';
+            tag === 'move' ? 'Click the grid to move the ' + configuration.source.name : tag === 'complete' ? 'Same parts. Same connections.' :
+                second ? '2 · Click the receiving hole' : tag === 'select' ? 'Click the ' + configuration.source.name + ' to select it' : '1 · Click the highlighted connector';
         if (isStory()) {
             var chapter = t < .23 ? 0 : t < .36 ? 1 : t < .54 ? 2 : t < .77 ? 3 : 4;
             var messages = ['1 · Pick the connection on the moving part', '2 · Pick the receiving hole mouth',
                 '3 · Turn until the connectors face each other', '4 · Follow the axis — ease into contact',
-                tag === 'mateArm' ? '5 · Connected — arrow keys turn around this hole' : '5 · Connected — arrow keys slide along this hole'];
+                tag === 'mateTurn' ? '5 · Connected — arrow keys turn around this hole' : '5 · Connected — arrow keys slide along this hole'];
             caption.textContent = messages[chapter];
             storySteps.querySelectorAll('span').forEach(function (s, i) { s.classList.toggle('current', i === chapter); s.classList.toggle('done', i < chapter); });
             host.dataset.chapter = String(chapter);
@@ -14180,6 +14180,7 @@ KBWorkspace.overview();
     } });
     function kindColor(id) { return String(id || '').charAt(0) === 'P' ? 0x8a4bff : 0xff2d95; }
     function show(container, config) {
+        storyNote = null;
         clear();
         host = container;
         configuration = config;
@@ -14217,7 +14218,6 @@ KBWorkspace.overview();
             storySteps = overlay('tt-story-steps');
             storySteps.innerHTML = ['Pick', 'Receive', 'Align', 'Join', 'Connected'].map(function (name) { return '<span>' + name + '</span>'; }).join('');
             storyNote = overlay('tt-story-note');
-            storyNote.textContent = config.tag === 'mateArm' ? (config.target.end === 1 ? 'Lower arm mouth → TOP plate mouth' : 'Lower arm mouth → UNDERSIDE plate mouth') : 'Shaft disc → wedge hole mouth';
             var controls = document.createElement('div');
             controls.className = 'tt-story-controls';
             host.appendChild(controls);
@@ -14238,10 +14238,9 @@ KBWorkspace.overview();
                 else
                     resume();
             };
-            if (config.tag === 'mateArm') {
+            if (config.tag === 'mateTurn') {
                 var faceButton = document.createElement('button');
                 faceButton.type = 'button';
-                faceButton.textContent = config.target.end === 1 ? 'Compare underside' : 'Back to top face';
                 controls.appendChild(faceButton);
                 faceButton.onclick = function () { show(host, Object.assign({}, config, { target: Object.assign({}, config.target, { end: -config.target.end }) })); };
             }
@@ -14257,7 +14256,7 @@ KBWorkspace.overview();
         config.objects.forEach(function (data) { nodes[data.name] = part(data); });
         source = nodes[config.source.name];
         target = nodes[config.target.name];
-        var alone = config.tag === 'select' || config.tag === 'move' || config.tag === 'armScrew';
+        var alone = config.tag === 'select' || config.tag === 'move' || config.tag === 'armPeg';
         if (alone)
             root.remove(target);
         source.position.set(0, 0, 0);
@@ -14265,6 +14264,13 @@ KBWorkspace.overview();
         sourceFeature = feature(source, config.source.id, config.source.end);
         targetFeature = feature(target, config.target.id, config.target.end);
         axis = targetFeature.d.clone().multiplyScalar(config.target.end || 1);
+        targetTop = axis.y >= 0;
+        if (storyNote)
+            storyNote.textContent = config.tag === 'mateTurn'
+                ? 'Lower ' + config.source.name + ' mouth → ' + (targetTop ? 'TOP ' : 'UNDERSIDE ') + config.target.name + ' mouth'
+                : 'Shaft disc → ' + config.target.name + ' hole mouth';
+        if (faceButton)
+            faceButton.textContent = targetTop ? 'Compare underside' : 'Back to top face';
         pivot = targetFeature.mouth.clone();
         var peg = config.source.id[0] === 'P';
         var normal = peg ? sourceFeature.tip : sourceFeature.d.clone().multiplyScalar(config.source.end);
@@ -14296,7 +14302,7 @@ KBWorkspace.overview();
         markerA = ring(source, config.source.id, config.source.end, kindColor(config.source.id));
         markerB = alone ? null : ring(target, config.target.id, config.target.end, kindColor(config.target.id));
         sourceLabel.textContent = config.source.name + (alone ? '' : peg ? ' · shaft' : ' · lower face');
-        targetLabel.textContent = config.target.name + (peg ? ' · hole' : config.target.end === 1 ? ' · top face' : ' · underside');
+        targetLabel.textContent = config.target.name + (peg ? ' · hole' : targetTop ? ' · top face' : ' · underside');
         targetLabel.hidden = alone;
         if (isStory()) {
             guide = new THREE.Line(geometry(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()])), material(new THREE.LineDashedMaterial({ color: 0xf0bb69, dashSize: size * .025, gapSize: size * .018, transparent: true, opacity: .8, depthTest: false })));
@@ -14356,6 +14362,127 @@ KBWorkspace.overview();
     function o(key, name, p, r) {
         return { id: KB.newId(), name: name, type: 'part:' + key, p: p, r: r || [0, 0, 0], s: [1, 1, 1] };
     }
+    var pick = null;
+    var V3 = function (a) { return new THREE.Vector3().fromArray(a); };
+    function feature(key, id) {
+        var sp = KBParts.spec(key);
+        return sp ? (sp.holes || []).concat(sp.pegs || []).filter(function (f) { return f.id === id; })[0] : null;
+    }
+    function featureAt(slot, id) { return V3(feature(slot.key, id).c).applyMatrix4(slot.M); }
+    function endToward(slot, id, world) {
+        var f = feature(slot.key, id);
+        return world.clone().applyMatrix4(slot.Minv).sub(V3(f.c)).dot(V3(f.d)) >= 0 ? 1 : -1;
+    }
+    function elongation(key) {
+        var b = KBParts.spec(key).bbox, d = [0, 1, 2].map(function (i) { return b.max[i] - b.min[i]; }).sort(function (x, y) { return y - x; });
+        return d[0] / Math.max(1e-6, d[1]);
+    }
+    function L() {
+        var ref = window.KBCheck && KBCheck.ref && KBCheck.ref();
+        if (pick && pick.ref === ref)
+            return pick;
+        var kind = function (sl) { return KBParts.kindOf(sl.key); };
+        var before = function (h, sl) { return h.step < sl.step || (h.step === sl.step && (h.start || 0) < (sl.start || 0)); };
+        var order = ref ? ref.slots.slice().sort(function (a, b) { return a.step - b.step || (a.start || 0) - (b.start || 0) || a.i - b.i; }) : [];
+        var ins = null, turn = null, best = -1;
+        order.forEach(function (sl) {
+            sl.mates.forEach(function (m) {
+                var h = m.slot;
+                (m.features || []).forEach(function (pr) {
+                    if (!ins && before(h, sl) && kind(sl).screw && !kind(h).screw && pr[0].charAt(0) === 'P' && pr[1].charAt(0) === 'H')
+                        ins = { peg: sl, host: h, pegId: pr[0], holeId: pr[1] };
+                    if (!kind(sl).turns && !kind(h).turns && pr[0].charAt(0) === 'H' && pr[1].charAt(0) === 'H') {
+                        var e = elongation(sl.key);
+                        if (e > best + 1e-6) {
+                            best = e;
+                            turn = { mover: sl, base: h, moverId: pr[0], baseId: pr[1] };
+                        }
+                    }
+                });
+            });
+        });
+        pick = { ref: ref, ok: !!(ins && turn) };
+        if (!pick.ok)
+            return pick;
+        var sp = KBParts.spec(ins.peg.key), shaft = sp.pegs.filter(function (f) { return f.id === ins.pegId; })[0], head = shaft;
+        sp.pegs.forEach(function (f) { if (f.r > head.r)
+            head = f; });
+        pick.pegKey = ins.peg.key;
+        pick.hostKey = ins.host.key;
+        pick.pegId = ins.pegId;
+        pick.holeId = ins.holeId;
+        pick.holeEnd = endToward(ins.host, ins.holeId, V3(head.c).applyMatrix4(ins.peg.M));
+        pick.headDir = V3(head.c).sub(V3(shaft.c)).normalize();
+        pick.moverKey = turn.mover.key;
+        pick.baseKey = turn.base.key;
+        pick.moverId = turn.moverId;
+        pick.baseId = turn.baseId;
+        pick.moverEnd = endToward(turn.mover, turn.moverId, featureAt(turn.base, turn.baseId));
+        pick.baseEnd = endToward(turn.base, turn.baseId, featureAt(turn.mover, turn.moverId));
+        pick.rel = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().multiplyMatrices(turn.base.Minv, turn.mover.M));
+        var label = function (key) { return KBParts.spec(key).label || key; };
+        pick.words = { peg: kind(ins.peg).screw ? 'screw' : label(ins.peg.key), host: label(ins.host.key),
+            mover: label(turn.mover.key), base: label(turn.base.key) };
+        pick.words.Peg = pick.words.peg.charAt(0).toUpperCase() + pick.words.peg.slice(1);
+        if (pick.words.mover === pick.words.base)
+            pick.words.base += ' (other)';
+        if (pick.words.Peg === pick.words.host)
+            pick.words.host += ' (other)';
+        return pick;
+    }
+    function fill(text) {
+        var w = L().words || {};
+        return String(text == null ? '' : text).replace(/\{(peg|Peg|host|mover|base)\}/g, function (m, k) { return w[k] || k; });
+    }
+    function rest(key, name, q, x, z) {
+        var b = KBParts.spec(key).bbox, box = new THREE.Box3(V3(b.min), V3(b.max)).applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(q));
+        var c = box.getCenter(new THREE.Vector3()), e = new THREE.Euler().setFromQuaternion(q, 'XYZ');
+        var data = o(key, name, [x - c.x, -box.min.y, z - c.z], [e.x, e.y, e.z]);
+        data.size = box.getSize(new THREE.Vector3());
+        return data;
+    }
+    var UP = new THREE.Vector3(0, 1, 0);
+    function lessonScene(c) {
+        var P = L(), ws = window.KBWorkspace ? KBWorkspace.bounds : { minX: -5, maxX: 5, minZ: 6, maxZ: 16 };
+        var W = ws.maxX - ws.minX, D = ws.maxZ - ws.minZ;
+        if (c.lesson === 'insert') {
+            var n = V3(feature(P.hostKey, P.holeId).d).multiplyScalar(P.holeEnd);
+            var qh = n.y < -0.1 ? new THREE.Quaternion().setFromUnitVectors(n, UP) : new THREE.Quaternion();
+            var host = rest(P.hostKey, P.words.host, qh, 0, 0);
+            var qp = new THREE.Quaternion().setFromUnitVectors(P.headDir, UP);
+            var ps = rest(P.pegKey, P.words.Peg, qp, 0, 0).size, gap = 0.6 * Math.max(host.size.x, host.size.z);
+            var x = host.size.x / 2 + ps.x / 2 + gap;
+            var peg = c.layout === 'tray' && window.KBTray
+                ? rest(P.pegKey, P.words.Peg, qp, x, KBTray.bounds.maxZ - 0.3 * (KBTray.bounds.maxZ - KBTray.bounds.minZ) - (window.KBWorkspace ? KBWorkspace.center.z : 0))
+                : rest(P.pegKey, P.words.Peg, qp, x, 0.5 * host.size.z);
+            return [host, peg];
+        }
+        var nb = V3(feature(P.baseKey, P.baseId).d).multiplyScalar(P.baseEnd);
+        var qb = new THREE.Quaternion().setFromUnitVectors(nb, UP);
+        var qm = new THREE.Quaternion().setFromAxisAngle(UP, Math.PI / 2).multiply(qb.clone().multiply(P.rel));
+        var bx = 0.18 * W, bz = -0.06 * D;
+        var base = rest(P.baseKey, P.words.base, qb, bx, bz);
+        var ms = rest(P.moverKey, P.words.mover, qm, 0, 0).size;
+        var mover = rest(P.moverKey, P.words.mover, qm, bx - 0.25 * base.size.x, bz + base.size.z / 2 + ms.z / 2 + 0.15 * Math.max(base.size.x, base.size.z, ms.x, ms.z));
+        return [base, mover];
+    }
+    function lessonView(nodes) {
+        if (!window.KBFocus || !KBFocus.viewOf)
+            return null;
+        var v = KBFocus.viewOf(nodes), p = V3(v.p), t = V3(v.t);
+        var right = new THREE.Vector3().crossVectors(t.clone().sub(p), UP).normalize().multiplyScalar(0.22 * p.distanceTo(t));
+        return { p: p.sub(right).toArray(), t: t.sub(right).toArray() };
+    }
+    function lessonPreview(c) {
+        var P = L(), names = lessonNames(c);
+        return c.lesson === 'insert'
+            ? { source: { name: names.peg, id: P.pegId, end: 0 }, target: { name: names.host, id: P.holeId, end: P.holeEnd } }
+            : { source: { name: names.mover, id: P.moverId, end: P.moverEnd }, target: { name: names.base, id: P.baseId, end: P.baseEnd } };
+    }
+    function lessonNames(c) {
+        var w = L().words;
+        return !c.lesson ? {} : c.lesson === 'insert' ? { peg: w.Peg, host: w.host } : { mover: w.mover, base: w.base };
+    }
     var ORBIT_DRAGS = 3;
     var PAN_DRAGS = 2;
     var ZOOMS = 2;
@@ -14406,138 +14533,117 @@ KBWorkspace.overview();
             ]
         },
         {
-            name: 'Insert a screw', names: { wedge: 'Wedge', screw: 'Screw' },
-            preview: { source: { name: 'Screw', id: 'P1', end: 0 }, target: { name: 'Wedge', id: 'H1', end: 1 } },
-            view: { p: [1.7, 1.9, 13.8], t: [0.6, 0.1, 11.3] },
-            scene: function () {
-                return [o('aluminum_arm_wedge_5mm', 'Wedge', [0, 0, 11]), o('screw_m3x16_socket_cap', 'Screw', [1.4, 0, 11.9])];
-            },
+            name: 'Insert a {peg}', lesson: 'insert', layout: 'beside', preview: true,
             steps: [
-                { tag: 'pickScrew', previewTag: 'armScrew', light: function () { return []; },
-                    focus: function () { return { nodes: [parts.screw] }; },
-                    done: function () { return flags.selected === parts.screw; },
-                    lesson: { title: '1 \u00b7 First click the part you want to move', hint: 'Every connection is three clicks, always in this order: the part, its hole, then the hole it goes into. Start with the part: click the screw. Its connection discs appear on it.',
-                        demo: 'arm', label: 'Click the screw', target: 'Screw', actions: ['Click the yellow screw', 'Its discs appear \u2014 holes pink, pegs purple'] } },
-                { tag: 'armScrew', light: function () { return [parts.screw]; },
-                    expect: function () { return { source: [{ node: parts.screw, id: 'P1', end: 0 }], target: [] }; },
-                    done: function () { var a = KBMate.armed(); return !!a && a.node === parts.screw && a.id === 'P1'; },
-                    lesson: { title: '2 \u00b7 Then click its hole or peg', hint: 'Now click the disc on the part that makes the connection \u2014 here the cyan one on the screw\u2019s shaft. It turns green: that end is the one that goes in.',
-                        demo: 'arm', label: 'Click the shaft disc', target: 'Screw', actions: ['Click the cyan disc on the shaft', 'It turns green \u2014 ready to connect'] } },
-                { tag: 'mateScrew', light: function () { return [parts.wedge]; },
-                    expect: function () { return { source: [{ node: parts.screw, id: 'P1', end: 0 }], target: [{ node: parts.wedge, id: 'H1' }] }; },
-                    done: function () { return flags.mate && flags.mate[0] === parts.screw && flags.mate[1] === parts.wedge; },
-                    lesson: { title: '3 \u00b7 Last, click the hole it goes into', hint: 'Only now click the hole where it belongs \u2014 the cyan disc on the wedge. The screw flies over and seats itself in that hole.',
-                        demo: 'insert', label: 'Click the wedge hole', target: 'Wedge hole', actions: ['Keep the shaft disc green', 'Click the cyan disc on the wedge'] } },
-                { tag: 'slide', light: function () { return [parts.screw]; },
+                { tag: 'pickPeg', previewTag: 'armPeg', light: function () { return []; },
+                    focus: function () { return { nodes: [parts.peg] }; },
+                    done: function () { return flags.selected === parts.peg; },
+                    lesson: { title: '1 \u00b7 First click the part you want to move', hint: 'Every connection is three clicks, always in this order: the part, its hole, then the hole it goes into. Start with the part: click the {peg}. Its connection discs appear on it.',
+                        demo: 'arm', label: 'Click the {peg}', target: '{Peg}', actions: ['Click the yellow {peg}', 'Its discs appear \u2014 holes pink, pegs purple'] } },
+                { tag: 'armPeg', light: function () { return [parts.peg]; },
+                    expect: function () { return { source: [{ node: parts.peg, id: L().pegId, end: 0 }], target: [] }; },
+                    done: function () { var a = KBMate.armed(); return !!a && a.node === parts.peg && a.id === L().pegId; },
+                    lesson: { title: '2 \u00b7 Then click its hole or peg', hint: 'Now click the disc on the part that makes the connection \u2014 here the cyan one on the {peg}\u2019s shaft. It turns green: that end is the one that goes in.',
+                        demo: 'arm', label: 'Click the shaft disc', target: '{Peg}', actions: ['Click the cyan disc on the shaft', 'It turns green \u2014 ready to connect'] } },
+                { tag: 'matePeg', light: function () { return [parts.host]; },
+                    expect: function () { return { source: [{ node: parts.peg, id: L().pegId, end: 0 }], target: [{ node: parts.host, id: L().holeId }] }; },
+                    done: function () { return flags.mate && flags.mate[0] === parts.peg && flags.mate[1] === parts.host; },
+                    lesson: { title: '3 \u00b7 Last, click the hole it goes into', hint: 'Only now click the hole where it belongs \u2014 the cyan disc on the {host}. The {peg} flies over and seats itself in that hole.',
+                        demo: 'insert', label: 'Click the {host} hole', target: '{host} hole', actions: ['Keep the shaft disc green', 'Click the cyan disc on the {host}'] } },
+                { tag: 'slide', light: function () { return [parts.peg]; },
                     done: function () { return slidMm() >= SLIDE_GOAL_MM; },
                     status: function () {
                         if (!flags.slideBase || slidMm() >= SLIDE_GOAL_MM)
                             return '';
-                        if (!(window.KBMate && KBMate.hingeFor(parts.screw)))
-                            return 'Click the screw once to take hold of it again, then press \u2191 or \u2193.';
+                        if (!(window.KBMate && KBMate.hingeFor(parts.peg)))
+                            return 'Click the {peg} once to take hold of it again, then press \u2191 or \u2193.';
                         return 'Slid ' + slidMm().toFixed(2) + ' mm of ' + SLIDE_GOAL_MM + ' mm \u2014 keep pressing \u2191 or \u2193.';
                     },
-                    lesson: { title: 'Push and pull', hint: 'The screw is locked in that hole. \u2191 / \u2193 slide it along the hole (Shift = fine steps).',
-                        demo: 'adjust', label: 'Slide \u2191 \u2193', target: 'Screw', actions: ['Press \u2191 or \u2193', 'Watch the screw move along the hole'] } }
+                    lesson: { title: 'Push and pull', hint: 'The {peg} is locked in that hole. \u2191 / \u2193 slide it along the hole (Shift = fine steps).',
+                        demo: 'adjust', label: 'Slide \u2191 \u2193', target: '{Peg}', actions: ['Press \u2191 or \u2193', 'Watch the {peg} move along the hole'] } }
             ]
         },
         {
-            name: 'Turn on a hole', names: { arm: 'Arm', plate: 'Front Plate' },
-            preview: { source: { name: 'Arm', id: 'H1', end: -1 }, target: { name: 'Front Plate', id: 'H6', end: 1 } },
-            scene: function () {
-                return [o('split_front_plate', 'Front Plate', [1.8, 0, 10.4]), o('arm_5in', 'Arm', [0.8, 0, 13.2], [0, Math.PI / 2, 0])];
-            },
+            name: 'Turn on a hole', lesson: 'turn', layout: 'beside', preview: true,
             steps: [
-                { tag: 'select', light: function () { return [parts.arm]; },
-                    done: function () { return flags.selected === parts.arm; },
-                    lesson: { title: 'Meet your first part', hint: 'The glowing arm is your target. A single click selects it and reveals its hole.',
-                        demo: 'select', label: 'Click to select', target: 'Arm', actions: ['Find the glowing arm', 'Left-click it once'] } },
-                { tag: 'move', light: function () { return [parts.arm]; },
-                    done: function () { return flags.placed === parts.arm; },
+                { tag: 'select', light: function () { return [parts.mover]; },
+                    done: function () { return flags.selected === parts.mover; },
+                    lesson: { title: 'Meet your first part', hint: 'The glowing {mover} is your target. A single click selects it and reveals its hole.',
+                        demo: 'select', label: 'Click to select', target: '{mover}', actions: ['Find the glowing {mover}', 'Left-click it once'] } },
+                { tag: 'move', light: function () { return [parts.mover]; },
+                    done: function () { return flags.placed === parts.mover; },
                     lesson: { title: 'Move it closer', hint: 'The selected part flies to the spot you click on the grid. Its height stays the same; \u2191 / \u2193 raise or lower it.',
-                        demo: 'move', label: 'Click an empty spot', target: 'Arm', actions: ['Keep the arm selected', 'Left-click an empty spot on the grid near the plate'] } },
-                { tag: 'mateArm', light: function () { return [parts.arm, parts.plate]; },
-                    expect: function () { return { source: [{ node: parts.arm, id: 'H1', end: -1 }], target: [{ node: parts.plate, id: 'H6', end: 1 }] }; },
-                    done: function () { return flags.mate && flags.mate[0] === parts.arm && flags.mate[1] === parts.plate; },
-                    lesson: { title: 'Set the arm on the plate', hint: 'The two glowing discs will touch: the LOWER disc of the arm hole and the TOP disc of the plate hole. Tilt the view a little to reach the lower one.',
-                        demo: 'mate', label: 'Click source \u2192 click target', target: 'Plate hole', actions: ['Click the glowing LOWER disc of the arm hole', 'Click the glowing disc on the plate'] } },
-                { tag: 'turn', light: function () { return [parts.arm]; },
+                        demo: 'move', label: 'Click an empty spot', target: '{mover}', actions: ['Keep the {mover} selected', 'Left-click an empty spot on the grid near the {base}'] } },
+                { tag: 'mateTurn', light: function () { return [parts.mover, parts.base]; },
+                    expect: function () { return { source: [{ node: parts.mover, id: L().moverId, end: L().moverEnd }], target: [{ node: parts.base, id: L().baseId, end: L().baseEnd }] }; },
+                    done: function () { return flags.mate && flags.mate[0] === parts.mover && flags.mate[1] === parts.base; },
+                    lesson: { title: 'Set the {mover} on the {base}', hint: 'The two glowing discs will touch: the LOWER disc of the {mover} hole and the TOP disc of the {base} hole. Tilt the view a little to reach the lower one.',
+                        demo: 'mate', label: 'Click source \u2192 click target', target: '{base} hole', actions: ['Click the glowing LOWER disc of the {mover} hole', 'Click the glowing disc on the {base}'] } },
+                { tag: 'turn', light: function () { return [parts.mover]; },
                     done: function () { return turnedDeg() >= TURN_GOAL; },
                     status: function () {
                         if (!flags.turnBase)
                             return '';
                         if (turnedDeg() >= TURN_GOAL)
                             return '';
-                        var held = window.KBMate && KBMate.hingeFor(parts.arm);
+                        var held = window.KBMate && KBMate.hingeFor(parts.mover);
                         if (!held)
-                            return 'Click the arm once to take hold of it again, then press \u2190 or \u2192.';
+                            return 'Click the {mover} once to take hold of it again, then press \u2190 or \u2192.';
                         return 'Turned ' + Math.round(turnedDeg()) + '\u00b0 of ' + TURN_GOAL + '\u00b0 \u2014 press \u2190 or \u2192 (15\u00b0 a press, Shift = 1\u00b0).';
                     },
-                    lesson: { title: 'Turn it on the hole', hint: 'The arm is locked on that hole. \u2190 / \u2192 turn it around the hole, 15\u00b0 a press (Shift = 1\u00b0 fine steps). In the real build, once it is close to the right angle it snaps into place by itself.',
-                        demo: 'adjust', label: 'Turn \u2190 \u2192', target: 'Arm', actions: ['Press \u2190 or \u2192 (15\u00b0 a press, Shift = 1\u00b0)', 'Watch the arm swing around the hole'] } }
+                    lesson: { title: 'Turn it on the hole', hint: 'The {mover} is locked on that hole. \u2190 / \u2192 turn it around the hole, 15\u00b0 a press (Shift = 1\u00b0 fine steps). In the real build, once it is close to the right angle it snaps into place by itself.',
+                        demo: 'adjust', label: 'Turn \u2190 \u2192', target: '{mover}', actions: ['Press \u2190 or \u2192 (15\u00b0 a press, Shift = 1\u00b0)', 'Watch the {mover} swing around the hole'] } }
             ]
         },
         {
-            name: 'Click to place', names: { wedge: 'Wedge', screw: 'Screw' },
-            view: { p: [5.2, 8.2, 18.5], t: [0.7, 0, 6.8] },
-            scene: function () {
-                return [o('aluminum_arm_wedge_5mm', 'Wedge', [0, 0, 11]), o('screw_m3x16_socket_cap', 'Screw', [1.4, 0, 1.5])];
-            },
+            name: 'Click to place', lesson: 'insert', layout: 'tray',
             steps: [
-                { tag: 'clickScrew', light: function () { return []; },
-                    focus: function () { return { nodes: [parts.screw], fly: parts.screw }; },
-                    done: function () { return flags.mate && flags.mate[0] === parts.screw && flags.mate[1] === parts.wedge; },
-                    lesson: { title: 'Click a part \u2014 it goes in by itself', hint: 'On Level 1 you never line anything up. The part you need turns yellow with a yellow arrow above it; click it and it flies straight to where it belongs \u2014 here, into the wedge.',
-                        demo: 'arm', label: 'Click the glowing screw', target: 'Screw', actions: ['Click the yellow screw (the arrow points at it)', 'Watch it fly into the wedge hole'] } }
+                { tag: 'clickPeg', light: function () { return []; },
+                    focus: function () { return { nodes: [parts.peg], fly: parts.peg }; },
+                    done: function () { return flags.mate && flags.mate[0] === parts.peg && flags.mate[1] === parts.host; },
+                    lesson: { title: 'Click a part \u2014 it goes in by itself', hint: 'On Level 1 you never line anything up. The part you need turns yellow with a yellow arrow above it; click it and it flies straight to where it belongs \u2014 here, into the {host}.',
+                        demo: 'arm', label: 'Click the glowing {peg}', target: '{Peg}', actions: ['Click the yellow {peg} (the arrow points at it)', 'Watch it fly into the {host} hole'] } }
             ]
         },
         {
-            name: 'Your helpers', names: { wedge: 'Wedge', screw: 'Screw' },
-            view: { p: [1.9, 2.6, 15.6], t: [0.6, 0.1, 11.2] },
-            scene: function () {
-                return [o('aluminum_arm_wedge_5mm', 'Wedge', [0, 0, 11]), o('screw_m3x16_socket_cap', 'Screw', [1.4, 0, 1.5])];
-            },
+            name: 'Your helpers', lesson: 'insert', layout: 'tray', frame: 'host',
             steps: [
                 { tag: 'suggest', light: function () { return []; },
-                    focus: function () { return { nodes: [parts.screw], card: { node: parts.screw, caption: 'Close-up: Screw' } }; },
+                    focus: function () { return { nodes: [parts.peg], card: { node: parts.peg, caption: 'Close-up: ' + parts.peg.name } }; },
                     done: function () { return flags.viewTip === 'used'; },
                     status: function () { return flags.viewTip === 'dismissed' ? 'That hid the card. It comes back with the next part \u2014 press \u201cUse this view\u201d to try it.' : ''; },
-                    lesson: { title: 'Suggested view: find the part in one click', hint: 'The part you need is often far away in the tray, out of sight \u2014 like the screw for this wedge. The card in the top-right corner previews a close-up of it. \u201cUse this view\u201d flies the camera there, and from then on the camera follows each part as it moves into place. \u201cNot now\u201d only hides the card.',
+                    lesson: { title: 'Suggested view: find the part in one click', hint: 'The part you need is often far away in the tray, out of sight \u2014 like the {peg} for this {host}. The card in the top-right corner previews a close-up of it. \u201cUse this view\u201d flies the camera there, and from then on the camera follows each part as it moves into place. \u201cNot now\u201d only hides the card.',
                         demo: 'arm', label: 'Click \u201cUse this view\u201d', target: 'View', actions: ['Look at the preview in the top-right card', 'Click \u201cUse this view\u201d \u2014 the camera flies to the part'] } },
                 { tag: 'glow', light: function () { return []; },
-                    focus: function () { return { nodes: [parts.screw], fly: level <= 2 ? parts.screw : null }; },
-                    done: function () { return flags.selected === parts.screw; },
+                    focus: function () { return { nodes: [parts.peg], fly: level <= 2 ? parts.peg : null }; },
+                    done: function () { return flags.selected === parts.peg; },
                     lesson: { title: 'Yellow means \u201cthis one next\u201d', hint: '',
-                        demo: 'arm', label: 'Click the yellow part', target: 'Screw', actions: ['Find the part with the yellow arrow above it', 'Click it to select it'] } }
+                        demo: 'arm', label: 'Click the yellow part', target: '{Peg}', actions: ['Find the part with the yellow arrow above it', 'Click it to select it'] } }
             ]
         },
         {
-            name: 'Once more: arm onto plate', names: { arm: 'Arm', plate: 'Front Plate' },
-            view: { p: [0.6, 5.4, 17.8], t: [-0.6, 0, 11.6] },
-            scene: function () {
-                return [o('split_front_plate', 'Front Plate', [1.8, 0, 10.4]), o('arm_5in', 'Arm', [0.8, 0, 13.2], [0, Math.PI / 2, 0])];
-            },
+            name: 'Once more: {mover} onto {base}', lesson: 'turn', layout: 'beside',
             steps: [
-                { tag: 'clickArm', light: function () { return []; },
-                    focus: function () { return { nodes: [parts.arm], fly: parts.arm }; },
-                    done: function () { return flags.mate && flags.mate[0] === parts.arm && flags.mate[1] === parts.plate; },
-                    lesson: { title: 'Your turn again: the arm', hint: 'Same idea with a different part. Click the yellow arm \u2014 it goes onto the plate by itself.',
-                        demo: 'arm', label: 'Click the arm', target: 'Arm', actions: ['Click the yellow arm', 'Watch it land on the plate'] } },
-                { tag: 'pickArm', light: function () { return []; },
-                    focus: function () { return { nodes: [parts.arm] }; },
-                    done: function () { return flags.selected === parts.arm; },
-                    lesson: { title: 'Your turn again: 1 \u00b7 the part', hint: 'Now without help: the same three clicks with a different part. First the part \u2014 click the arm.',
-                        demo: 'arm', label: 'Click the arm', target: 'Arm', actions: ['Click the arm'] } },
-                { tag: 'armArm', light: function () { return [parts.arm]; },
-                    expect: function () { return { source: [{ node: parts.arm, id: 'H1', end: -1 }], target: [] }; },
-                    done: function () { var a = KBMate.armed(); return !!a && a.node === parts.arm && a.id === 'H1'; },
-                    lesson: { title: '2 \u00b7 its hole', hint: 'Then its hole: click the cyan disc on the arm (the lower face of the hole \u2014 tilt the view if you need to).',
-                        demo: 'arm', label: 'Click the arm\u2019s hole', target: 'Arm hole', actions: ['Click the cyan disc on the arm'] } },
-                { tag: 'mateArm2', light: function () { return [parts.plate]; },
-                    expect: function () { return { source: [{ node: parts.arm, id: 'H1', end: -1 }], target: [{ node: parts.plate, id: 'H6', end: 1 }] }; },
-                    done: function () { return flags.mate && flags.mate[0] === parts.arm && flags.mate[1] === parts.plate; },
-                    lesson: { title: '3 \u00b7 the hole it goes into', hint: 'Last, the hole where it goes: the cyan disc on top of the plate. The arm seats itself.',
-                        demo: 'insert', label: 'Click the plate hole', target: 'Plate hole', actions: ['Click the cyan disc on the plate'] } }
+                { tag: 'clickMover', light: function () { return []; },
+                    focus: function () { return { nodes: [parts.mover], fly: parts.mover }; },
+                    done: function () { return flags.mate && flags.mate[0] === parts.mover && flags.mate[1] === parts.base; },
+                    lesson: { title: 'Your turn again: the {mover}', hint: 'Same idea with a different part. Click the yellow {mover} \u2014 it goes onto the {base} by itself.',
+                        demo: 'arm', label: 'Click the {mover}', target: '{mover}', actions: ['Click the yellow {mover}', 'Watch it land on the {base}'] } },
+                { tag: 'pickMover', light: function () { return []; },
+                    focus: function () { return { nodes: [parts.mover] }; },
+                    done: function () { return flags.selected === parts.mover; },
+                    lesson: { title: 'Your turn again: 1 \u00b7 the part', hint: 'Now without help: the same three clicks with a different part. First the part \u2014 click the {mover}.',
+                        demo: 'arm', label: 'Click the {mover}', target: '{mover}', actions: ['Click the {mover}'] } },
+                { tag: 'armMover', light: function () { return [parts.mover]; },
+                    expect: function () { return { source: [{ node: parts.mover, id: L().moverId, end: L().moverEnd }], target: [] }; },
+                    done: function () { var a = KBMate.armed(); return !!a && a.node === parts.mover && a.id === L().moverId; },
+                    lesson: { title: '2 \u00b7 its hole', hint: 'Then its hole: click the cyan disc on the {mover} (the lower face of the hole \u2014 tilt the view if you need to).',
+                        demo: 'arm', label: 'Click the {mover}\u2019s hole', target: '{mover} hole', actions: ['Click the cyan disc on the {mover}'] } },
+                { tag: 'mateMover', light: function () { return [parts.base]; },
+                    expect: function () { return { source: [{ node: parts.mover, id: L().moverId, end: L().moverEnd }], target: [{ node: parts.base, id: L().baseId, end: L().baseEnd }] }; },
+                    done: function () { return flags.mate && flags.mate[0] === parts.mover && flags.mate[1] === parts.base; },
+                    lesson: { title: '3 \u00b7 the hole it goes into', hint: 'Last, the hole where it goes: the cyan disc on top of the {base}. The {mover} seats itself.',
+                        demo: 'insert', label: 'Click the {base} hole', target: '{base} hole', actions: ['Click the cyan disc on the {base}'] } }
             ]
         }
     ];
@@ -14550,8 +14656,8 @@ KBWorkspace.overview();
         lesson: { title: 'That card top-left checked your move', hint: 'The card in the top-left corner is your step guide. It checked every click you just made: each one turned green as soon as it was right, the card turns red and says what is wrong when it is not, and it says \u201cStep complete\u201d at the end. In the real build it lists the parts of each step the same way, and it stays there the whole time. Fold it into a small pill with \u2013, then click the pill to open it again.',
             demo: 'arm', label: 'Fold it, then open it', target: 'Guide', actions: ['Click \u2013 on the card to fold it into a pill', 'Click the pill to open it again'] } };
     var PLAN = {
-        1: { courses: [0, 4, 3, 5], skip: { suggest: 1, pickArm: 1, armArm: 1, mateArm2: 1 } },
-        2: { courses: [0, 4, 1, 5], skip: { slide: 1, suggest: 1, clickArm: 1 } },
+        1: { courses: [0, 4, 3, 5], skip: { suggest: 1, pickMover: 1, armMover: 1, mateMover: 1 } },
+        2: { courses: [0, 4, 1, 5], skip: { slide: 1, suggest: 1, clickMover: 1 } },
         3: { courses: [0, 4, 1, 2], skip: {} }
     };
     var FINALS = {
@@ -14563,8 +14669,8 @@ KBWorkspace.overview();
             actions: ['Click a part to select', 'Click hole \u2192 hole to assemble', 'Use arrow keys to adjust the fit'] }
     };
     var GLOW_HINTS = {
-        auto: 'The part you need is often far away in the tray, so the camera flies there for you. The part turns yellow and a yellow arrow bobs above it \u2014 even in a tray full of look-alike screws. Click the yellow screw.',
-        card: 'There it is. The part you need next turns yellow and a yellow arrow bobs above it \u2014 even in a tray full of look-alike screws. Click the yellow screw.'
+        auto: 'The part you need is often far away in the tray, so the camera flies there for you. The part turns yellow and a yellow arrow bobs above it \u2014 even in a tray full of look-alike screws. Click the yellow {peg}.',
+        card: 'There it is. The part you need next turns yellow and a yellow arrow bobs above it \u2014 even in a tray full of look-alike screws. Click the yellow {peg}.'
     };
     var FINAL = { light: function () { return []; }, done: function () { return false; },
         lesson: { title: 'You\u2019ve got the basics', hint: 'Select a part, click its hole, click the receiving hole. Arrow keys fine-tune on the hole. New puts the whole kit on the bench.',
@@ -14573,9 +14679,10 @@ KBWorkspace.overview();
     function buildPlan(lv) {
         level = PLAN[lv] ? lv : 3;
         var plan = PLAN[level];
+        var list = plan.courses.filter(function (ci) { return !courses[ci].lesson || L().ok; });
         steps = [];
         lessons = [];
-        plan.courses.forEach(function (ci) {
+        list.forEach(function (ci) {
             courses[ci].steps.forEach(function (st) {
                 if (plan.skip[st.tag])
                     return;
@@ -14586,12 +14693,12 @@ KBWorkspace.overview();
         });
         courses[4].steps.forEach(function (st) { if (st.tag === 'glow')
             st.lesson.hint = level <= 2 ? GLOW_HINTS.auto : GLOW_HINTS.card; });
-        GUIDE.course = HELP.course = plan.courses[plan.courses.length - 1];
+        GUIDE.course = HELP.course = list[list.length - 1];
         steps.push(GUIDE);
         lessons.push(GUIDE.lesson);
         steps.push(HELP);
         lessons.push(HELP.lesson);
-        FINAL.course = plan.courses[plan.courses.length - 1];
+        FINAL.course = list[list.length - 1];
         FINAL.lesson.hint = FINALS[level].hint;
         FINAL.lesson.actions = FINALS[level].actions;
         steps.push(FINAL);
@@ -14681,16 +14788,17 @@ KBWorkspace.overview();
                 '<path class="tt-nav-wheel-arrows" d="M190 62V42 M186 46L190 42L194 46 M198 51V71 M194 67L198 71L202 67" stroke="#e9bd76" fill="none"/>' +
                 '</g><text x="160" y="138" text-anchor="middle" fill="#bcd0e7" font-size="11">' +
                 (gesture === 'zoom' ? 'SCROLL FORWARD  /  BACK' : gesture === 'pan' ? 'RIGHT BUTTON  +  DRAG' : 'LEFT BUTTON  +  DRAG') + '</text></svg></div>';
-            inputsEl.innerHTML = '<div><strong>' + lesson.label + '</strong><small>' + instruction + '</small></div>';
+            inputsEl.innerHTML = '<div><strong>' + fill(lesson.label) + '</strong><small>' + instruction + '</small></div>';
             return;
         }
         if (course.preview) {
             if (demoBox)
                 demoBox.hidden = false;
+            var pv = lessonPreview(course);
             KBTutorialPreview.show(stageEl, {
                 tag: steps[idx].previewTag || steps[idx].tag || 'complete', course: steps[idx].course,
-                label: lesson.label, objects: course.scene(),
-                source: course.preview.source, target: course.preview.target
+                label: fill(lesson.label), objects: lessonScene(course),
+                source: pv.source, target: pv.target
             });
             KBTutorialPreview.pause(el.classList.contains('minimized'));
         }
@@ -14701,23 +14809,23 @@ KBWorkspace.overview();
                 demoBox.hidden = true;
         }
         inputsEl.innerHTML = mode === 'adjust' ?
-            '<div class="tt-keyboard ' + (at('turn') ? 'tt-turn-keys' : 'tt-slide-keys') + '" aria-hidden="true"><kbd class="tt-key-up">↑</kbd><div><kbd class="tt-key-left">←</kbd><kbd class="tt-key-down">↓</kbd><kbd class="tt-key-right">→</kbd></div></div><div><strong>' + lesson.label + '</strong><small>' + (at('turn') ? 'Turn the arm around its hole' : 'Slide the screw along its axis') + '</small></div>' :
-            mode === 'complete' ? '<span class="tt-finish-icon">✓</span><div><strong>' + lesson.label + '</strong><small>Esc · deselect &nbsp; Ctrl / ⌘ Z · undo</small></div>' :
-                '<div class="tt-mouse" aria-hidden="true"><i></i><b></b></div><div><strong>' + lesson.label + '</strong><small>Left mouse button · one click at a time</small></div>';
+            '<div class="tt-keyboard ' + (at('turn') ? 'tt-turn-keys' : 'tt-slide-keys') + '" aria-hidden="true"><kbd class="tt-key-up">↑</kbd><div><kbd class="tt-key-left">←</kbd><kbd class="tt-key-down">↓</kbd><kbd class="tt-key-right">→</kbd></div></div><div><strong>' + fill(lesson.label) + '</strong><small>' + fill(at('turn') ? 'Turn the {mover} around its hole' : 'Slide the {peg} along its axis') + '</small></div>' :
+            mode === 'complete' ? '<span class="tt-finish-icon">✓</span><div><strong>' + fill(lesson.label) + '</strong><small>Esc · deselect &nbsp; Ctrl / ⌘ Z · undo</small></div>' :
+                '<div class="tt-mouse" aria-hidden="true"><i></i><b></b></div><div><strong>' + fill(lesson.label) + '</strong><small>Left mouse button · one click at a time</small></div>';
     }
     var TURN_GOAL = 10;
     var SLIDE_GOAL_MM = 0.5;
     function slidMm() {
-        if (!flags.slideBase || !parts || !parts.screw)
+        if (!flags.slideBase || !parts || !parts.peg)
             return flags.slide ? SLIDE_GOAL_MM : 0;
         var mm = 1000 / (window.KBParts ? KBParts.unitScale() : 24.77);
-        return flags.slideBase.distanceTo(parts.screw.position) * mm;
+        return flags.slideBase.distanceTo(parts.peg.position) * mm;
     }
     function turnedDeg() {
         var byKey = Math.abs(flags.turned || 0);
-        if (!flags.turnBase || !parts || !parts.arm)
+        if (!flags.turnBase || !parts || !parts.mover)
             return byKey;
-        var dot = Math.min(1, Math.abs(flags.turnBase.dot(parts.arm.quaternion)));
+        var dot = Math.min(1, Math.abs(flags.turnBase.dot(parts.mover.quaternion)));
         return Math.max(byKey, THREE.MathUtils.radToDeg(2 * Math.acos(dot)));
     }
     function updateActions() {
@@ -14734,36 +14842,36 @@ KBWorkspace.overview();
         if (at('areas'))
             checks = [(flags.areaCount || 0) > 0, (flags.areaCount || 0) >= AREA_HOPS];
         if (at('select'))
-            checks = [selected === parts.arm, selected === parts.arm];
+            checks = [selected === parts.mover, selected === parts.mover];
         if (at('move'))
-            checks = [selected === parts.arm || flags.placed === parts.arm, flags.placed === parts.arm];
-        if (at('mateArm'))
-            checks = [!!armed && armed.node === parts.arm && armed.end === -1 || mated(parts.arm, parts.plate), mated(parts.arm, parts.plate)];
+            checks = [selected === parts.mover || flags.placed === parts.mover, flags.placed === parts.mover];
+        if (at('mateTurn'))
+            checks = [!!armed && armed.node === parts.mover && armed.end === L().moverEnd || mated(parts.mover, parts.base), mated(parts.mover, parts.base)];
         if (at('turn'))
             checks = [turnedDeg() > 0.5, turnedDeg() >= TURN_GOAL];
-        if (at('armScrew'))
-            checks = [selected === parts.screw || !!armed && armed.node === parts.screw, !!armed && armed.node === parts.screw];
-        if (at('mateScrew'))
-            checks = [!!armed && armed.node === parts.screw || mated(parts.screw, parts.wedge), mated(parts.screw, parts.wedge)];
+        if (at('armPeg'))
+            checks = [selected === parts.peg || !!armed && armed.node === parts.peg, !!armed && armed.node === parts.peg];
+        if (at('matePeg'))
+            checks = [!!armed && armed.node === parts.peg || mated(parts.peg, parts.host), mated(parts.peg, parts.host)];
         if (at('slide'))
             checks = [slidMm() > 0.01, slidMm() >= SLIDE_GOAL_MM];
         var picked = function (n) { return flags.selected === n || selected === n; };
         if (at('glow'))
-            checks = [true, picked(parts.screw)];
+            checks = [true, picked(parts.peg)];
         if (at('suggest'))
             checks = [true, flags.viewTip === 'used'];
-        if (at('pickScrew'))
-            checks = [picked(parts.screw), picked(parts.screw)];
-        if (at('clickScrew'))
-            checks = [!!flags.flying || mated(parts.screw, parts.wedge), mated(parts.screw, parts.wedge)];
-        if (at('clickArm'))
-            checks = [!!flags.flying || mated(parts.arm, parts.plate), mated(parts.arm, parts.plate)];
-        if (at('pickArm'))
-            checks = [picked(parts.arm)];
-        if (at('armArm'))
-            checks = [!!armed && armed.node === parts.arm];
-        if (at('mateArm2'))
-            checks = [mated(parts.arm, parts.plate)];
+        if (at('pickPeg'))
+            checks = [picked(parts.peg), picked(parts.peg)];
+        if (at('clickPeg'))
+            checks = [!!flags.flying || mated(parts.peg, parts.host), mated(parts.peg, parts.host)];
+        if (at('clickMover'))
+            checks = [!!flags.flying || mated(parts.mover, parts.base), mated(parts.mover, parts.base)];
+        if (at('pickMover'))
+            checks = [picked(parts.mover)];
+        if (at('armMover'))
+            checks = [!!armed && armed.node === parts.mover];
+        if (at('mateMover'))
+            checks = [mated(parts.mover, parts.base)];
         if (at('guide'))
             checks = [!!flags.guideFolded, !!flags.guideOpened];
         if (at('help'))
@@ -14784,20 +14892,23 @@ KBWorkspace.overview();
         var c = courses[ci];
         parts = null;
         KB.setSelection([]);
-        var scene = c.scene();
-        if (window.KBWorkspace)
-            scene.forEach(function (o) { o.p[0] += KBWorkspace.center.x; });
+        var scene = c.lesson ? lessonScene(c) : c.scene();
+        var cx = window.KBWorkspace ? KBWorkspace.center.x : 0, cz = window.KBWorkspace ? KBWorkspace.center.z : 11;
+        scene.forEach(function (o) { o.p[0] += cx; if (c.lesson)
+            o.p[2] += cz; delete o.size; });
         KB.loadSceneData({ objects: scene }, true);
         KB.pushSnapshot();
         parts = {};
-        Object.keys(c.names).forEach(function (k) { parts[k] = find(c.names[k]); });
-        var v = c.view || VIEW;
-        var vp = v.p.slice(), vt = v.t.slice();
-        if (window.KBWorkspace) {
-            vp[0] += KBWorkspace.center.x;
-            vt[0] += KBWorkspace.center.x;
+        var names = lessonNames(c);
+        Object.keys(names).forEach(function (k) { parts[k] = find(names[k]); });
+        var v = c.lesson ? lessonView(c.frame ? [parts[c.frame]] : Object.keys(parts).map(function (k) { return parts[k]; })) : null;
+        if (!v) {
+            v = c.view || VIEW;
+            v = { p: v.p.slice(), t: v.t.slice() };
+            v.p[0] += cx;
+            v.t[0] += cx;
         }
-        KB.flyCamera(vp, vt);
+        KB.flyCamera(v.p, v.t);
         dropIn(Object.keys(parts).map(function (k) { return parts[k]; }));
     }
     function dropIn(nodes) {
@@ -14827,20 +14938,20 @@ KBWorkspace.overview();
         idx = i;
         flags = {};
         var s = steps[i];
-        if (s.tag === 'turn' && parts && parts.arm)
-            flags.turnBase = parts.arm.quaternion.clone();
-        if (s.tag === 'slide' && parts && parts.screw)
-            flags.slideBase = parts.screw.position.clone();
+        if (s.tag === 'turn' && parts && parts.mover)
+            flags.turnBase = parts.mover.quaternion.clone();
+        if (s.tag === 'slide' && parts && parts.peg)
+            flags.slideBase = parts.peg.position.clone();
         stepEl.textContent = 'Lesson ' + (PLAN[level].courses.indexOf(steps[i].course) + 1) + ' \u00b7 ' + (i + 1) + ' / ' + steps.length;
-        textEl.textContent = lessons[i].title;
-        hintEl.textContent = lessons[i].hint;
+        textEl.textContent = fill(lessons[i].title);
+        hintEl.textContent = fill(lessons[i].hint);
         renderDemo();
         actionsEl.innerHTML = lessons[i].actions.map(function (action, n) {
-            return '<li><span>' + (n + 1) + '</span><div>' + action + '</div></li>';
+            return '<li><span>' + (n + 1) + '</span><div>' + fill(action) + '</div></li>';
         }).join('');
         updateActions();
         statusEl.textContent = i === steps.length - 1 ? Object.keys(completed).length + ' / ' + (steps.length - 1) + ' steps practiced'
-            : courses[steps[i].course].name + ' \u00b7 your turn';
+            : fill(courses[steps[i].course].name) + ' \u00b7 your turn';
         el.querySelector('.tt-bar').setAttribute('aria-valuenow', i + 1);
         var last = i === steps.length - 1;
         if (choiceEl)
@@ -14882,14 +14993,17 @@ KBWorkspace.overview();
         if (s.view)
             KB.flyCamera(s.view.p, s.view.t);
     }
-    function describe(x) {
-        var side = x.end === -1 ? 'lower ' : x.end === 1 ? 'top ' : '';
-        return 'the ' + side + 'glowing disc on the ' + x.node.name;
+    function sideOf(x) {
+        if (!x.end || !x.node.userData.kbType)
+            return '';
+        var f = feature(x.node.userData.kbType.slice(5), x.id);
+        if (!f)
+            return '';
+        x.node.updateMatrixWorld(true);
+        return V3(f.d).multiplyScalar(x.end).transformDirection(x.node.matrixWorld).y < 0 ? 'lower ' : 'top ';
     }
-    function describeAny(x) {
-        var side = x.end === -1 ? 'lower ' : x.end === 1 ? 'top ' : '';
-        return 'the ' + side + 'disc on the ' + x.node.name;
-    }
+    function describe(x) { return 'the ' + sideOf(x) + 'glowing disc on the ' + x.node.name; }
+    function describeAny(x) { return 'the ' + sideOf(x) + 'disc on the ' + x.node.name; }
     function matches(x, i) { return x.node === i.node && x.id === i.id && (x.end === undefined || x.end === i.end); }
     function applyExpect(exp) {
         if (!window.KBMate)
@@ -14908,7 +15022,7 @@ KBWorkspace.overview();
             },
             mate: function (src, dst) {
                 if (!exp.target.length)
-                    return 'Not yet \u2014 first ' + lessons[idx].actions[0].toLowerCase() + '.';
+                    return 'Not yet \u2014 first ' + fill(lessons[idx].actions[0]).toLowerCase() + '.';
                 if (!exp.source.some(function (x) { return matches(x, src); })) {
                     return 'Wrong source. Start again from ' + exp.source.map(describe).join(' or ') + '.';
                 }
@@ -14948,9 +15062,9 @@ KBWorkspace.overview();
             rows.push({ st: st, i: i }); });
         var all = rows.every(function (r) { return completed[r.i]; });
         KBGuide.demo({
-            name: courses[ci].name,
+            name: fill(courses[ci].name),
             parts: rows.map(function (r, n) {
-                return { name: (n + 1) + ' \u00b7 ' + r.st.lesson.label, ok: !!completed[r.i], now: !completed[r.i] && r.i === idx,
+                return { name: (n + 1) + ' \u00b7 ' + fill(r.st.lesson.label), ok: !!completed[r.i], now: !completed[r.i] && r.i === idx,
                     status: completed[r.i] ? '\u2713 Done' : r.i === idx ? 'Now' : 'To do' };
             }),
             state: guideErr ? 'error' : all ? 'success' : 'progress',
@@ -14976,7 +15090,7 @@ KBWorkspace.overview();
             return;
         updateActions();
         if (steps[idx].status && !statusEl.classList.contains('err')) {
-            var st = steps[idx].status();
+            var st = fill(steps[idx].status());
             statusEl.textContent = st || 'Your turn \u00b7 try it in the scene';
             statusEl.classList.toggle('warn', !!st);
         }
@@ -14995,7 +15109,7 @@ KBWorkspace.overview();
             textEl.classList.remove('ok');
             if (idx === at && idx < steps.length - 1)
                 show(idx + 1);
-        }, /^(clickScrew|clickArm|mateScrew|mateArm2|mateArm)$/.test(steps[at].tag) ? 1800 : 700);
+        }, /^(clickPeg|clickMover|matePeg|mateMover|mateTurn)$/.test(steps[at].tag) ? 1800 : 700);
     }
     function start(opts) {
         if (!window.KBParts || !KBParts.ready()) {
@@ -15061,17 +15175,17 @@ KBWorkspace.overview();
         currentSelection = sel.slice();
         if (idx >= 0 && sel.length === 1)
             flags.selected = sel[0];
-        if (at('clickArm') && sel.length === 1 && sel[0] === parts.arm && !flags.flying && window.KBMate) {
+        if (at('clickMover') && sel.length === 1 && sel[0] === parts.mover && !flags.flying && window.KBMate) {
             flags.flying = true;
-            KBMate.mate(parts.arm, 'H1', parts.plate, 'H6', -1, 1);
+            KBMate.mate(parts.mover, L().moverId, parts.base, L().baseId, L().moverEnd, L().baseEnd);
             KB.setSelection([]);
-            followTo([parts.plate, parts.arm]);
+            followTo([parts.base, parts.mover]);
         }
-        if (at('clickScrew') && sel.length === 1 && sel[0] === parts.screw && !flags.flying && window.KBMate) {
+        if (at('clickPeg') && sel.length === 1 && sel[0] === parts.peg && !flags.flying && window.KBMate) {
             flags.flying = true;
-            KBMate.mate(parts.screw, 'P1', parts.wedge, 'H1', 0, 1);
+            KBMate.mate(parts.peg, L().pegId, parts.host, L().holeId, 0, L().holeEnd);
             KB.setSelection([]);
-            followTo([parts.wedge]);
+            followTo([parts.host]);
         }
     });
     KB.on('help', function (h) { if (idx >= 0 && h && h.open)
@@ -15164,11 +15278,11 @@ KBWorkspace.overview();
         if (idx < 0)
             return;
         flags.placed = node;
-        if (at('turn') && node === parts.arm && activeArrow && /Left|Right/.test(activeArrow)) {
+        if (at('turn') && node === parts.mover && activeArrow && /Left|Right/.test(activeArrow)) {
             flags.turn = true;
             flags.turned = (flags.turned || 0) + (activeArrow === 'ArrowLeft' ? 1 : -1) * (lastShift ? 1 : 15);
         }
-        if (at('slide') && node === parts.screw && activeArrow && /Up|Down/.test(activeArrow))
+        if (at('slide') && node === parts.peg && activeArrow && /Up|Down/.test(activeArrow))
             flags.slide = true;
     });
     KB.on('snapAttempt', function (a) {
@@ -15254,7 +15368,12 @@ KBWorkspace.overview();
         level: function () { return level; },
         _tag: function () { return idx >= 0 ? steps[idx].tag || (steps[idx] === FINAL ? 'final' : '') : null; },
         discs: function () { return level !== 1; },
-        _debug: function () { return { flags: flags, idx: idx, advancing: advancing, parts: Object.keys(parts || {}).map(function (k) { return k + ':' + (parts[k] && parts[k].name); }), timer: timer }; } };
+        _debug: function () { return { flags: flags, idx: idx, advancing: advancing, parts: Object.keys(parts || {}).map(function (k) { return k + ':' + (parts[k] && parts[k].name); }), timer: timer }; },
+        _pick: function () { var P = L(); return P.ok ? { words: P.words, pegId: P.pegId, holeId: P.holeId, holeEnd: P.holeEnd, moverId: P.moverId, moverEnd: P.moverEnd, baseId: P.baseId, baseEnd: P.baseEnd } : null; },
+        _expect: function () {
+            var e = idx >= 0 && steps[idx].expect ? steps[idx].expect() : null;
+            return e ? { source: e.source.map(function (x) { return { name: x.node.name, id: x.id, end: x.end }; }), target: e.target.map(function (x) { return { name: x.node.name, id: x.id, end: x.end }; }) } : null;
+        } };
     if (new URLSearchParams(location.search).has('tutorial')) {
         (function wait() { if (window.KBParts && KBParts.ready())
             start();

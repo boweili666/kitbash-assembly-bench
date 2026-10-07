@@ -8,8 +8,8 @@
   var moveTarget, guide, storySteps, storyNote, playButton, startQuaternion;
   var cameraCenter, cameraDirection, cameraDistance, joinedCenter, joinedDistance;
   var elapsed = 0, tickTime = 0, userPaused = false;
-  function isStory() { return configuration && /^(mateArm|mateScrew)$/.test(configuration.tag); }
-  var startPosition, endPosition, endQuaternion, axis, pivot, configuration;
+  function isStory() { return configuration && /^(mateTurn|matePeg)$/.test(configuration.tag); }
+  var startPosition, endPosition, endQuaternion, axis, pivot, configuration, targetTop = true;
   var frame = 0, lastDraw = 0, paused = false, active = false;
   var width = 0, height = 0;
   var ownedMaterials = [], ownedGeometries = [];
@@ -66,13 +66,13 @@
     source.position.copy(endPosition);
     source.quaternion.copy(endQuaternion);
     var tag = configuration.tag;
-    if (tag === 'select' || tag === 'armScrew') source.position.copy(startPosition);
+    if (tag === 'select' || tag === 'armPeg') source.position.copy(startPosition);
     if (tag === 'move') source.position.lerpVectors(startPosition, endPosition, smooth((t - .3) / .4));
     if (isStory()) {
       // Align while separated, then approach strictly along the receiving axis.
       source.quaternion.copy(startQuaternion).slerp(endQuaternion, smooth((t - .36) / .16));
       source.position.lerpVectors(startPosition, endPosition, smooth((t - .54) / .23));
-      if (tag === 'mateArm' && t > .84) {
+      if (tag === 'mateTurn' && t > .84) {
         var turn = new THREE.Quaternion().setFromAxisAngle(axis, Math.sin(smooth((t - .84) / .12) * Math.PI * 2) * Math.PI / 12);
         source.position.sub(pivot).applyQuaternion(turn).add(pivot);
         source.quaternion.premultiply(turn);
@@ -97,7 +97,7 @@
     var angle = Math.min(camera.fov * Math.PI / 360, Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect));
     var distance = radius / Math.sin(angle) * 1.08;
     var direction = configuration.course === 0 ? new THREE.Vector3(1.25, 1.6, 2.2) : new THREE.Vector3(2.6, 1.4, 1.3);
-    if (isStory() && configuration.tag === 'mateArm' && configuration.target.end === -1) direction.y *= -1;
+    if (isStory() && configuration.tag === 'mateTurn' && !targetTop) direction.y *= -1;
     cameraCenter = center; cameraDirection = direction.normalize(); cameraDistance = distance;
     camera.position.copy(center).addScaledVector(cameraDirection, distance);
     if (isStory()) {
@@ -142,19 +142,19 @@
     var tag = configuration.tag;
     var clicking = isStory() ? t < .36 : tag !== 'turn' && tag !== 'slide' && tag !== 'complete';
     cursor.hidden = !clicking;
-    var second = markerB && (tag === 'mateArm' || tag === 'mateScrew') && t > .23;
+    var second = markerB && (tag === 'mateTurn' || tag === 'matePeg') && t > .23;
     if (clicking) {
       anchor(cursor, tag === 'move' ? moveTarget : second ? markerB : markerA, 0, 0);
       cursor.classList.toggle('press', (t > .18 && t < .27) || (second && t > .29 && t < .35));
     }
     caption.textContent = tag === 'turn' ? '← / →  Rotate around the hole' : tag === 'slide' ? '↑ / ↓  Slide along the hole' :
-      tag === 'move' ? 'Click the grid to move the arm' : tag === 'complete' ? 'Same parts. Same connections.' :
-      second ? '2 · Click the receiving hole' : tag === 'select' ? 'Click the arm to select it' : '1 · Click the highlighted connector';
+      tag === 'move' ? 'Click the grid to move the ' + configuration.source.name : tag === 'complete' ? 'Same parts. Same connections.' :
+      second ? '2 · Click the receiving hole' : tag === 'select' ? 'Click the ' + configuration.source.name + ' to select it' : '1 · Click the highlighted connector';
     if (isStory()) {
       var chapter = t < .23 ? 0 : t < .36 ? 1 : t < .54 ? 2 : t < .77 ? 3 : 4;
       var messages = ['1 · Pick the connection on the moving part', '2 · Pick the receiving hole mouth',
         '3 · Turn until the connectors face each other', '4 · Follow the axis — ease into contact',
-        tag === 'mateArm' ? '5 · Connected — arrow keys turn around this hole' : '5 · Connected — arrow keys slide along this hole'];
+        tag === 'mateTurn' ? '5 · Connected — arrow keys turn around this hole' : '5 · Connected — arrow keys slide along this hole'];
       caption.textContent = messages[chapter];
       storySteps.querySelectorAll('span').forEach(function (s, i) { s.classList.toggle('current', i === chapter); s.classList.toggle('done', i < chapter); });
       host.dataset.chapter = String(chapter);
@@ -187,6 +187,7 @@
   function kindColor(id) { return String(id || '').charAt(0) === 'P' ? 0x8a4bff : 0xff2d95; }
 
   function show(container, config) {
+    storyNote = null;
     clear();
     host = container; configuration = config; active = true; paused = false; userPaused = false; elapsed = 0; tickTime = 0;
     host.classList.toggle('tt-story', isStory()); delete host.dataset.chapter;
@@ -212,7 +213,7 @@
       storySteps = overlay('tt-story-steps');
       storySteps.innerHTML = ['Pick', 'Receive', 'Align', 'Join', 'Connected'].map(function (name) { return '<span>' + name + '</span>'; }).join('');
       storyNote = overlay('tt-story-note');
-      storyNote.textContent = config.tag === 'mateArm' ? (config.target.end === 1 ? 'Lower arm mouth → TOP plate mouth' : 'Lower arm mouth → UNDERSIDE plate mouth') : 'Shaft disc → wedge hole mouth';
+
       var controls = document.createElement('div'); controls.className = 'tt-story-controls'; host.appendChild(controls);
       playButton = document.createElement('button'); playButton.type = 'button'; playButton.textContent = 'Pause'; playButton.setAttribute('aria-label', 'Pause connection demonstration'); controls.appendChild(playButton);
       playButton.onclick = function () {
@@ -221,8 +222,8 @@
         playButton.setAttribute('aria-label', (userPaused ? 'Play' : 'Pause') + ' connection demonstration');
         if (userPaused) { cancelAnimationFrame(frame); frame = 0; } else resume();
       };
-      if (config.tag === 'mateArm') {
-        var faceButton = document.createElement('button'); faceButton.type = 'button'; faceButton.textContent = config.target.end === 1 ? 'Compare underside' : 'Back to top face'; controls.appendChild(faceButton);
+      if (config.tag === 'mateTurn') {
+        var faceButton = document.createElement('button'); faceButton.type = 'button'; controls.appendChild(faceButton);
         faceButton.onclick = function () { show(host, Object.assign({}, config, { target: Object.assign({}, config.target, { end: -config.target.end }) })); };
       }
     }
@@ -233,13 +234,19 @@
     var nodes = {};
     config.objects.forEach(function (data) { nodes[data.name] = part(data); });
     source = nodes[config.source.name]; target = nodes[config.target.name];
-    var alone = config.tag === 'select' || config.tag === 'move' || config.tag === 'armScrew';
+    var alone = config.tag === 'select' || config.tag === 'move' || config.tag === 'armPeg';
     if (alone) root.remove(target);
     // Presentation poses use the course orientation, and the actual H/P records.
     source.position.set(0, 0, 0); target.position.set(0, 0, 0);
     sourceFeature = feature(source, config.source.id, config.source.end);
     targetFeature = feature(target, config.target.id, config.target.end);
     axis = targetFeature.d.clone().multiplyScalar(config.target.end || 1);
+    // which face of the receiving part the clicked mouth is on, as the part lies (not the sign of its axis)
+    targetTop = axis.y >= 0;
+    if (storyNote) storyNote.textContent = config.tag === 'mateTurn'
+      ? 'Lower ' + config.source.name + ' mouth → ' + (targetTop ? 'TOP ' : 'UNDERSIDE ') + config.target.name + ' mouth'
+      : 'Shaft disc → ' + config.target.name + ' hole mouth';
+    if (faceButton) faceButton.textContent = targetTop ? 'Compare underside' : 'Back to top face';
     pivot = targetFeature.mouth.clone();
     var peg = config.source.id[0] === 'P';
     var normal = peg ? sourceFeature.tip : sourceFeature.d.clone().multiplyScalar(config.source.end);
@@ -264,7 +271,7 @@
     markerA = ring(source, config.source.id, config.source.end, kindColor(config.source.id));
     markerB = alone ? null : ring(target, config.target.id, config.target.end, kindColor(config.target.id));
     sourceLabel.textContent = config.source.name + (alone ? '' : peg ? ' · shaft' : ' · lower face');
-    targetLabel.textContent = config.target.name + (peg ? ' · hole' : config.target.end === 1 ? ' · top face' : ' · underside');
+    targetLabel.textContent = config.target.name + (peg ? ' · hole' : targetTop ? ' · top face' : ' · underside');
     targetLabel.hidden = alone;
     if (isStory()) {
       guide = new THREE.Line(geometry(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()])),
