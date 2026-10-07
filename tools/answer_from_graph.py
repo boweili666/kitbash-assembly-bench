@@ -15,6 +15,8 @@ every keyframe of every step. Nothing about this particular product is written h
               far each group waited from its final spot is its stage offset
   mates       which parts touch / share a hole axis at the end (features_db.compute_mates)
   kit         every part at its pose in the first keyframe (where the recording laid it out)
+  start       when in its step the recording sets the part off (0..1): in one step, of two parts
+              that go together the one that starts first goes in first (grommets before the board)
 
     python3 tools/answer_from_graph.py GRAPH.json PATHS.json FEATURES_DB MODELS_DIR \
         --out assets/parts/answer_graph77.json [--manifest assets/parts/manifest.json]
@@ -141,6 +143,15 @@ def main():
             pts = pts[1:]                  # far tray points are not part of the approach
         return [tuple(round(float(x), 4) for x in v) for v in pts]
 
+    def start(pid):
+        """when the part leaves its rest pose in its installing step (keyframe time, 0..1)"""
+        f = frames[home[pid]]
+        rest = f[0][1][pid]
+        for k in range(1, len(f)):
+            if f[k][1][pid] != rest:
+                return round(float(f[k - 1][0]), 4)
+        return 0.0
+
     # answer steps: graph order; prerequisites = graph requirements, transitively, among answer steps
     index = {sid: i for i, sid in enumerate(anim)}
     req = g.get("requirements", {})
@@ -167,7 +178,7 @@ def main():
         if a.nut_from_below and key == "motor_nut_m5" and len(path) > 1:
             seated = path[-1]; path = [tuple([seated[0], round(seated[1] - 36.0, 4)] + list(seated[2:])), seated]
         out_parts.append({"id": pid, "key": key, "name": gparts[pid]["name"], "step": index[home[pid]],
-                          "path": [pose_dict(v) for v in path],
+                          "start": start(pid), "path": [pose_dict(v) for v in path],
                           "mates": [{"id": m["pid"], "kind": m["kind"], "features": m["features"],
                                      "rel": pose_dict(m["rel"])} for m in mates.get(pid, [])]})
     out_parts.sort(key=lambda d: (d["step"], d["name"]))

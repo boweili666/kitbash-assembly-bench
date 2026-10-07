@@ -83,15 +83,17 @@
   var POS_TOL = 0.08, ANG_TOL = 12;      // 到位:场景单位(1 = 40.4 mm)→ 3.2 mm / 12°
   var NEAR = 0.5, NEAR_ANG = 45;         // 在配合件旁边但没到位:20 mm / 45°
   var PAIR_TOL = POS_TOL * 2;            // 两个都未配对的零件互相配上的门槛(没有锚,严一点)
-  var REVOLVE = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1,
-    screw_m3x8_socket_cap: 1, knurled_standoff: 1, motor_nut_m5: 1, damper_m2: 1,
-    // 桨装上去绕轴转到哪个角度都一样(三叶,自己也是 120° 周期)
-    propeller_cw: 1, propeller_ccw: 1 };
-  // 绕自身轴转多少度都一样, 但**翻个面装是错的**: 桨叶有迎角, 倒着装推力反向。
-  // axisAngle 的非螺丝分支取了 |dot|, 翻 180° 读成 0°(完全对齐), 于是倒装的桨
-  // 被判为正确。这里只在**判定**时补一次带符号的判断 —— 挑期望位姿的打分一字
-  // 不改, 因为 L1 / L2 的自动对齐和判定共用那段, 动打分就会把落点带偏。
-  var FLIP_MATTERS = { propeller_cw: 1, propeller_ccw: 1 };
+  /* What a part is comes from its data (KBParts.kindOf: revolve / sym in the manifest), not from its name:
+       turns(key)        turns freely about its axis (a continuous symmetry): only the axis is compared
+       isScrew(key)      one of those with a shaft and a wider head: the shaft -> head direction is compared
+                         (a screw put in backwards is wrong) and its roll follows the user's
+       flipMatters(key)  turns freely, but turning it over is wrong (a propeller, a flanged nut): judged once with the sign
+                         of the axis; the scoring that picks the expected pose stays unsigned, L1 / L2 seat with it
+       canon(key)        part types drawn from the same model are interchangeable */
+  function kind(key) { return window.KBParts && KBParts.kindOf ? KBParts.kindOf(key) : { turns: false, flipSafe: false, screw: false, same: key }; }
+  function turns(key) { return kind(key).turns; }
+  function isScrew(key) { return kind(key).screw; }
+  function flipMatters(key) { var k = kind(key); return k.turns && !k.flipSafe && !k.screw; }
   // 这一件相对期望位姿是不是翻过来的。只看轴的朝向, 不管绕轴转了多少。
   function flipped(key, qUser, qWant) {
     var spec = KBParts.spec(key);
@@ -102,24 +104,9 @@
     var a = d.clone().applyQuaternion(qUser), b = d.clone().applyQuaternion(qWant);
     return a.dot(b) < 0;
   }
-  var SCREW = { screw_m3x6_pan: 1, screw_m3x16_pan: 1, screw_m3x16_socket_cap: 1, screw_m3x22_pan: 1,
-    screw_m3x8_socket_cap: 1 };
-  function family(key) { return key.indexOf('screw_') === 0 ? 'screw' : key.indexOf('split_') === 0 ? 'plate' : key; }
-  // 暂不区分头型:M3×16 盘头 与 M3×16 杯头 视为同一种零件。
-  //
-  // 这张表只能收"位姿可以互换"的零件。canon 把两种零件算成一种之后,
-  // 摆件和判定都会拿其中一个的**烘好的矩阵**去要求另一个 —— 而 nodeTransform
-  // 把每个网格自己的原点烘进了矩阵。实测:同一个答案位姿走两种 M3×16 螺丝,
-  // 落点差 0 mm(确实可以互换);走正桨和反桨差 23.17 mm。
-  //
-  // 所以正反桨**不能**放进这张表。原先放了(理由是任务图没说哪条对角线装正桨),
-  // 结果是 L1 逐件点过去时,第 43/46 步的槽位烘的是反桨的矩阵,点到的却是正桨,
-  // 零件飞到那个矩阵上 = 偏出电机轴 22.4 mm,而判定量的是"零件矩阵 vs 槽位矩阵",
-  // 差值为 0,于是台子报装配完成而画面上两片桨明显偏着。
-  // 摆件顺序一变、哪片先被点一变,中招的就换一对 —— 上游偶发、我们这条
-  // 跳步 + 逐件点的路子上稳定复现,就是这个原因。
-  var SAME = { screw_m3x16_socket_cap: 'screw_m3x16_pan' };
-  function canon(key) { return SAME[key] || key; }
+  // "wrong part" looks among parts of the same family: screws among screws, other parts among the rest
+  function family(key) { return isScrew(key) ? 'screw' : 'part'; }
+  function canon(key) { return kind(key).same; }
 
   var results = null;
 
@@ -182,7 +169,7 @@
   function axisAngle(key, qa, qb) {
     var spec = KBParts.spec(key);
     var pegs = (spec && spec.pegs) || [];
-    if (SCREW[key] && pegs.length >= 2) {
+    if (isScrew(key) && pegs.length >= 2) {
       var shaft = pegs[0], head = pegs[0];
       pegs.forEach(function (p) { if (p.r < shaft.r) shaft = p; if (p.r > head.r) head = p; });
       var v = new THREE.Vector3().fromArray(head.c).sub(new THREE.Vector3().fromArray(shaft.c));
@@ -216,7 +203,7 @@
     var byId = {};
     var slots = a.parts.map(function (d, idx) {
       var M = matrixOf(d.key, d.path[d.path.length - 1]);
-      var s = { i: idx, id: d.id, key: d.key, ckey: canon(d.key), name: d.name, step: d.step,
+      var s = { i: idx, id: d.id, key: d.key, ckey: canon(d.key), name: d.name, step: d.step, start: d.start,
         M: M, Minv: M.clone().invert(), mates: [] };
       byId[d.id] = s;
       return s;
@@ -258,13 +245,13 @@
     function consider(expected) {
       expected.decompose(_p, _q, _s);
       var d = _p.distanceTo(_p2);
-      var ang = REVOLVE[t.key] ? axisAngle(t.key, _q2, _q) : { deg: angleBetween(_q2, _q), signed: false };
+      var ang = turns(t.key) ? axisAngle(t.key, _q2, _q) : { deg: angleBetween(_q2, _q), signed: false };
       var reversed = ang.signed && ang.deg > 90;
       var nearAng = reversed ? 180 - ang.deg : ang.deg;
       var score = d + (reversed ? 0.02 : nearAng / 180 * 0.05);
       // 翻面有区别的件: 打分照旧(不带符号, 落点不受影响), 但把"翻过来了"单独
       // 记一笔, 交给 isOk / 问题清单去报。
-      if (FLIP_MATTERS[t.key] && flipped(t.key, _q2, _q)) reversed = true;
+      if (flipMatters(t.key) && flipped(t.key, _q2, _q)) reversed = true;
       // symmetric candidates (a screw turned about its own axis) tie; only a clearly better one replaces the
       // earlier, so the answer's own pose (identity, considered first) wins over float noise
       if (!best || score < best.score - 1e-9) best = { score: score, d: d, ang: ang.deg, reversed: reversed, nearAng: nearAng,
@@ -278,16 +265,16 @@
         // Continuous screw roll applies on either side of the relation. Rotate
         // about the actual shaft line, not an arbitrary node origin.
         var q = new THREE.Quaternion().setFromRotationMatrix(expected);
-        if (SCREW[m.key]) {
+        if (isScrew(m.key)) {
           var roll = screwRoll(m.key, q.clone().multiply(_q2.clone().invert()));
           var aligned = roll.clone().invert().multiply(expected);
           consider(aligned);
-          if (SCREW[t.key]) {
+          if (isScrew(t.key)) {
             var aq = new THREE.Quaternion().setFromRotationMatrix(aligned);
             consider(aligned.clone().multiply(screwRoll(t.key, aq.invert().multiply(_q2))));
           }
         }
-        if (SCREW[t.key]) consider(expected.clone().multiply(screwRoll(t.key, q.invert().multiply(_q2))));
+        if (isScrew(t.key)) consider(expected.clone().multiply(screwRoll(t.key, q.invert().multiply(_q2))));
       });
     });
     return best;
@@ -313,7 +300,7 @@
   }
   function guidanceFor(issue) {
     if (!issue.node || !issue.host || !issue.features || !issue.features.length) return null;
-    if (!SCREW[issue.node.userData.kbType.slice(5)]) return null;
+    if (!isScrew(issue.node.userData.kbType.slice(5))) return null;
     var mate = window.KBMate && KBMate.mateState && KBMate.mateState(issue.node);
     var base = { expectedFeatures: issue.features || null, mate: mate || null,
       targetPose: issue.want ? poseOfMatrix(issue.want) : null };
@@ -781,8 +768,8 @@
       if (hostIssue && hostIssue.host === it.node) {
         if (hostIssue.reversed && !it.reversed) return;
         if (!(it.reversed && !hostIssue.reversed)) {
-          var meScrew = !!SCREW[it.node.userData.kbType.slice(5)];
-          var otherScrew = !!SCREW[hostIssue.node.userData.kbType.slice(5)];
+          var meScrew = isScrew(it.node.userData.kbType.slice(5));
+          var otherScrew = isScrew(hostIssue.node.userData.kbType.slice(5));
           if (otherScrew && !meScrew) return;        // 楔块没问题,是螺丝插得不对
           if (meScrew === otherScrew && (hostIssue.d + hostIssue.ang * 0.01) > (it.d + it.ang * 0.01)) return;
         }
@@ -1557,12 +1544,15 @@
   /* 答案里没有接近路点的零件(电机螺丝、ESC 垫圈):按零件自己的几何补一个"插入前的那个点" ——
      有杆有头的(螺丝)从杆指向头的方向就是它进来的方向;只有一根轴的(垫圈)沿轴从上方套下来。
      离最终位置 = 零件长度 + 10 mm。给的是世界位姿(和 want 同一个坐标系) */
-  // 同一步里零件的先后(答案里没有,按实物装法补):ESC 那一步先放四个垫圈,再把 ESC 压上去
-  var FIRST = { esc_4in1: { damper_m2: true } };
+  // order within one step, from the recording: of two parts that go together, the one the recording sets off
+  // first goes in first (the grommets, then the board pressed onto them)
   function comesFirst(slotRef) {
-    if (!ref || !slotRef) return false;
-    var st = ref.steps[slotRef.step], k = canon(slotRef.key);
-    return !!(st && st.slots.some(function (o) { var f = FIRST[canon(o.key)]; return f && f[k]; }));
+    if (!ref || !slotRef || slotRef.start == null) return false;
+    var st = ref.steps[slotRef.step];
+    return !!(st && st.slots.some(function (o) {
+      return o !== slotRef && o.start > slotRef.start &&
+        (slotRef.mates.some(function (m) { return m.slot === o; }) || o.mates.some(function (m) { return m.slot === slotRef; }));
+    }));
   }
   function fallbackApproach(key, want, slotRef) {
     var sp = KBParts.spec(key);

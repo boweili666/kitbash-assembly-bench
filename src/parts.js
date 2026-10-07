@@ -196,6 +196,34 @@
      offsets) comes from tools/answer_from_graph.py as is: nothing about a particular product here. */
   function assemblyAnswer() { return (manifest && manifest.answer) || null; }
 
+  /* What a part is, from its data rather than its name. revolve: any angle about that axis is the same
+     part (manifest.revolve, a continuous symmetry); sym: the discrete turns that map it onto itself */
+  var kinds = {};
+  function kindOf(key) {
+    if (kinds[key]) return kinds[key];
+    var s = (cache[key] && cache[key].spec) || (manifest && manifest.parts.filter(function (p) { return p.key === key; })[0]);
+    if (!s) return { turns: false, flipSafe: false, screw: false, same: key };
+    var k = { turns: !!s.revolve, flipSafe: false, screw: false, same: key };
+    if (s.revolve) {
+      var a = new THREE.Vector3().fromArray(s.revolve.axis).normalize();
+      var along = function (d) { return Math.abs(new THREE.Vector3().fromArray(d).normalize().dot(a)) > 0.999; };
+      // turning it over is the same part: a half turn about an axis across the revolve axis
+      k.flipSafe = (s.sym || []).some(function (sy) {
+        return Math.abs(sy.deg - 180) < 1e-6 && Math.abs(new THREE.Vector3().fromArray(sy.axis).normalize().dot(a)) < 1e-3;
+      });
+      // a screw: turns freely, a shaft and a wider head on that axis (two coaxial pegs), nothing it receives
+      var pegs = (s.pegs || []).filter(function (p) { return along(p.d); });
+      k.screw = !k.flipSafe && !(s.holes && s.holes.length) && pegs.length >= 2 &&
+        pegs.some(function (p) { return Math.abs(p.r - pegs[0].r) > 1e-6; });
+    }
+    // interchangeable part types are the ones drawn from the same model (GLB)
+    var model = s.models && s.models[0];
+    var first = model && manifest && manifest.parts.filter(function (p) { return p.models && p.models[0] === model; })[0];
+    if (first) k.same = first.key;
+    if (manifest) kinds[key] = k;
+    return k;
+  }
+
   window.KBParts = {
     ready: function () { return ready; },
     unitScale: function () { return manifest ? manifest.unitScale : 24.77; },
@@ -207,6 +235,7 @@
     kit: function () { return (manifest && manifest.kit) || null; },
     /* 参考装配(步骤顺序 / 每件的接近→落位轨迹 / 前置依赖),由 features_db.py answer 从任务图库生成;mm · GLB 原点 */
     answer: assemblyAnswer,
+    kindOf: kindOf,
     keyForModel: keyForModel,
     poseOf: poseOf,
     nodeTransform: nodeTransform,

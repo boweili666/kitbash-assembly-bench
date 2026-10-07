@@ -61,7 +61,7 @@
     return n;
   }
   function isScrew(n) {
-    return !!(n && n.userData && /^screw_/.test(n.userData.kbType.slice(5)));
+    return !!(n && n.userData && n.userData.kbType && KBParts.kindOf(n.userData.kbType.slice(5)).screw);
   }
 
   /* ---------- 可点的孔位圆片 ---------- */

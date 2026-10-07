@@ -30,7 +30,8 @@ CREATE TABLE PartTypeSymmetries (
   partTypeId INT,                 -- PartTypes.id
   axisX FLOAT, axisY FLOAT, axisZ FLOAT,          -- rotation axis (unit vector)
   centerX FLOAT, centerY FLOAT, centerZ FLOAT,    -- a point on the axis, mm
-  degrees FLOAT,                  -- rotating the part by this angle about the axis maps it onto itself
+  degrees FLOAT,                  -- rotating the part by this angle about the axis maps it onto itself;
+                                  -- 0 = any angle (continuous: a screw, a nut, a propeller on its shaft)
   source CHAR(16)
 );
 ```
@@ -54,6 +55,16 @@ CREATE TABLE PartTypeSymmetries (
   180° about Z for the arm wedge, 5-fold for a knurled standoff. They tell the
   checker that a symmetric-equivalent pose is the same pose, and that identical
   parts are interchangeable.
+  A **continuous** symmetry (`"continuous": true`, stored as `degrees = 0`) says
+  any angle about that axis is the same part. The simulator reads everything it
+  needs to know about a part from this data, not from its name:
+  - turns freely: has a continuous symmetry, so only its axis is compared;
+  - may be turned over: also has a 180° symmetry about an axis across that one
+    (a standoff, a damper); without it, upside down is wrong (a flanged nut, a
+    propeller);
+  - a screw: turns freely, two coaxial pegs of different diameter (shaft, head)
+    and no hole; put in backwards is wrong, its roll follows the user's.
+  Part types that use the same model are interchangeable.
 - **`source`**: the mesh detector writes `auto` rows and, on re-run, replaces
   only those. Rows a contributor adds or edits are `contributor` and are never
   touched by tooling.
@@ -87,7 +98,7 @@ A complete example for the 20 modelled part types of the drone kit:
 | `features[].center` | mm, model frame; a point on the axis at the middle of the feature |
 | `features[].axis` | direction of the axis (normalised on import); hole: bottom → mouth, peg: root → tip |
 | `features[].diameter`, `depth` | mm |
-| `symmetries[]` | rotation axis + a point on it + angle that maps the part onto itself |
+| `symmetries[]` | rotation axis + a point on it + angle that maps the part onto itself (`degrees`), or `"continuous": true` for any angle |
 
 ## Workflow
 

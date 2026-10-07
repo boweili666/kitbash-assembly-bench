@@ -233,6 +233,19 @@
   "symmetries": [
    {
     "axis": [
+     0,
+     1,
+     0
+    ],
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "continuous": true
+   },
+   {
+    "axis": [
      0.0,
      1.0,
      0.0
@@ -821,6 +834,19 @@
   "symmetries": [
    {
     "axis": [
+     0,
+     0,
+     1
+    ],
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "continuous": true
+   },
+   {
+    "axis": [
      0.0,
      0.0,
      1.0
@@ -1244,6 +1270,19 @@
   "symmetries": [
    {
     "axis": [
+     0,
+     1,
+     0
+    ],
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "continuous": true
+   },
+   {
+    "axis": [
      0.0,
      1.0,
      0.0
@@ -1298,6 +1337,19 @@
    }
   ],
   "symmetries": [
+   {
+    "axis": [
+     0,
+     1,
+     0
+    ],
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "continuous": true
+   },
    {
     "axis": [
      0.0,
@@ -1380,6 +1432,19 @@
    }
   ],
   "symmetries": [
+   {
+    "axis": [
+     0,
+     0,
+     1
+    ],
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "continuous": true
+   },
    {
     "axis": [
      1.0,
@@ -1611,7 +1676,21 @@
     "depth": 6.0
    }
   ],
-  "symmetries": []
+  "symmetries": [
+   {
+    "axis": [
+     0,
+     1,
+     0
+    ],
+    "center": [
+     0,
+     3.0,
+     0
+    ],
+    "continuous": true
+   }
+  ]
  },
  {
   "partType": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
@@ -1656,6 +1735,19 @@
   "symmetries": [
    {
     "axis": [
+     0,
+     1,
+     0
+    ],
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "continuous": true
+   },
+   {
+    "axis": [
      0.0,
      1.0,
      0.0
@@ -1692,7 +1784,34 @@
     "depth": 3.0
    }
   ],
-  "symmetries": []
+  "symmetries": [
+   {
+    "axis": [
+     0,
+     1,
+     0
+    ],
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "continuous": true
+   },
+   {
+    "axis": [
+     1,
+     0,
+     0
+    ],
+    "center": [
+     0,
+     0,
+     0
+    ],
+    "degrees": 180.0
+   }
+  ]
  },
  {
   "partType": "3af83cae-b9d4-46d8-a182-79d57b909cef",
@@ -1807,7 +1926,21 @@
     "depth": 4.9
    }
   ],
-  "symmetries": []
+  "symmetries": [
+   {
+    "axis": [
+     0,
+     0,
+     1
+    ],
+    "center": [
+     0,
+     0.0001,
+     2.45
+    ],
+    "continuous": true
+   }
+  ]
  },
  {
   "partType": "204a36e9-ca51-4f29-8043-baf999a21d10",
@@ -1832,6 +1965,20 @@
     "depth": 4.9
    }
   ],
-  "symmetries": []
+  "symmetries": [
+   {
+    "axis": [
+     0,
+     0,
+     1
+    ],
+    "center": [
+     0,
+     -0.0001,
+     -2.45
+    ],
+    "continuous": true
+   }
+  ]
  }
 ]

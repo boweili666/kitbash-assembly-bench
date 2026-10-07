@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/boweili666/kitbash-assembly-bench/docs/part_features.schema.json",
   "title": "ARISTOS part features",
-  "description": "Holes, pegs and rotational symmetries of part types, authored by contributors. Geometry is in the part model's own frame (GLB node origin), Y up, millimetres.",
+  "description": "Holes, pegs and rotational symmetries (discrete or continuous) of part types, authored by contributors. Geometry is in the part model's own frame (GLB node origin), Y up, millimetres.",
   "oneOf": [
     { "$ref": "#/$defs/partTypeEntry" },
     { "type": "array", "items": { "$ref": "#/$defs/partTypeEntry" } }
@@ -37,11 +37,13 @@
     },
     "symmetry": {
       "type": "object",
-      "required": ["axis", "center", "degrees"],
+      "required": ["axis", "center"],
+      "oneOf": [ { "required": ["degrees"] }, { "required": ["continuous"] } ],
       "properties": {
         "axis":    { "$ref": "#/$defs/vec3", "description": "Rotation axis (normalised on import)" },
         "center":  { "$ref": "#/$defs/vec3", "description": "mm, model frame: a point on the axis" },
-        "degrees": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 360, "description": "Rotating the part by this angle about the axis maps it onto itself (180 = can be flipped; 72 = 5-fold)" }
+        "degrees": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 360, "description": "Rotating the part by this angle about the axis maps it onto itself (180 = can be flipped; 72 = 5-fold)" },
+        "continuous": { "const": true, "description": "Any angle about the axis maps the part onto itself (a screw, a nut, a propeller on its shaft): how far it is turned about this axis never matters. Turning it over is the same only if it also has a 180-degree symmetry about an axis perpendicular to this one" }
       },
       "additionalProperties": false
     }

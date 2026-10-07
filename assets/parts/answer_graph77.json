@@ -783,6 +783,7 @@
    "key": "aluminum_arm_wedge_5mm",
    "name": "Left Arm Wedge",
    "step": 0,
+   "start": 0.0,
    "path": [
     {
      "x": -57.359,
@@ -892,6 +893,7 @@
    "key": "screw_m3x16_socket_cap",
    "name": "Left Arm Wedge Screw",
    "step": 0,
+   "start": 0.5,
    "path": [
     {
      "x": -115.0,
@@ -1006,6 +1008,7 @@
    "key": "aluminum_arm_wedge_5mm",
    "name": "Right Arm Wedge",
    "step": 1,
+   "start": 0.0,
    "path": [
     {
      "x": 58.323,
@@ -1115,6 +1118,7 @@
    "key": "screw_m3x16_socket_cap",
    "name": "Right Arm Wedge Screw",
    "step": 1,
+   "start": 0.5,
    "path": [
     {
      "x": 115.0,
@@ -1229,6 +1233,7 @@
    "key": "aluminum_x_lock",
    "name": "Aluminum X-Lock",
    "step": 2,
+   "start": 0.0,
    "path": [
     {
      "x": 0.0,
@@ -1575,6 +1580,7 @@
    "key": "split_rear_plate",
    "name": "Split Rear Plate",
    "step": 4,
+   "start": 0.0,
    "path": [
     {
      "x": 0.0,
@@ -2042,6 +2048,7 @@
    "key": "screw_m3x22_pan",
    "name": "M3x22mm Pan Head Screw #1",
    "step": 5,
+   "start": 0.0,
    "path": [
     {
      "x": 15.465,
@@ -2161,6 +2168,7 @@
    "key": "screw_m3x22_pan",
    "name": "M3x22mm Pan Head Screw #2",
    "step": 6,
+   "start": 0.0,
    "path": [
     {
      "x": -15.465,
@@ -2280,6 +2288,7 @@
    "key": "screw_m3x22_pan",
    "name": "M3x22mm Pan Head Screw #3",
    "step": 7,
+   "start": 0.0,
    "path": [
     {
      "x": -15.465,
@@ -2399,6 +2408,7 @@
    "key": "screw_m3x22_pan",
    "name": "M3x22mm Pan Head Screw #4",
    "step": 8,
+   "start": 0.0,
    "path": [
     {
      "x": 15.465,
@@ -2518,6 +2528,7 @@
    "key": "arm_5in",
    "name": "5-inch Arm #1",
    "step": 9,
+   "start": 0.0,
    "path": [
     {
      "x": 91.071,
@@ -2783,6 +2794,7 @@
    "key": "arm_5in",
    "name": "5-inch Arm #2",
    "step": 10,
+   "start": 0.0,
    "path": [
     {
      "x": 91.071,
@@ -3043,6 +3055,7 @@
    "key": "arm_5in",
    "name": "5-inch Arm #3",
    "step": 11,
+   "start": 0.0,
    "path": [
     {
      "x": -85.373,
@@ -3313,6 +3326,7 @@
    "key": "arm_5in",
    "name": "5-inch Arm #4",
    "step": 12,
+   "start": 0.0,
    "path": [
     {
      "x": -90.667,
@@ -3583,6 +3597,7 @@
    "key": "split_front_plate",
    "name": "Split Front Plate",
    "step": 13,
+   "start": 0.0,
    "path": [
     {
      "x": 0.0,
@@ -3888,6 +3903,7 @@
    "key": "screw_m3x6_pan",
    "name": "Center X-Lock Screw",
    "step": 14,
+   "start": 0.0,
    "path": [
     {
      "x": 0.0,
@@ -4015,6 +4031,7 @@
    "key": "screw_m3x16_pan",
    "name": "Standoff Screw #1",
    "step": 15,
+   "start": 0.0,
    "path": [
     {
      "x": 14.821,
@@ -4108,6 +4125,7 @@
    "key": "knurled_standoff",
    "name": "Standoff #1",
    "step": 16,
+   "start": 0.0,
    "path": [
     {
      "x": 14.821,
@@ -4183,6 +4201,7 @@
    "key": "screw_m3x16_pan",
    "name": "Standoff Screw #2",
    "step": 17,
+   "start": 0.0,
    "path": [
     {
      "x": 14.821,
@@ -4276,6 +4295,7 @@
    "key": "knurled_standoff",
    "name": "Standoff #2",
    "step": 18,
+   "start": 0.0,
    "path": [
     {
      "x": 14.821,
@@ -4351,6 +4371,7 @@
    "key": "screw_m3x16_pan",
    "name": "Standoff Screw #3",
    "step": 19,
+   "start": 0.0,
    "path": [
     {
      "x": -14.821,
@@ -4449,6 +4470,7 @@
    "key": "knurled_standoff",
    "name": "Standoff #3",
    "step": 20,
+   "start": 0.0,
    "path": [
     {
      "x": -14.821,
@@ -4524,6 +4546,7 @@
    "key": "screw_m3x16_pan",
    "name": "Standoff Screw #4",
    "step": 21,
+   "start": 0.0,
    "path": [
     {
      "x": -14.821,
@@ -4622,6 +4645,7 @@
    "key": "knurled_standoff",
    "name": "Standoff #4",
    "step": 22,
+   "start": 0.0,
    "path": [
     {
      "x": -14.821,
@@ -4697,6 +4721,7 @@
    "key": "motor_2207",
    "name": "Motor #1",
    "step": 23,
+   "start": 0.0,
    "path": [
     {
      "x": 91.0,
@@ -4826,6 +4851,7 @@
    "key": "motor_nut_m5",
    "name": "Prop Nut #1",
    "step": 23,
+   "start": 0.5,
    "path": [
     {
      "x": 91.0,
@@ -4870,6 +4896,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #1-1",
    "step": 24,
+   "start": 0.0,
    "path": [
     {
      "x": 92.494,
@@ -4927,6 +4954,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #1-2",
    "step": 24,
+   "start": 0.25,
    "path": [
     {
      "x": 90.15,
@@ -4984,6 +5012,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #1-3",
    "step": 24,
+   "start": 0.5,
    "path": [
     {
      "x": 99.541,
@@ -5041,6 +5070,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #1-4",
    "step": 24,
+   "start": 0.75,
    "path": [
     {
      "x": 82.921,
@@ -5098,6 +5128,7 @@
    "key": "motor_2207",
    "name": "Motor #2",
    "step": 25,
+   "start": 0.0,
    "path": [
     {
      "x": 91.0,
@@ -5227,6 +5258,7 @@
    "key": "motor_nut_m5",
    "name": "Prop Nut #2",
    "step": 25,
+   "start": 0.5,
    "path": [
     {
      "x": 91.0,
@@ -5271,6 +5303,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #2-1",
    "step": 26,
+   "start": 0.0,
    "path": [
     {
      "x": 89.887,
@@ -5328,6 +5361,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #2-2",
    "step": 26,
+   "start": 0.25,
    "path": [
     {
      "x": 92.653,
@@ -5385,6 +5419,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #2-3",
    "step": 26,
+   "start": 0.5,
    "path": [
     {
      "x": 99.61,
@@ -5442,6 +5477,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #2-4",
    "step": 26,
+   "start": 0.75,
    "path": [
     {
      "x": 82.696,
@@ -5499,6 +5535,7 @@
    "key": "motor_2207",
    "name": "Motor #3",
    "step": 27,
+   "start": 0.0,
    "path": [
     {
      "x": -90.628,
@@ -5628,6 +5665,7 @@
    "key": "motor_nut_m5",
    "name": "Prop Nut #3",
    "step": 27,
+   "start": 0.5,
    "path": [
     {
      "x": -90.628,
@@ -5672,6 +5710,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #3-1",
    "step": 28,
+   "start": 0.0,
    "path": [
     {
      "x": -99.101,
@@ -5729,6 +5768,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #3-2",
    "step": 28,
+   "start": 0.25,
    "path": [
     {
      "x": -82.187,
@@ -5786,6 +5826,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #3-3",
    "step": 28,
+   "start": 0.5,
    "path": [
     {
      "x": -89.144,
@@ -5843,6 +5884,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #3-4",
    "step": 28,
+   "start": 0.75,
    "path": [
     {
      "x": -91.91,
@@ -5900,6 +5942,7 @@
    "key": "motor_2207",
    "name": "Motor #4",
    "step": 29,
+   "start": 0.0,
    "path": [
     {
      "x": -85.302,
@@ -6029,6 +6072,7 @@
    "key": "motor_nut_m5",
    "name": "Prop Nut #4",
    "step": 29,
+   "start": 0.5,
    "path": [
     {
      "x": -85.302,
@@ -6073,6 +6117,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #4-1",
    "step": 30,
+   "start": 0.0,
    "path": [
     {
      "x": -93.479,
@@ -6130,6 +6175,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #4-2",
    "step": 30,
+   "start": 0.25,
    "path": [
     {
      "x": -76.859,
@@ -6187,6 +6233,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #4-3",
    "step": 30,
+   "start": 0.5,
    "path": [
     {
      "x": -86.25,
@@ -6244,6 +6291,7 @@
    "key": "screw_m3x8_socket_cap",
    "name": "M3x8mm Motor Screw #4-4",
    "step": 30,
+   "start": 0.75,
    "path": [
     {
      "x": -83.906,
@@ -6301,6 +6349,7 @@
    "key": "damper_m2",
    "name": "ESC Spacer Grommet #1",
    "step": 31,
+   "start": 0.0,
    "path": [
     {
      "x": 15.465,
@@ -6402,6 +6451,7 @@
    "key": "damper_m2",
    "name": "ESC Spacer Grommet #2",
    "step": 31,
+   "start": 0.25,
    "path": [
     {
      "x": -15.465,
@@ -6503,6 +6553,7 @@
    "key": "damper_m2",
    "name": "ESC Spacer Grommet #3",
    "step": 31,
+   "start": 0.5,
    "path": [
     {
      "x": -15.465,
@@ -6604,6 +6655,7 @@
    "key": "damper_m2",
    "name": "ESC Spacer Grommet #4",
    "step": 31,
+   "start": 0.75,
    "path": [
     {
      "x": 15.465,
@@ -6705,6 +6757,7 @@
    "key": "esc_4in1",
    "name": "4-in-1 ESC",
    "step": 32,
+   "start": 0.0,
    "path": [
     {
      "x": 0.0,

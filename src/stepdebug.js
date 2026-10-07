@@ -129,8 +129,8 @@
       if (t.ref.step >= i) return;                    // 这一步及以后的不动
       var node = t.part && t.part.node;
       if (!node) {                                    // 还没有件占这个槽: 挑一个同型号的
-        // 先认零件型号本身, 认不到才退到 canon 的"可以顶替"(见 check.js 的 SAME):
-        // 顶替只在两种零件位姿一致时才成立, 挑错了就是摆到别的零件的矩阵上。
+        // the exact part type first, then one canon() treats as the same (part types drawn from one model):
+        // a stand-in only works when both share a pose, otherwise it lands on another part's matrix
         for (var pass = 0; pass < 2 && !node; pass++) {
           for (var k = 0; k < free.length; k++) {
             var n = free[k];

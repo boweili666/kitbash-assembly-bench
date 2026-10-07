@@ -20,6 +20,10 @@ Contributor file (one object per part type, or a list of them):
     ],
     "symmetries": [ {"axis": [0, 1, 0], "center": [0, 10, 0], "degrees": 72} ]
   }
+A symmetry with "continuous": true instead of "degrees" means any angle about that axis (a screw,
+a nut, a propeller on its shaft); it is stored with degrees = 0. Whether turning the part over
+matters follows from the same data: it does not when there is also a 180-degree symmetry about a
+perpendicular axis.
 
 Commands
   import   DB FILE                 load a contributor file (replaces that part type's rows)
@@ -215,6 +219,8 @@ def cmd_manifest(a):
             return [{"id": n, "c": X([cx, cy, cz]), "d": [round(dx, 4), round(dy, 4), round(dz, 4)],
                      "r": round(dia / 2 / mm * S, 4), "depth": round(dep / mm * S, 4)}
                     for n, k, cx, cy, cz, dx, dy, dz, dia, dep in rows if k == kind]
+        spin = [s for s in syms if not s[6]]            # continuous (degrees = 0)
+        syms = [s for s in syms if s[6]]
         sym_center = X([syms[0][3], syms[0][4], syms[0][5]]) if syms else X((np.asarray(mesh.centroid) * mm).tolist())
         if a.copy_glb:
             shutil.copy(t["file"], out_dir / f"{t['key']}.glb")
@@ -227,6 +233,9 @@ def cmd_manifest(a):
             "sym_center": sym_center,
             "holes": fx(feats, "hole"), "pegs": fx(feats, "peg"),
         })
+        if spin:
+            ax, ay, az, cx, cy, cz, _ = spin[0]
+            parts[-1]["revolve"] = {"axis": [ax, ay, az], "center": X([cx, cy, cz])}
         print(f"  {t['key']:24s} holes {len(parts[-1]['holes']):2d} pegs {len(parts[-1]['pegs']):2d}")
         del mesh; gc.collect()
 
@@ -504,10 +513,12 @@ def validate_entry(e, i):
         _unit(f["axis"], w)
     for j, sy in enumerate(e.get("symmetries", [])):
         w = f"{where} symmetry {j}"
-        for k in ("axis", "center", "degrees"):
+        for k in ("axis", "center"):
             if k not in sy:
                 raise ValueError(f"{w}: missing '{k}'")
-        if not 0 < float(sy["degrees"]) < 360:
+        if ("degrees" in sy) == bool(sy.get("continuous")):
+            raise ValueError(f"{w}: give either 'degrees' or 'continuous': true")
+        if "degrees" in sy and not 0 < float(sy["degrees"]) < 360:
             raise ValueError(f"{w}: degrees must be in (0, 360)")
         _unit(sy["axis"], w)
 
@@ -544,7 +555,8 @@ def cmd_import(a):
         for sy in e.get("symmetries", []):
             ax = _unit(sy["axis"], "symmetry")
             db.execute("INSERT INTO PartTypeSymmetries VALUES (NULL,?,?,?,?,?,?,?,?,?)",
-                       (pid, *ax, *[float(x) for x in sy["center"]], float(sy["degrees"]), "contributor"))
+                       (pid, *ax, *[float(x) for x in sy["center"]],
+                        0.0 if sy.get("continuous") else float(sy["degrees"]), "contributor"))
         print(f"  {pname[:58]:58s} features {len(e.get('features', [])):2d}  symmetries {len(e.get('symmetries', []))}")
     db.commit()
     print(f"imported {len(entries)} part types from {a.file}")
@@ -564,7 +576,8 @@ def cmd_export(a):
             "partType": puuid, "model": model, "name": name,
             "features": [{"uuid": u, "name": n, "kind": k, "center": [cx, cy, cz], "axis": [ax, ay, az],
                           "diameter": dia, "depth": dep} for u, n, k, cx, cy, cz, ax, ay, az, dia, dep in feats],
-            "symmetries": [{"axis": [ax, ay, az], "center": [cx, cy, cz], "degrees": deg}
+            "symmetries": [dict({"axis": [ax, ay, az], "center": [cx, cy, cz]},
+                                **({"continuous": True} if not deg else {"degrees": deg}))
                            for ax, ay, az, cx, cy, cz, deg in syms],
         })
     pathlib.Path(a.out).write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
