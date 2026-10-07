@@ -5,7 +5,7 @@
  *     initialScene={parts}
  *     onGrabObject={(id, pose) => ...}
  *     onMoveObject={(id, pose) => ...}
- *     onPlaceObject={(id, pose) => ...}
+ *     onPlaceObject={(id, pose, check) => ...}
  *     onViewUpdate={(image) => ...}      // JPEG data URL, ~10 Hz
  *   />
  *
@@ -42,7 +42,8 @@ export interface SimulatorProps {
   initialScene: ScenePart[];
   onGrabObject?: (objectId: string, pose: Pose) => void;
   onMoveObject?: (objectId: string, pose: Pose) => void;
-  onPlaceObject?: (objectId: string, pose: Pose) => void;
+  /** check: how the part compares with the reference assembly (its step, offset, poses in the task graph's frame). */
+  onPlaceObject?: (objectId: string, pose: Pose, check?: PlaceCheck) => void;
   /** Rendered frame as a JPEG data URL. */
   onViewUpdate?: (image: string) => void;
   /** Fires once the simulator has loaded its part library and the initial scene. */
@@ -68,6 +69,14 @@ export interface SimulatorProps {
    * Nothing is blocked: the simulator reports, ARISTOS decides.
    */
   onCollision?: (object1Id: string, object2Id: string, info: CollisionInfo) => void;
+  /** A task-graph node changed state (e.g. 'available' -> 'complete'). Not fired for the state a new scene starts in. */
+  onStepChange?: (nodeId: string, state: StepState, previous: StepState | null, step: { index: number; name: string }) => void;
+  /** A new error, in the error/diagnosis schema (observation + the node where the mistake was made). */
+  onError?: (error: Diagnosis) => void;
+  /** The practice tutorial ended (only when the bench was started with options.tutorial). */
+  onTutorialEnd?: (result: TutorialResult) => void;
+  /** Every step is complete. */
+  onAssemblyComplete?: (info: { level: number | 'demo' | null; steps: number }) => void;
   /** Where the bench is served from. */
   src?: string;
   /** Frame callback rate, Hz. 0 disables frames. */
@@ -103,6 +112,34 @@ export interface SimState {
   next: string | null;
   score: { partsOk: number; partsTotal: number; stepsComplete: number; stepsSettled: number; stepsTotal: number };
 }
+/** How a part that was just put down compares with the reference assembly. */
+export interface PlaceCheck {
+  /** Task-graph node (step) of the answer part it was matched to; null if it matched none. */
+  nodeId: string | null;
+  /** Answer part it was matched to (an interchangeable part may take another one's place). */
+  slotId: string | null;
+  ok: boolean;
+  /** Distance / angle from its place, measured against the parts it joins. */
+  offsetMm: number | null;
+  angleDeg: number | null;
+  reversed: boolean;
+  /** Its pose and the answer pose, both in the task graph's frame (as in step_3d_paths.json). */
+  pose: Pose | null;
+  targetPose: Pose | null;
+}
+/** An error, in the shape of the error / diagnosis / repair schema (repair and safety are left to ARISTOS). */
+export interface Diagnosis {
+  taskgraph_id: string | null;
+  id: string;
+  node_id: string | null;
+  observation: string;
+  cause: { node_id: string | null; description: string };
+  kind: string;
+  part_id: string | null;
+  host_part_id: string | null;
+  features: string[][] | null;
+}
+export interface TutorialResult { reason: 'completed' | 'skipped'; experience: 'first' | 'again' | null; level: number | null }
 export interface CollisionInfo { kind: 'mesh' | 'feature'; depthMm?: number; snapPoint1: string | null; snapPoint2: string | null }
 /** What the trainee just put down, and whether it landed a step. */
 export interface LastPlace { objectId: string; pose: Pose; fitsStep: string | null; ok: boolean }
@@ -130,6 +167,10 @@ export interface SimulatorHandle {
   /** Make two parts move as one from now on (e.g. after a step is confirmed complete). */
   fuse: (parentId: string, childId: string) => void;
   unfuse: (childId: string) => void;
+  /** Lay the kit out again with every step before this one assembled; the trainee does this step (task-graph node id or index). */
+  jumpToStep: (step: string | number) => void;
+  /** Yellow arrow on a part of the current step (null clears). Resolves false if it is not one the step needs. */
+  pointAt: (objectId: string | null) => Promise<boolean>;
 }
 
 const DEFAULT_SRC = 'http://127.0.0.1:8123/index.html';
@@ -138,7 +179,7 @@ const POPUP_FEATURES = 'width=1280,height=800,menubar=no,toolbar=no,location=no'
 
 type BenchMessage =
   | { type: 'kb:ready'; protocol: number; keys: string[] }
-  | { type: 'kb:grab' | 'kb:move' | 'kb:place'; id: string; name: string; key: string; pose: Pose }
+  | { type: 'kb:grab' | 'kb:move' | 'kb:place'; id: string; name: string; key: string; pose: Pose; check?: PlaceCheck }
   | { type: 'kb:frame'; image: string; t: number }
   | { type: 'kb:scene'; parts: ScenePartState[] }
   | { type: 'kb:state'; state: SimState; lastPlace?: LastPlace }
@@ -146,7 +187,12 @@ type BenchMessage =
       success: boolean; reason: string | null }
   | { type: 'kb:collision'; object1: string; object2: string; kind: 'mesh' | 'feature'; depthMm?: number;
       snapPoint1: string | null; snapPoint2: string | null }
-  | { type: 'kb:warn'; message: string };
+  | { type: 'kb:warn'; message: string }
+  | { type: 'kb:stepChange'; nodeId: string; index: number; name: string; state: StepState; previous: StepState | null }
+  | { type: 'kb:error'; error: Diagnosis }
+  | { type: 'kb:tutorialEnd'; reason: 'completed' | 'skipped'; experience: 'first' | 'again' | null; level: number | null }
+  | { type: 'kb:assemblyComplete'; level: number | 'demo' | null; steps: number }
+  | { type: 'kb:pointed'; id: string | null; pointed: boolean };
 
 const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator(props, ref) {
   // initialScene and the callbacks are read through `cb` (below), never here,
@@ -158,6 +204,7 @@ const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator
   const originRef = useRef<string>('*');
   const sceneWaiters = useRef<Array<(parts: ScenePartState[]) => void>>([]);
   const stateWaiters = useRef<Array<(state: SimState) => void>>([]);
+  const pointWaiters = useRef<Array<(pointed: boolean) => void>>([]);
   // The scene the *next* bench window is initialised with: the caller's
   // initialScene at first, then whatever the last window reported, so popping
   // out and docking back never lose the trainee's progress.
@@ -223,7 +270,7 @@ const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator
             const p = sceneRef.current.find((s) => s.id === msg.id);
             if (p) p.pose = msg.pose;
           }
-          cb.current.onPlaceObject?.(msg.id, msg.pose);
+          cb.current.onPlaceObject?.(msg.id, msg.pose, msg.check);
           break;
         case 'kb:frame':
           if (popupRef.current) setLastFrame(msg.image);
@@ -245,6 +292,21 @@ const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator
           break;
         case 'kb:warn':
           console.warn('[Simulator]', msg.message);
+          break;
+        case 'kb:stepChange':
+          cb.current.onStepChange?.(msg.nodeId, msg.state, msg.previous, { index: msg.index, name: msg.name });
+          break;
+        case 'kb:error':
+          cb.current.onError?.(msg.error);
+          break;
+        case 'kb:tutorialEnd':
+          cb.current.onTutorialEnd?.({ reason: msg.reason, experience: msg.experience, level: msg.level });
+          break;
+        case 'kb:assemblyComplete':
+          cb.current.onAssemblyComplete?.({ level: msg.level, steps: msg.steps });
+          break;
+        case 'kb:pointed':
+          pointWaiters.current.splice(0).forEach((resolve) => resolve(msg.pointed));
           break;
       }
     };
@@ -302,6 +364,11 @@ const Simulator = forwardRef<SimulatorHandle, SimulatorProps>(function Simulator
     highlight: (objectId, color) => post({ type: 'kb:highlight', id: objectId, color }),
     fuse: (parentId, childId) => post({ type: 'kb:fuse', parentId, childId }),
     unfuse: (childId) => post({ type: 'kb:unfuse', childId }),
+    jumpToStep: (step) => post({ type: 'kb:jumpToStep', step }),
+    pointAt: (objectId) => new Promise<boolean>((resolve) => {
+      pointWaiters.current.push(resolve);
+      post({ type: 'kb:pointAt', id: objectId });
+    }),
     };
   }, []);
 

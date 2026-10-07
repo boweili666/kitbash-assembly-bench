@@ -146,6 +146,20 @@ session page still requires an account, as on gin-dev.
 | `onCollision(obj1, obj2, info)` | no-op | the moved part is pushed into another: solids interpenetrating by more than 1 mm (`info.kind='mesh'`, `depthMm`), or a peg lined up with a hole it cannot enter (`'feature'`, `snapPoint1/2`). Correctly assembled pairs never collide; nothing is blocked, ARISTOS decides whether to say something |
 | `onStateChange(state, lastPlace)` | no-op | `state.steps` → task-graph node states (replaces the hand-curated linear sequence); `state.next` → what the tutor proposes; `lastPlace.fitsStep && ok` → confirm the step and `ref.fuse(mate, part)`; an *Out of order … started* issue → the trainee has begun seating a part where it does not belong yet → intervene; a `grab` of a part no `available` step uses → note, say nothing |
 
+Added later (all optional; the props above keep their signatures):
+
+| callback / command | what it gives |
+| --- | --- |
+| `onPlaceObject(id, pose, check)` | third argument `check`: `{nodeId, slotId, ok, offsetMm, angleDeg, reversed, pose, targetPose}` — the task-graph node the part belongs to, the answer part it was matched to, how far it is from its place (measured against the parts it joins), and its pose and the answer pose **in the task graph's frame** (as in `step_3d_paths.json`). `pose` (second argument) stays in the table's frame |
+| `onStepChange(nodeId, state, previous, {index, name})` | a task-graph node changed state (`blocked` / `available` / `premature` / `complete`); not fired for the state a new scene starts in |
+| `onError(error)` | a new error, shaped like the error / diagnosis / repair schema: `{taskgraph_id, id, node_id, observation, cause: {node_id, description}, kind, part_id, host_part_id, features}`. `cause.node_id` is an earlier node when the part it goes onto is itself wrong there; repair and safety are left to ARISTOS |
+| `onTutorialEnd({reason, experience, level})` | the practice tutorial ended (only in a tutorial session) |
+| `onAssemblyComplete({level, steps})` | every step is complete |
+| `ref.jumpToStep(nodeId \| index)` | the kit laid out again with every earlier step assembled; the trainee does that step. `onStepChange` reports what it changed |
+| `ref.pointAt(objectId \| null)` | yellow arrow on a part of the current step; resolves `false` when the step does not need that part |
+
+None of these is sent while the tutorial or the demo plays.
+
 Nothing else is touched: no auth, no session database, no chat, no Workflow
 server calls. The component does not know ARISTOS exists.
 

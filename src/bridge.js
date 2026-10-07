@@ -31,10 +31,20 @@
  *                                                  自己解析(宿主猜不出来: 步骤描述的孔号和台子的 feature id 不一致);
  *                                                  clear:true 先清掉全部 AI 标记(台子自带的淡黄自动回来)
  *     {type:'kb:fuse', parentId, childId} / {type:'kb:unfuse', childId}
+ *     {type:'kb:jumpToStep', step:<id|index>}      the kit, with every step before it assembled; the trainee does that step
+ *     {type:'kb:pointAt', id|null}                 yellow arrow on that part (it must be one of the current step's); null clears
+ *                                                  → kb:pointed {id, pointed}
  *                                                  两件从此一体移动(步骤判定完成后由宿主调用)
  *   仿真台 → 宿主
  *     {type:'kb:ready', protocol:1, keys:[...]}    仿真台就绪(零件库已加载)
  *     {type:'kb:grab' | 'kb:move' | 'kb:place', id, name, key, pose}
+ *     kb:place also carries check: {nodeId, slotId, ok, offsetMm, angleDeg, reversed, pose, targetPose}
+ *                                                  -- its step, the answer part it was matched to, how far it is from its
+ *                                                  place, and its pose / the answer pose in the task graph's frame (Step3DPaths)
+ *     {type:'kb:stepChange', nodeId, index, name, state, previous}   a task-graph node changed state
+ *     {type:'kb:error', error:{taskgraph_id, id, node_id, observation, cause:{node_id, description},
+ *                              kind, part_id, host_part_id, features}}     a new error (Dana's error schema)
+ *     {type:'kb:assemblyComplete', level, steps}   every step complete
  *     Automatic frame capture is disabled; no kb:frame events are emitted.
  *     {type:'kb:scene', parts:[{id, name, key, pose}]}
  *     {type:'kb:state', state, lastPlace?}         装配状态(见 check.js state()): 每次放下之后, 以及
@@ -90,10 +100,12 @@
 
   function post(msg) {
     // Practice must never become training frames, actions, or scored progress.
-    if (tutorialSession && /^kb:(frame|grab|move|place|state|snapAttempt|collision|handleClick|handleMatch)$/.test(msg.type)) return;
+    if (tutorialSession && /^kb:(frame|grab|move|place|state|snapAttempt|collision|handleClick|handleMatch|stepChange|error|assemblyComplete)$/.test(msg.type)) return;
     // The demo's moves are not the trainee's: no actions or progress while it plays (kb:demoProgress instead)
-    if (window.KBDemo && KBDemo.active() && /^kb:(frame|grab|move|place|state|snapAttempt|collision|handleClick|handleMatch|pickWarn|guide)$/.test(msg.type)) return;
-    try { host.postMessage(msg, origin); } catch (e) { /* 宿主已关闭 */ } }
+    if (window.KBDemo && KBDemo.active() && /^kb:(frame|grab|move|place|state|snapAttempt|collision|handleClick|handleMatch|stepChange|error|assemblyComplete|pickWarn|guide)$/.test(msg.type)) return;
+    try { host.postMessage(msg, origin); } catch (e) { /* the host has gone */ }
+    if (msg.type === 'kb:state') { statePosts += 1; afterState(msg.state); }
+  }
   function warn(message) { post({ type: 'kb:warn', message: message }); }
 
   /* ---------- 位姿换算与模型识别:统一在 parts.js(与 Kit 布局、答案数据同源) ---------- */
@@ -112,7 +124,8 @@
   }
 
   /* ---------- 场景 ---------- */
-  function setScene(parts) {
+  function setScene(parts, keepBaseline) {
+    if (!keepBaseline) seen = null;
     var objects = [], skipped = [];
     (parts || []).forEach(function (part, i) {
       var o = KBParts.sceneObject(part);
@@ -202,10 +215,86 @@
       kind: c.kind, depthMm: c.depthMm, snapPoint1: c.snapPoint1, snapPoint2: c.snapPoint2 });
   });
   KB.on('place', function (node) {
-    partsOf(node).forEach(function (n) { var d = describe(n); d.type = 'kb:place'; post(d); });
+    if (window.KBCheck) KBCheck.evaluate();
+    partsOf(node).forEach(function (n) { var d = describe(n); d.type = 'kb:place'; d.check = placeCheck(n); post(d); });
     var st = stateMsg(partsOf(node)[0]);
     if (st) post(st);
   });
+
+  /* How the part just put down compares with the reference assembly. Poses are in the task graph's own
+     frame (Step3DPaths: mm, Y up, XYZ Euler, GLB origin), not the table's, so the host can compare them
+     with its data directly; offset and angle are what the checks measure (relative to the parts it joins). */
+  function placeCheck(n) {
+    var t = window.KBCheck && KBCheck.slotOf(n), a = KBParts.answer && KBParts.answer();
+    if (!t || !a) return { nodeId: null, slotId: null, ok: false, offsetMm: null, angleDeg: null, reversed: false, pose: null, targetPose: null };
+    var res = KBCheck.results(), mm = 1000 / KBParts.unitScale(), e = t.err && t.err.e;
+    var d = a.parts.filter(function (p) { return p.id === t.ref.id; })[0];
+    n.updateMatrixWorld(true);
+    var inRef = new THREE.Matrix4().copy(KBCheck.refToWorld()).invert().multiply(n.matrixWorld);
+    return { nodeId: res.steps[t.ref.step].id, slotId: t.ref.id, ok: !!t.ok,
+      offsetMm: e ? Math.round(e.d * mm * 10) / 10 : null, angleDeg: e ? Math.round(e.ang * 10) / 10 : null,
+      reversed: !!(e && e.reversed),
+      pose: KBParts.poseOfMatrix(n.userData.kbType.slice(5), inRef),
+      targetPose: d ? d.path[d.path.length - 1] : null };
+  }
+
+  /* ---------- what changed since the last state: node states, completion, new errors ----------
+     The first state after a scene arrives is the baseline: nothing is reported for it (getState has it all). */
+  var seen = null, statePosts = 0;
+  function newId() { return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : KB.newId(); }
+  function afterState(st) {
+    if (!st || !st.steps) return;
+    var first = !seen;
+    if (first) seen = { steps: {}, done: false, errors: {} };
+    var index = {};
+    st.steps.forEach(function (s) {
+      index[s.id] = s.index;
+      var was = seen.steps[s.id];
+      seen.steps[s.id] = s.state;
+      if (!first && was !== s.state)
+        post({ type: 'kb:stepChange', nodeId: s.id, index: s.index, name: s.name, state: s.state, previous: was || null });
+    });
+    var done = st.steps.length > 0 && st.steps.every(function (s) { return s.state === 'complete'; });
+    if (done && !seen.done && !first) post({ type: 'kb:assemblyComplete', level: window.KBLevel ? KBLevel.get() : null, steps: st.steps.length });
+    seen.done = done;
+    var now = {};
+    (st.issues || []).forEach(function (i) {
+      if (i.severity !== 'error') return;
+      var key = (i.objectId || '') + '|' + i.message;
+      now[key] = true;
+      if (!first && !seen.errors[key]) post({ type: 'kb:error', error: diagnosis(i, st, index) });
+    });
+    seen.errors = now;
+  }
+  // Dana's error schema. The cause is the issue's own step, unless the part it goes onto is itself wrong and
+  // belongs to an earlier step: then the mistake was made there.
+  function diagnosis(i, st, index) {
+    var a = KBParts.answer && KBParts.answer(), cause = { node_id: i.step, description: i.message };
+    var host = i.hostId ? st.parts.filter(function (p) { return p.by === i.hostId; })[0] : null;
+    if (host && !host.ok && i.step && index[host.step] < index[i.step]) {
+      var why = st.issues.filter(function (x) { return x.objectId === i.hostId; })[0];
+      cause = { node_id: host.step, description: why ? why.message : host.name + ' is not in place' };
+    }
+    return { taskgraph_id: (a && a.graph) || null, id: newId(), node_id: i.step, observation: i.message, cause: cause,
+             kind: i.kind, part_id: i.objectId, host_part_id: i.hostId, features: i.features };
+  }
+
+  /* ---------- the host moves the build to a step: the kit again, every earlier step assembled ---------- */
+  function jumpToStep(step, waited) {
+    var res = window.KBCheck && KBCheck.results && KBCheck.results();
+    var i = (res && res.ready) ? stepIndex(step) : -1;
+    if (i < 0 || i >= res.steps.length) {
+      if ((waited || 0) >= 2000) { warn('no such step to jump to: ' + step); return; }
+      setTimeout(function () { jumpToStep(step, (waited || 0) + 100); }, 100);
+      return;
+    }
+    if (!window.KBStepDebug) { warn('this simulator build cannot jump to a step'); return; }
+    if (window.KBDemo && KBDemo.active()) KBDemo.stop(false);
+    if (hostKit) setScene(hostKit, true); else if (KB.loadKit) KB.loadKit();
+    var before = statePosts;
+    KBStepDebug.play(i);
+    if (statePosts === before) { var st = stateMsg(); if (st) post(st); }   // nothing had to be seated (the first step)
+  }
 
   /* ---------- 装配状态:仿真算几何,宿主据此更新任务图 ---------- */
   function stateMsg(placedNode) {
@@ -389,6 +478,13 @@
         } else KB.highlight(KB.partById(msg.id), msg.color || null);
         break;
       case 'kb:fuse': KB.fuse(KB.partById(msg.parentId), KB.partById(msg.childId)); break;
+      case 'kb:jumpToStep': jumpToStep(msg.step); break;
+      case 'kb:pointAt': {
+        var pn = msg.id ? KB.partById(msg.id) : null;
+        var hit = !!(window.KBFocus && KBFocus.pointAt) && KBFocus.pointAt(pn);
+        post({ type: 'kb:pointed', id: msg.id || null, pointed: !!(pn && hit) });
+        break;
+      }
       case 'kb:unfuse': KB.unfuse(KB.partById(msg.childId)); break;
     }
   });

@@ -155,15 +155,16 @@
 
   // 零件节点 → 其 GLB 原点的世界位姿。烘焙时 v' = S·(v − offset),所以 GLB 原点在节点局部的 −offset·S
   function poseOf(node) {
-    var key = node.userData.kbType.slice(5);
+    node.updateMatrixWorld(true);
+    return poseOfMatrix(node.userData.kbType.slice(5), node.matrixWorld);
+  }
+  // the same pose for a part whose node sits at matrix M (scene units), e.g. in another frame
+  function poseOfMatrix(key, M) {
     var spec = cache[key] ? cache[key].spec : null;
     var S = manifest.unitScale, k = S / 1000;
-    node.updateMatrixWorld(true);
-    var originLocal = spec
-      ? new THREE.Vector3(-spec.offset[0] * S, -spec.offset[1] * S, -spec.offset[2] * S)
-      : new THREE.Vector3();
-    var p = node.localToWorld(originLocal);
-    var e = new THREE.Euler().setFromQuaternion(node.getWorldQuaternion(new THREE.Quaternion()), 'XYZ');
+    var p = (spec ? new THREE.Vector3(-spec.offset[0] * S, -spec.offset[1] * S, -spec.offset[2] * S) : new THREE.Vector3()).applyMatrix4(M);
+    var q = new THREE.Quaternion(); M.decompose(new THREE.Vector3(), q, new THREE.Vector3());
+    var e = new THREE.Euler().setFromQuaternion(q, 'XYZ');
     return { x: p.x / k, y: p.y / k, z: p.z / k, roll: e.x, pitch: e.y, yaw: e.z };
   }
 
@@ -238,6 +239,7 @@
     kindOf: kindOf,
     keyForModel: keyForModel,
     poseOf: poseOf,
+    poseOfMatrix: poseOfMatrix,
     nodeTransform: nodeTransform,
     sceneObject: sceneObject,
     instantiate: instantiate,

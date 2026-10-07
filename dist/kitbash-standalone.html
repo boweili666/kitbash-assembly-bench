@@ -1571,7 +1571,7 @@ body.demo-mode #debugSteps { display: none !important; }
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-10-06 22:07';  /* build.py replaces this with the build time */</script>
+<script>window.KB_BUILD = '2026-10-06 22:41';  /* build.py replaces this with the build time */</script>
 <script>
 /**
  * @license
@@ -13745,15 +13745,16 @@ KBWorkspace.overview();
         return null;
     }
     function poseOf(node) {
-        var key = node.userData.kbType.slice(5);
+        node.updateMatrixWorld(true);
+        return poseOfMatrix(node.userData.kbType.slice(5), node.matrixWorld);
+    }
+    function poseOfMatrix(key, M) {
         var spec = cache[key] ? cache[key].spec : null;
         var S = manifest.unitScale, k = S / 1000;
-        node.updateMatrixWorld(true);
-        var originLocal = spec
-            ? new THREE.Vector3(-spec.offset[0] * S, -spec.offset[1] * S, -spec.offset[2] * S)
-            : new THREE.Vector3();
-        var p = node.localToWorld(originLocal);
-        var e = new THREE.Euler().setFromQuaternion(node.getWorldQuaternion(new THREE.Quaternion()), 'XYZ');
+        var p = (spec ? new THREE.Vector3(-spec.offset[0] * S, -spec.offset[1] * S, -spec.offset[2] * S) : new THREE.Vector3()).applyMatrix4(M);
+        var q = new THREE.Quaternion();
+        M.decompose(new THREE.Vector3(), q, new THREE.Vector3());
+        var e = new THREE.Euler().setFromQuaternion(q, 'XYZ');
         return { x: p.x / k, y: p.y / k, z: p.z / k, roll: e.x, pitch: e.y, yaw: e.z };
     }
     function nodeTransform(key, pose) {
@@ -13818,6 +13819,7 @@ KBWorkspace.overview();
         kindOf: kindOf,
         keyForModel: keyForModel,
         poseOf: poseOf,
+        poseOfMatrix: poseOfMatrix,
         nodeTransform: nodeTransform,
         sceneObject: sceneObject,
         instantiate: instantiate,
@@ -23006,14 +23008,18 @@ KBWorkspace.overview();
     var options = { frames: false, fps: 10, width: 960, quality: 0.72, moveHz: 30 };
     var lastMove = 0;
     function post(msg) {
-        if (tutorialSession && /^kb:(frame|grab|move|place|state|snapAttempt|collision|handleClick|handleMatch)$/.test(msg.type))
+        if (tutorialSession && /^kb:(frame|grab|move|place|state|snapAttempt|collision|handleClick|handleMatch|stepChange|error|assemblyComplete)$/.test(msg.type))
             return;
-        if (window.KBDemo && KBDemo.active() && /^kb:(frame|grab|move|place|state|snapAttempt|collision|handleClick|handleMatch|pickWarn|guide)$/.test(msg.type))
+        if (window.KBDemo && KBDemo.active() && /^kb:(frame|grab|move|place|state|snapAttempt|collision|handleClick|handleMatch|stepChange|error|assemblyComplete|pickWarn|guide)$/.test(msg.type))
             return;
         try {
             host.postMessage(msg, origin);
         }
         catch (e) { }
+        if (msg.type === 'kb:state') {
+            statePosts += 1;
+            afterState(msg.state);
+        }
     }
     function warn(message) { post({ type: 'kb:warn', message: message }); }
     function poseOf(node) { return KBParts.poseOf(node); }
@@ -23028,7 +23034,9 @@ KBWorkspace.overview();
             out.push(o); });
         return out;
     }
-    function setScene(parts) {
+    function setScene(parts, keepBaseline) {
+        if (!keepBaseline)
+            seen = null;
         var objects = [], skipped = [];
         (parts || []).forEach(function (part, i) {
             var o = KBParts.sceneObject(part);
@@ -23112,11 +23120,97 @@ KBWorkspace.overview();
             kind: c.kind, depthMm: c.depthMm, snapPoint1: c.snapPoint1, snapPoint2: c.snapPoint2 });
     });
     KB.on('place', function (node) {
-        partsOf(node).forEach(function (n) { var d = describe(n); d.type = 'kb:place'; post(d); });
+        if (window.KBCheck)
+            KBCheck.evaluate();
+        partsOf(node).forEach(function (n) { var d = describe(n); d.type = 'kb:place'; d.check = placeCheck(n); post(d); });
         var st = stateMsg(partsOf(node)[0]);
         if (st)
             post(st);
     });
+    function placeCheck(n) {
+        var t = window.KBCheck && KBCheck.slotOf(n), a = KBParts.answer && KBParts.answer();
+        if (!t || !a)
+            return { nodeId: null, slotId: null, ok: false, offsetMm: null, angleDeg: null, reversed: false, pose: null, targetPose: null };
+        var res = KBCheck.results(), mm = 1000 / KBParts.unitScale(), e = t.err && t.err.e;
+        var d = a.parts.filter(function (p) { return p.id === t.ref.id; })[0];
+        n.updateMatrixWorld(true);
+        var inRef = new THREE.Matrix4().copy(KBCheck.refToWorld()).invert().multiply(n.matrixWorld);
+        return { nodeId: res.steps[t.ref.step].id, slotId: t.ref.id, ok: !!t.ok,
+            offsetMm: e ? Math.round(e.d * mm * 10) / 10 : null, angleDeg: e ? Math.round(e.ang * 10) / 10 : null,
+            reversed: !!(e && e.reversed),
+            pose: KBParts.poseOfMatrix(n.userData.kbType.slice(5), inRef),
+            targetPose: d ? d.path[d.path.length - 1] : null };
+    }
+    var seen = null, statePosts = 0;
+    function newId() { return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : KB.newId(); }
+    function afterState(st) {
+        if (!st || !st.steps)
+            return;
+        var first = !seen;
+        if (first)
+            seen = { steps: {}, done: false, errors: {} };
+        var index = {};
+        st.steps.forEach(function (s) {
+            index[s.id] = s.index;
+            var was = seen.steps[s.id];
+            seen.steps[s.id] = s.state;
+            if (!first && was !== s.state)
+                post({ type: 'kb:stepChange', nodeId: s.id, index: s.index, name: s.name, state: s.state, previous: was || null });
+        });
+        var done = st.steps.length > 0 && st.steps.every(function (s) { return s.state === 'complete'; });
+        if (done && !seen.done && !first)
+            post({ type: 'kb:assemblyComplete', level: window.KBLevel ? KBLevel.get() : null, steps: st.steps.length });
+        seen.done = done;
+        var now = {};
+        (st.issues || []).forEach(function (i) {
+            if (i.severity !== 'error')
+                return;
+            var key = (i.objectId || '') + '|' + i.message;
+            now[key] = true;
+            if (!first && !seen.errors[key])
+                post({ type: 'kb:error', error: diagnosis(i, st, index) });
+        });
+        seen.errors = now;
+    }
+    function diagnosis(i, st, index) {
+        var a = KBParts.answer && KBParts.answer(), cause = { node_id: i.step, description: i.message };
+        var host = i.hostId ? st.parts.filter(function (p) { return p.by === i.hostId; })[0] : null;
+        if (host && !host.ok && i.step && index[host.step] < index[i.step]) {
+            var why = st.issues.filter(function (x) { return x.objectId === i.hostId; })[0];
+            cause = { node_id: host.step, description: why ? why.message : host.name + ' is not in place' };
+        }
+        return { taskgraph_id: (a && a.graph) || null, id: newId(), node_id: i.step, observation: i.message, cause: cause,
+            kind: i.kind, part_id: i.objectId, host_part_id: i.hostId, features: i.features };
+    }
+    function jumpToStep(step, waited) {
+        var res = window.KBCheck && KBCheck.results && KBCheck.results();
+        var i = (res && res.ready) ? stepIndex(step) : -1;
+        if (i < 0 || i >= res.steps.length) {
+            if ((waited || 0) >= 2000) {
+                warn('no such step to jump to: ' + step);
+                return;
+            }
+            setTimeout(function () { jumpToStep(step, (waited || 0) + 100); }, 100);
+            return;
+        }
+        if (!window.KBStepDebug) {
+            warn('this simulator build cannot jump to a step');
+            return;
+        }
+        if (window.KBDemo && KBDemo.active())
+            KBDemo.stop(false);
+        if (hostKit)
+            setScene(hostKit, true);
+        else if (KB.loadKit)
+            KB.loadKit();
+        var before = statePosts;
+        KBStepDebug.play(i);
+        if (statePosts === before) {
+            var st = stateMsg();
+            if (st)
+                post(st);
+        }
+    }
     function stateMsg(placedNode) {
         if (!window.KBCheck)
             return null;
@@ -23369,6 +23463,15 @@ KBWorkspace.overview();
             case 'kb:fuse':
                 KB.fuse(KB.partById(msg.parentId), KB.partById(msg.childId));
                 break;
+            case 'kb:jumpToStep':
+                jumpToStep(msg.step);
+                break;
+            case 'kb:pointAt': {
+                var pn = msg.id ? KB.partById(msg.id) : null;
+                var hit = !!(window.KBFocus && KBFocus.pointAt) && KBFocus.pointAt(pn);
+                post({ type: 'kb:pointed', id: msg.id || null, pointed: !!(pn && hit) });
+                break;
+            }
             case 'kb:unfuse':
                 KB.unfuse(KB.partById(msg.childId));
                 break;
