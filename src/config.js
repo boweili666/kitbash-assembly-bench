@@ -43,7 +43,7 @@
     },
     ui: {
       guideCard: true,            // step card at the top left
-      celebration: true,          // "Drone assembled!" screen at the end
+      celebration: true,          // the "assembled" screen at the end (text.assembled)
       levelButtons: true,         // Level 1 / 2 / 3 / Demo in the toolbar
       demoButton: true,
       tutorialButton: true,
@@ -61,6 +61,10 @@
       autoplay: true, by: 'substep', speed: 1, gap: 450, substepGap: 700, stepGap: 1000,
       trajectory: 'approach', camera: 'follow', from: null, to: null, steps: null,
       fresh: true, loop: false, restore: true, hideTray: true, bar: true
+    },
+    text: {                       // words about the product being built (the bench itself knows only parts)
+      assembled: 'Drone assembled!',          // celebration headline
+      demoDone: 'The drone is assembled'      // demo bar after the last step
     }
   };
   var UI = {

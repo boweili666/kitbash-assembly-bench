@@ -1571,7 +1571,7 @@ body.demo-mode #debugSteps { display: none !important; }
 
 <input type="file" id="importFile" hidden accept=".json,application/json">
 
-<script>window.KB_BUILD = '2026-10-06 21:17';  /* build.py replaces this with the build time */</script>
+<script>window.KB_BUILD = '2026-10-06 21:27';  /* build.py replaces this with the build time */</script>
 <script>
 /**
  * @license
@@ -11158,44 +11158,17 @@ body.demo-mode #debugSteps { display: none !important; }
         };
         reader.readAsText(file);
     }
-    var KIT_SCENE = (function () {
-        var objects = [];
-        function put(key, name, x, z, ry) {
-            objects.push({ name: name, type: 'part:' + key, p: [x, 0, z], r: [0, ry || 0, 0], s: [1, 1, 1] });
-        }
-        for (var i = 0; i < 4; i++)
-            put('arm_5in', 'Arm ' + (i + 1), -3.5 + i * 0.85, 0.8);
-        put('split_front_plate', 'Front Plate', 0.6, -1.9);
-        put('split_rear_plate', 'Rear Plate', 2.2, -1.9);
-        put('aluminum_x_lock', 'X-Lock', 0.6, 0.4);
-        put('aluminum_arm_wedge_5mm', 'Arm Wedge L', 1.6, 0.15);
-        put('aluminum_arm_wedge_5mm', 'Arm Wedge R', 1.6, 0.65);
-        for (i = 0; i < 4; i++)
-            put('knurled_standoff', 'Standoff ' + (i + 1), 0.3 + i * 0.3, 1.5);
-        for (i = 0; i < 4; i++)
-            put('screw_m3x22_pan', 'M3\u00d722 ' + (i + 1), 1.7 + i * 0.3, 1.5);
-        for (i = 0; i < 4; i++)
-            put('screw_m3x16_pan', 'M3\u00d716 ' + (i + 1), 0.3 + i * 0.3, 2.3);
-        put('screw_m3x16_socket_cap', 'M3\u00d716 Cap L', 1.8, 2.3);
-        put('screw_m3x16_socket_cap', 'M3\u00d716 Cap R', 2.1, 2.3);
-        put('screw_m3x6_pan', 'M3\u00d76', 2.6, 2.3);
-        return {
-            v: 1,
-            counter: 40,
-            camera: { p: [6.5, 5.5, 7.5], t: [-0.2, 0.3, -0.2] },
-            objects: objects
-        };
-    })();
+    var KIT_CAMERA = { p: [6.5, 5.5, 7.5], t: [-0.2, 0.3, -0.2] };
     function kitSceneData() {
         var kit = window.KBParts && KBParts.ready() && KBParts.kit();
         if (!kit)
-            return KIT_SCENE;
+            return { v: 1, counter: 0, camera: KIT_CAMERA, objects: [] };
         var objects = [];
         kit.forEach(function (part) { var o = KBParts.sceneObject(part); if (o)
             objects.push(o); });
         if (window.KBTray)
             KBTray.arrange(objects);
-        return { v: 1, counter: objects.length, camera: KIT_SCENE.camera, objects: objects };
+        return { v: 1, counter: objects.length, camera: KIT_CAMERA, objects: objects };
     }
     function buildDemoScene() {
         loadSceneData(kitSceneData(), false);
@@ -11898,6 +11871,10 @@ body.demo-mode #debugSteps { display: none !important; }
             autoplay: true, by: 'substep', speed: 1, gap: 450, substepGap: 700, stepGap: 1000,
             trajectory: 'approach', camera: 'follow', from: null, to: null, steps: null,
             fresh: true, loop: false, restore: true, hideTray: true, bar: true
+        },
+        text: {
+            assembled: 'Drone assembled!',
+            demoDone: 'The drone is assembled'
         }
     };
     var UI = {
@@ -12100,10 +12077,18 @@ KBWorkspace.overview();
         spec.pegs.forEach(function (p) { longest = Math.max(longest, p.depth * mm); });
         return Math.round(longest);
     }
-    var RANK = { split_rear_plate: 0, split_front_plate: 0, top_plate: 0, esc_4in1: 1,
-        aluminum_x_lock: 2, arm_5in: 2, aluminum_arm_wedge_5mm: 3, camera_plate_left: 3, camera_plate_right: 3,
-        motor_2207: 4, propeller_cw: 5, propeller_ccw: 5,
-        knurled_standoff: 6, motor_nut_m5: 7, damper_m2: 7 };
+    function screwThread(spec) {
+        var mm = 1000 / KBParts.unitScale(), r = Infinity;
+        spec.pegs.forEach(function (p) { r = Math.min(r, p.r); });
+        return 'M' + Math.round(2 * r * mm);
+    }
+    function isScrew(key) { return KBParts.kindOf(key).screw; }
+    function bulkOrder(spec) {
+        var s = 1000 / KBParts.unitScale(), b = spec.bbox, v = 1;
+        for (var i = 0; i < 3; i++)
+            v *= Math.max(1e-3, (b.max[i] - b.min[i]) * s);
+        return 10 / (1 + Math.log(1 + v));
+    }
     var BY_STEP = true;
     var SPARE_ORDER = 999;
     var stepCache = null;
@@ -12135,10 +12120,10 @@ KBWorkspace.overview();
             return { id: key, label: key, order: 99 };
         var byZone = BY_STEP ? zoneOrders() : null;
         var id, label;
-        if (key.indexOf('screw_') === 0) {
+        if (isScrew(key)) {
             var len = screwLengthMm(spec);
             id = 'screw_' + len;
-            label = 'M3 × ' + len + ' mm';
+            label = screwThread(spec) + ' × ' + len + ' mm';
         }
         else {
             id = key;
@@ -12148,14 +12133,13 @@ KBWorkspace.overview();
             return { id: id, label: label,
                 order: byZone[id] !== undefined ? byZone[id] : SPARE_ORDER };
         return { id: id, label: label,
-            order: key.indexOf('screw_') === 0 ? 20 + screwLengthMm(spec) / 100
-                : (RANK[key] !== undefined ? RANK[key] : 9) };
+            order: isScrew(key) ? 20 + screwLengthMm(spec) / 100 : bulkOrder(spec) };
     }
     function zoneIdOf(key) {
         var spec = KBParts.spec(key);
         if (!spec)
             return key;
-        return key.indexOf('screw_') === 0 ? 'screw_' + screwLengthMm(spec) : key;
+        return isScrew(key) ? 'screw_' + screwLengthMm(spec) : key;
     }
     var _box = new THREE.Box3(), _m = new THREE.Matrix4(), _e = new THREE.Euler(), _sz = new THREE.Vector3();
     function footprint(key, r) {
@@ -21612,6 +21596,9 @@ KBWorkspace.overview();
             KB.flyCamera([c.x + r * 0.9, c.y + r * 0.7, c.z + r * 0.9], [c.x, c.y, c.z]);
         }
         orbit(true);
+        var title = (window.KBConfig && KBConfig.get('text.assembled')) || 'Assembly complete!';
+        el.querySelector('h2').textContent = title;
+        el.setAttribute('aria-label', title);
         el.hidden = false;
         confetti();
         KB.emit('celebrate', { level: lv, mistakes: mistakes, ms: startedAt ? performance.now() - startedAt : null });
@@ -21816,7 +21803,7 @@ KBWorkspace.overview();
         var list = stepList(), total = list.length, res = KBCheck.results();
         if (finished) {
             elCount.textContent = lastInPlay() === total - 1 || total === 0 ? 'All ' + total + ' steps' : 'Done';
-            elName.textContent = lastInPlay() === total - 1 ? 'The drone is assembled' : 'End of the selected steps';
+            elName.textContent = lastInPlay() === total - 1 ? ((window.KBConfig && KBConfig.get('text.demoDone')) || 'Assembly complete') : 'End of the selected steps';
             elSub.textContent = '';
         }
         else if (st) {

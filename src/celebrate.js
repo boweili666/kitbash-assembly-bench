@@ -84,6 +84,8 @@
       KB.flyCamera([c.x + r * 0.9, c.y + r * 0.7, c.z + r * 0.9], [c.x, c.y, c.z]);
     }
     orbit(true);
+    var title = (window.KBConfig && KBConfig.get('text.assembled')) || 'Assembly complete!';
+    el.querySelector('h2').textContent = title; el.setAttribute('aria-label', title);
     el.hidden = false;
     confetti();
     KB.emit('celebrate', { level: lv, mistakes: mistakes, ms: startedAt ? performance.now() - startedAt : null });

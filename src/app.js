@@ -902,42 +902,15 @@
     reader.readAsText(file);
   }
 
-  /* ---------- 示例场景:Frame Bottom Assembly 全套零件清单 ----------
-   * 数量来自 aristos 的装配任务图 task_graph_frame_bottom.json(共 24 件):
-   * 机臂×4 螺柱×4 M3×22×4 M3×16盘头×4 楔块×2 M3×16杯头×2 前板/后板/X锁块/M3×6 各×1 */
-  var KIT_SCENE = (function () {
-    var objects = [];
-    function put(key, name, x, z, ry) {
-      objects.push({ name: name, type: 'part:' + key, p: [x, 0, z], r: [0, ry || 0, 0], s: [1, 1, 1] });
-    }
-    for (var i = 0; i < 4; i++) put('arm_5in', 'Arm ' + (i + 1), -3.5 + i * 0.85, 0.8);
-    put('split_front_plate', 'Front Plate', 0.6, -1.9);
-    put('split_rear_plate', 'Rear Plate', 2.2, -1.9);
-    put('aluminum_x_lock', 'X-Lock', 0.6, 0.4);
-    put('aluminum_arm_wedge_5mm', 'Arm Wedge L', 1.6, 0.15);
-    put('aluminum_arm_wedge_5mm', 'Arm Wedge R', 1.6, 0.65);
-    for (i = 0; i < 4; i++) put('knurled_standoff', 'Standoff ' + (i + 1), 0.3 + i * 0.3, 1.5);
-    for (i = 0; i < 4; i++) put('screw_m3x22_pan', 'M3\u00d722 ' + (i + 1), 1.7 + i * 0.3, 1.5);
-    for (i = 0; i < 4; i++) put('screw_m3x16_pan', 'M3\u00d716 ' + (i + 1), 0.3 + i * 0.3, 2.3);
-    put('screw_m3x16_socket_cap', 'M3\u00d716 Cap L', 1.8, 2.3);
-    put('screw_m3x16_socket_cap', 'M3\u00d716 Cap R', 2.1, 2.3);
-    put('screw_m3x6_pan', 'M3\u00d76', 2.6, 2.3);
-    return {
-      v: 1,
-      counter: 40,
-      camera: { p: [6.5, 5.5, 7.5], t: [-0.2, 0.3, -0.2] },
-      objects: objects
-    };
-  })();
-
-  // Kit 布局优先来自零件库数据(manifest.kit,由任务图库生成);没有时退回手写的 KIT_SCENE
+  /* ---------- the kit: the parts laid out on the table, from manifest.kit (generated from the task graph) ---------- */
+  var KIT_CAMERA = { p: [6.5, 5.5, 7.5], t: [-0.2, 0.3, -0.2] };
   function kitSceneData() {
     var kit = window.KBParts && KBParts.ready() && KBParts.kit();
-    if (!kit) return KIT_SCENE;
+    if (!kit) return { v: 1, counter: 0, camera: KIT_CAMERA, objects: [] };
     var objects = [];
     kit.forEach(function (part) { var o = KBParts.sceneObject(part); if (o) objects.push(o); });
     if (window.KBTray) KBTray.arrange(objects);   // 物料区按零件类型 / 螺丝长度分格
-    return { v: 1, counter: objects.length, camera: KIT_SCENE.camera, objects: objects };
+    return { v: 1, counter: objects.length, camera: KIT_CAMERA, objects: objects };
   }
 
   function buildDemoScene() {

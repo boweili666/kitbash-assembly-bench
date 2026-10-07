@@ -30,12 +30,20 @@
     spec.pegs.forEach(function (p) { longest = Math.max(longest, p.depth * mm); });
     return Math.round(longest);
   }
-  // 大件在前、细碎在后;同类里螺丝按长度升序。
-  // 按零件类型排的旧口径 —— 现在只在参考装配读不到时兜底(见 BY_STEP)
-  var RANK = { split_rear_plate: 0, split_front_plate: 0, top_plate: 0, esc_4in1: 1,
-    aluminum_x_lock: 2, arm_5in: 2, aluminum_arm_wedge_5mm: 3, camera_plate_left: 3, camera_plate_right: 3,
-    motor_2207: 4, propeller_cw: 5, propeller_ccw: 5,
-    knurled_standoff: 6, motor_nut_m5: 7, damper_m2: 7 };
+  // thread size of a screw: its shaft (the thinner peg), e.g. M3
+  function screwThread(spec) {
+    var mm = 1000 / KBParts.unitScale(), r = Infinity;
+    spec.pegs.forEach(function (p) { r = Math.min(r, p.r); });
+    return 'M' + Math.round(2 * r * mm);
+  }
+  function isScrew(key) { return KBParts.kindOf(key).screw; }
+  // by kind (only when there is no reference assembly, or byStep is off): big parts first, by the volume of
+  // their bounding box, then the screws by length
+  function bulkOrder(spec) {
+    var s = 1000 / KBParts.unitScale(), b = spec.bbox, v = 1;
+    for (var i = 0; i < 3; i++) v *= Math.max(1e-3, (b.max[i] - b.min[i]) * s);
+    return 10 / (1 + Math.log(1 + v));
+  }
 
   /* ---------- 按装配顺序排格:越早用到的越靠近装配区 ---------- */
   // KBTray.byStep(false) 换回上面按类型排的原口径
@@ -46,7 +54,7 @@
   var stepCache = null;    // { source, zone: {格子 id -> 最早用到它的步号} }
   function zoneOrders() {
     var a = window.KBParts && KBParts.answer && KBParts.answer();
-    if (!a || !a.parts) return null;   // 读不到就让调用方退回 RANK,不猜
+    if (!a || !a.parts) return null;   // no reference assembly: the caller orders by kind (bulkOrder)
     if (stepCache && stepCache.source === a) return stepCache.zone;
     var byKey = {};
     a.parts.forEach(function (p) {
@@ -67,10 +75,10 @@
     if (!spec) return { id: key, label: key, order: 99 };
     var byZone = BY_STEP ? zoneOrders() : null;
     var id, label;
-    if (key.indexOf('screw_') === 0) {
+    if (isScrew(key)) {
       var len = screwLengthMm(spec);
       id = 'screw_' + len;
-      label = 'M3 × ' + len + ' mm';
+      label = screwThread(spec) + ' × ' + len + ' mm';
     } else {
       id = key;
       label = spec.label;
@@ -78,14 +86,13 @@
     if (byZone) return { id: id, label: label,
       order: byZone[id] !== undefined ? byZone[id] : SPARE_ORDER };
     return { id: id, label: label,
-      order: key.indexOf('screw_') === 0 ? 20 + screwLengthMm(spec) / 100
-                                         : (RANK[key] !== undefined ? RANK[key] : 9) };
+      order: isScrew(key) ? 20 + screwLengthMm(spec) / 100 : bulkOrder(spec) };
   }
   // 只算格子 id,不算 order —— zoneOf 求"整格最早步"时要用,不能递归调自己
   function zoneIdOf(key) {
     var spec = KBParts.spec(key);
     if (!spec) return key;
-    return key.indexOf('screw_') === 0 ? 'screw_' + screwLengthMm(spec) : key;
+    return isScrew(key) ? 'screw_' + screwLengthMm(spec) : key;
   }
   // 零件在桌面上的占地(场景单位):把包围盒按零件自己的朝向转过去再取 x / z 跨度 ——
   // 机臂躺着时长边在 z 上,拿"最长边当宽"会让它们在格子里叠在一起

@@ -92,7 +92,7 @@
   function baseName(name) { return String(name || '').replace(/\s*#[\d-]+$/, '').replace(/\s*\([A-Z]\)$/, ''); }
   // same order as the highlight (focus.js partsToMove): comesFirst parts first, then runs of one kind
   function planOf(st) {
-    // joining pre-built assemblies (the X-Lock step): the base, then each assembly moves as one piece
+    // joining pre-built assemblies (an assembly step): the base, then each assembly moves as one piece
     if (st.assembly && st.assembly.groups) {
       var plan = [];
       if (st.base && !st.base.ok) plan.push({ kind: null, count: 1, left: 1, label: baseName(st.base.ref.name) });
@@ -171,7 +171,7 @@
     var list = stepList(), total = list.length, res = KBCheck.results();
     if (finished) {
       elCount.textContent = lastInPlay() === total - 1 || total === 0 ? 'All ' + total + ' steps' : 'Done';
-      elName.textContent = lastInPlay() === total - 1 ? 'The drone is assembled' : 'End of the selected steps';
+      elName.textContent = lastInPlay() === total - 1 ? ((window.KBConfig && KBConfig.get('text.demoDone')) || 'Assembly complete') : 'End of the selected steps';
       elSub.textContent = '';
     } else if (st) {
       var n = cur && cur.step === st.i ? cur.plan.length : 0;

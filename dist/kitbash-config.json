@@ -79,5 +79,11 @@
     "restore": true,
     "hideTray": true,
     "bar": true
+  },
+
+  "text": {
+    "_help": "Words about the product being built; the bench itself only knows parts. assembled: celebration headline. demoDone: demo bar after the last step.",
+    "assembled": "Drone assembled!",
+    "demoDone": "The drone is assembled"
   }
 }
