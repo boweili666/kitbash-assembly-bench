@@ -110,7 +110,7 @@
       : 'Follow the ghost. Select a source hole or peg, then the receiving hole.';
     var message = mode === 'workspace' ? hint : how + ' Parts turn green in this list when correctly placed.';
     if (issue && mode !== 'workspace') {
-      state = issue.hint ? 'progress' : issue.severity === 'warn' ? 'warn' : 'error'; message = issue.msg + ' ' + (st.assembly ? 'Keep the wedge and screw together. Move the whole assembly onto the indicated side of the fixed X-Lock.' : /backwards/.test(issue.msg) ? 'Turn the part around and use the other hole entrance.' : /order/.test(issue.msg) ? 'Finish the required earlier step first.' : /workspace/.test(issue.msg) ? 'Move the whole part inside the marked area.' : 'Select the part and adjust its position or angle. Ungroup first if you need to adjust one part.');
+      state = issue.hint ? 'progress' : issue.severity === 'warn' ? 'warn' : 'error'; message = issue.msg + ' ' + (st.assembly ? 'Keep each pre-built group together and move it as one piece onto its side of the ' + (st.base ? st.base.ref.name : 'base') + '.' : /backwards/.test(issue.msg) ? 'Turn the part around and use the other hole entrance.' : /order/.test(issue.msg) ? 'Finish the required earlier step first.' : /workspace/.test(issue.msg) ? 'Move the whole part inside the marked area.' : 'Select the part and adjust its position or angle. Ungroup first if you need to adjust one part.');
     }
     if (attempt) { state = attempt.error ? 'error' : state; message = attempt.message; }
     draw(st, state, message);

@@ -386,7 +386,7 @@
     var step = res.steps[i], src = KBParts.answer();
     var anchor = null, candAnchor = null;
     if (step.assembly) {
-      if (!step.base.part) { destroy(); KB.toast('Add the X-Lock to the scene first.'); return false; }
+      if (!step.base.part) { destroy(); KB.toast('Add the ' + step.base.ref.name + ' to the scene first.'); return false; }
       anchor = { ref: step.base.ref, M: step.base.part.M, node: step.base.part.node };
     }
     step.slots.forEach(function (tt) { if (!anchor && tt.part && tt.near.length) anchor = { ref: tt.ref, M: tt.part.M, node: tt.part.node }; });

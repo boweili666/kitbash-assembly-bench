@@ -1,0 +1,3393 @@
+{
+  "id": "0c98e424-e671-472a-8b68-722d0274e9f2",
+  "name": "Frame, ESC, Motors, and FC Assembly",
+  "description": "Complete static task graph for Part 2 of the 2023 Freestyle FPV Drone Build series ('Build an FPV drone in 2023 - Part 2 - Frame, ESC, Motors, FC'), derived from assembly_instructions_part2_Frame_ESC_Motors_FC.yml. It covers the full video: frame bottom assembly (arm wedges, X-Lock, plates, arms, standoffs), motor prep and mounting, ESC grommets and mounting, soldering all four motors to the 4-in-1 ESC, building and soldering the XT60 battery lead, and mounting the flight controller plus connecting the ESC-to-FC harness. The 31 frame-bottom nodes are carried over verbatim (same UUIDs) from instances_v2/task_graph_frame_bottom.json, where the YML's permutation enumerations were already collapsed into DAG-native parallel branches; 46 new nodes cover the remaining YML steps one-to-one. Conventions: (1) chains the YML writes as strictly sequential remain sequential (standoffs A,B then C,D; motor mounting A->B->C->D; motor soldering A->B->C->D; battery-lead soldering order), while self-contained sub-assemblies (prop-nut threading x4, ESC corner grommets, XT60 battery lead build, FC corner grommets) branch directly from START and merge where the YML joins them; (2) wiring/electronics steps use the action_type verbs SOLDER, TIN, CUT, STRIP, TAPE, ROUTE, CONNECT, VERIFY added to schema_v2 on 2026-06-09; (3) the duplicate part-instance UUID that 'M3x22mm Pan Head Screw #3' had in task_graph_frame_bottom.json (it shared Screw #2's id) is fixed here with a fresh UUID, and the 'Feed Screw through X-Lock and Rear Plate (C)' node now references it; (4) video entries are authoring placeholders that encode each step's timestamp in the source video.",
+  "parts": [
+    {
+      "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+      "type": "ddce5eb4-07de-48ba-99c8-5dfbc58903ac",
+      "name": "Left Arm Wedge",
+      "description": "A purple 5mm aluminum arm wedge installed on one side of the X-Lock. It clamps a pair of 5-inch arms against the rear plate when tightened with an M3x16mm socket cap screw."
+    },
+    {
+      "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+      "type": "ddce5eb4-07de-48ba-99c8-5dfbc58903ac",
+      "name": "Right Arm Wedge",
+      "description": "A purple 5mm aluminum arm wedge installed on one side of the X-Lock. It clamps a pair of 5-inch arms against the rear plate when tightened with an M3x16mm socket cap screw."
+    },
+    {
+      "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+      "type": "f183bfcc-69de-4b80-ab8d-65b2df81789e",
+      "name": "Aluminum X-Lock",
+      "description": "A purple aluminum X-Lock plate mounted under the split rear plate. It receives the arm wedges and screws, forming the locking mechanism that clamps all four 5-inch arms."
+    },
+    {
+      "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+      "type": "7054f7fa-53b2-4c9c-8fda-7ad7e7478d26",
+      "name": "Split Front Plate",
+      "description": "A black carbon fiber split front plate placed over the front side of the arm assembly. Its holes align with the four arms and the X-Lock to close the bottom frame structure."
+    },
+    {
+      "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+      "type": "e33c0318-ef98-45dd-a44a-c6bd81b4fb4b",
+      "name": "Split Rear Plate",
+      "description": "A black carbon fiber split rear plate that sits above the Aluminum X-Lock. Its holes align with the X-Lock so the M3x22mm pan screws can fasten the rear section of the bottom frame."
+    },
+    {
+      "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+      "type": "e75e56dc-d0f9-4140-86ab-6c2003a06c4b",
+      "name": "5-inch Arm #1",
+      "description": "A black 5-inch carbon fiber arm inserted into the X-Lock channel on the rear frame assembly. It becomes one of the four motor-support arms of the frame bottom."
+    },
+    {
+      "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+      "type": "e75e56dc-d0f9-4140-86ab-6c2003a06c4b",
+      "name": "5-inch Arm #2",
+      "description": "A black 5-inch carbon fiber arm inserted into the X-Lock channel on the rear frame assembly. It becomes one of the four motor-support arms of the frame bottom."
+    },
+    {
+      "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+      "type": "e75e56dc-d0f9-4140-86ab-6c2003a06c4b",
+      "name": "5-inch Arm #3",
+      "description": "A black 5-inch carbon fiber arm inserted into the X-Lock channel on the rear frame assembly. It becomes one of the four motor-support arms of the frame bottom."
+    },
+    {
+      "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+      "type": "e75e56dc-d0f9-4140-86ab-6c2003a06c4b",
+      "name": "5-inch Arm #4",
+      "description": "A black 5-inch carbon fiber arm inserted into the X-Lock channel on the rear frame assembly. It becomes one of the four motor-support arms of the frame bottom."
+    },
+    {
+      "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+      "type": "3e7aa9cb-a6d9-4673-a453-2811b5a8841f",
+      "name": "M3x22mm Pan Head Screw #1",
+      "description": "A black M3x22mm pan head screw used at one rear plate mounting hole to fasten the Aluminum X-Lock through the split rear plate."
+    },
+    {
+      "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+      "type": "3e7aa9cb-a6d9-4673-a453-2811b5a8841f",
+      "name": "M3x22mm Pan Head Screw #2",
+      "description": "A black M3x22mm pan head screw used at one rear plate mounting hole to fasten the Aluminum X-Lock through the split rear plate."
+    },
+    {
+      "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+      "type": "3e7aa9cb-a6d9-4673-a453-2811b5a8841f",
+      "name": "M3x22mm Pan Head Screw #3",
+      "description": "A black M3x22mm pan head screw used at one rear plate mounting hole to fasten the Aluminum X-Lock through the split rear plate."
+    },
+    {
+      "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+      "type": "3e7aa9cb-a6d9-4673-a453-2811b5a8841f",
+      "name": "M3x22mm Pan Head Screw #4",
+      "description": "A black M3x22mm pan head screw used at one rear plate mounting hole to fasten the Aluminum X-Lock through the split rear plate."
+    },
+    {
+      "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+      "type": "3deb522a-fd64-4ce4-87de-37703acd4e61",
+      "name": "Left Arm Wedge Screw",
+      "description": "A black M3x16mm socket cap screw that passes through 5mm Arm Wedge #1 and threads into the Aluminum X-Lock. It is tightened after the first pair of arms is positioned."
+    },
+    {
+      "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+      "type": "3deb522a-fd64-4ce4-87de-37703acd4e61",
+      "name": "Right Arm Wedge Screw",
+      "description": "A black M3x16mm socket cap screw that passes through 5mm Arm Wedge #2 and threads into the Aluminum X-Lock. It is tightened after the second pair of arms is positioned."
+    },
+    {
+      "id": "52e5ae62-8d7f-4975-95fd-28611d677d39",
+      "type": "ba8f0eb4-ad6c-471b-b6ee-7be597e00bdc",
+      "name": "Center X-Lock Screw",
+      "description": "A black M3x6mm pan head screw used through the split front plate into the Aluminum X-Lock. It lightly secures the front plate before the standoffs are installed."
+    },
+    {
+      "id": "06151b08-07be-444d-b6c1-e960a3a90528",
+      "type": "0df65e49-4c2d-4913-ac11-7e6422c4e3c5",
+      "name": "Standoff Screw #1",
+      "description": "A black M3x16mm pan head screw fed upward through the bottom frame plates and arm area. It threads into Knurled Standoff #1 to create one vertical support point."
+    },
+    {
+      "id": "7f4f1096-48e3-4d5e-a753-2c777f78dd29",
+      "type": "0df65e49-4c2d-4913-ac11-7e6422c4e3c5",
+      "name": "Standoff Screw #2",
+      "description": "A black M3x16mm pan head screw fed upward through the bottom frame plates and arm area. It threads into Knurled Standoff #1 to create one vertical support point."
+    },
+    {
+      "id": "1901797f-ee02-43de-990e-817dfeef6ea8",
+      "type": "0df65e49-4c2d-4913-ac11-7e6422c4e3c5",
+      "name": "Standoff Screw #3",
+      "description": "A black M3x16mm pan head screw fed upward through the bottom frame plates and arm area. It threads into Knurled Standoff #1 to create one vertical support point."
+    },
+    {
+      "id": "f2460165-80e4-4c0e-ab99-5b877b8178fb",
+      "type": "0df65e49-4c2d-4913-ac11-7e6422c4e3c5",
+      "name": "Standoff Screw #4",
+      "description": "A black M3x16mm pan head screw fed upward through the bottom frame plates and arm area. It threads into Knurled Standoff #1 to create one vertical support point."
+    },
+    {
+      "id": "7ba6ea05-098b-4c62-9ae8-a203e41652fd",
+      "type": "e1b51f19-5149-4028-8e56-31adc814a71d",
+      "name": "Standoff #1",
+      "description": "A purple aluminum knurled standoff mounted to the bottom frame with M3x16mm Pan Screw #1. It provides a threaded vertical support for later frame or electronics stack layers."
+    },
+    {
+      "id": "b9d5fd44-1a47-4c0a-bdfb-c3a0b2925ca2",
+      "type": "e1b51f19-5149-4028-8e56-31adc814a71d",
+      "name": "Standoff #2",
+      "description": "A purple aluminum knurled standoff mounted to the bottom frame with M3x16mm Pan Screw #2. It provides a threaded vertical support for later frame or electronics stack layers."
+    },
+    {
+      "id": "56281c28-09d7-4519-aed3-6aeab2a1ac49",
+      "type": "e1b51f19-5149-4028-8e56-31adc814a71d",
+      "name": "Standoff #3",
+      "description": "A purple aluminum knurled standoff mounted to the bottom frame with M3x16mm Pan Screw #3. It provides a threaded vertical support for later frame or electronics stack layers."
+    },
+    {
+      "id": "9ef7451a-519d-44b6-b309-791f2deb2927",
+      "type": "e1b51f19-5149-4028-8e56-31adc814a71d",
+      "name": "Standoff #4",
+      "description": "A purple aluminum knurled standoff mounted to the bottom frame with M3x16mm Pan Screw #4. It provides a threaded vertical support for later frame or electronics stack layers."
+    },
+    {
+      "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+      "type": "166a582b-36ee-4a2c-b50d-398404ce7c83",
+      "name": "Motor #1",
+      "description": "A XILO Stealth 2207 brushless motor mounted on the motor pad of 5-inch Arm #1 (motor A in the source video). Its three wires exit toward the center of the frame and are soldered to ESC motor pads A1 -- A3."
+    },
+    {
+      "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+      "type": "166a582b-36ee-4a2c-b50d-398404ce7c83",
+      "name": "Motor #2",
+      "description": "A XILO Stealth 2207 brushless motor mounted on the motor pad of 5-inch Arm #2 (motor B in the source video). Its three wires exit toward the center of the frame and are soldered to ESC motor pads B1 -- B3."
+    },
+    {
+      "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+      "type": "166a582b-36ee-4a2c-b50d-398404ce7c83",
+      "name": "Motor #3",
+      "description": "A XILO Stealth 2207 brushless motor mounted on the motor pad of 5-inch Arm #3 (motor C in the source video). Its three wires exit toward the center of the frame and are soldered to ESC motor pads C1 -- C3."
+    },
+    {
+      "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+      "type": "166a582b-36ee-4a2c-b50d-398404ce7c83",
+      "name": "Motor #4",
+      "description": "A XILO Stealth 2207 brushless motor mounted on the motor pad of 5-inch Arm #4 (motor D in the source video). Its three wires exit toward the center of the frame and are soldered to ESC motor pads D1 -- D3."
+    },
+    {
+      "id": "b4e6ca7b-0f42-48aa-96db-bdc272b153a5",
+      "type": "f9042698-c094-41cc-9b1b-d124921e01b3",
+      "name": "Prop Nut #1",
+      "description": "An M5 nylon flanged hex nut threaded loosely onto the prop shaft of Motor #1 so it is not lost during the build; it is fully tightened only when a propeller is installed."
+    },
+    {
+      "id": "b0e480aa-818a-4eea-84d0-3000f13a6a23",
+      "type": "f9042698-c094-41cc-9b1b-d124921e01b3",
+      "name": "Prop Nut #2",
+      "description": "An M5 nylon flanged hex nut threaded loosely onto the prop shaft of Motor #2 so it is not lost during the build; it is fully tightened only when a propeller is installed."
+    },
+    {
+      "id": "484cb3e1-4d98-4509-8c7d-35a83ae123ed",
+      "type": "f9042698-c094-41cc-9b1b-d124921e01b3",
+      "name": "Prop Nut #3",
+      "description": "An M5 nylon flanged hex nut threaded loosely onto the prop shaft of Motor #3 so it is not lost during the build; it is fully tightened only when a propeller is installed."
+    },
+    {
+      "id": "61970440-40d5-44f7-a718-a79591c70524",
+      "type": "f9042698-c094-41cc-9b1b-d124921e01b3",
+      "name": "Prop Nut #4",
+      "description": "An M5 nylon flanged hex nut threaded loosely onto the prop shaft of Motor #4 so it is not lost during the build; it is fully tightened only when a propeller is installed."
+    },
+    {
+      "id": "c83c45d7-c6e4-4b7c-8184-135c528f9536",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #1-1",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [1] of 5-inch Arm #1 into motor base threaded hole [1] of Motor #1."
+    },
+    {
+      "id": "5ebe5814-3691-4844-ab81-e8462819fdbe",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #1-2",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [2] of 5-inch Arm #1 into motor base threaded hole [2] of Motor #1."
+    },
+    {
+      "id": "6d987065-3475-403c-8080-a4abc763f65b",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #1-3",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [3] of 5-inch Arm #1 into motor base threaded hole [3] of Motor #1."
+    },
+    {
+      "id": "26b9c19c-be5f-4543-8879-964cf24a865f",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #1-4",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [4] of 5-inch Arm #1 into motor base threaded hole [4] of Motor #1."
+    },
+    {
+      "id": "39f5bc62-8bac-49f0-a886-e35c252f2f09",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #2-1",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [1] of 5-inch Arm #2 into motor base threaded hole [1] of Motor #2."
+    },
+    {
+      "id": "da36cc28-f889-4fbe-81f7-d68e1af38b91",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #2-2",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [2] of 5-inch Arm #2 into motor base threaded hole [2] of Motor #2."
+    },
+    {
+      "id": "3ff3d68e-54fd-454a-8a4f-802c7392d1cf",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #2-3",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [3] of 5-inch Arm #2 into motor base threaded hole [3] of Motor #2."
+    },
+    {
+      "id": "d62e2658-6a51-49cf-9d14-9506a004d84f",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #2-4",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [4] of 5-inch Arm #2 into motor base threaded hole [4] of Motor #2."
+    },
+    {
+      "id": "8a59e5bb-6e58-451c-a3c0-504fcfd7d032",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #3-1",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [1] of 5-inch Arm #3 into motor base threaded hole [1] of Motor #3."
+    },
+    {
+      "id": "250b1751-d5db-4cd6-86b8-9dfc5add0a30",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #3-2",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [2] of 5-inch Arm #3 into motor base threaded hole [2] of Motor #3."
+    },
+    {
+      "id": "f977e47d-b592-440f-b573-3484c52b1972",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #3-3",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [3] of 5-inch Arm #3 into motor base threaded hole [3] of Motor #3."
+    },
+    {
+      "id": "031286ef-09e1-4d25-9aa7-26fe1d1b5b34",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #3-4",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [4] of 5-inch Arm #3 into motor base threaded hole [4] of Motor #3."
+    },
+    {
+      "id": "2e66311a-1399-4f92-87f4-a9368df68a36",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #4-1",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [1] of 5-inch Arm #4 into motor base threaded hole [1] of Motor #4."
+    },
+    {
+      "id": "63dcf032-2444-4962-b873-996f7ffa6b49",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #4-2",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [2] of 5-inch Arm #4 into motor base threaded hole [2] of Motor #4."
+    },
+    {
+      "id": "576d9adf-2736-4af3-8ddc-59e5de127737",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #4-3",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [3] of 5-inch Arm #4 into motor base threaded hole [3] of Motor #4."
+    },
+    {
+      "id": "d765d31b-ce11-4402-9c5f-b3763788820f",
+      "type": "a08fd0eb-d5b0-44dd-b5f1-a4c509d365f3",
+      "name": "M3x8mm Motor Screw #4-4",
+      "description": "A black M3x8mm socket cap screw fed up through motor mount hole [4] of 5-inch Arm #4 into motor base threaded hole [4] of Motor #4."
+    },
+    {
+      "id": "1f067ba6-468c-48d4-94dd-e9b65f5fe57d",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "ESC Spacer Grommet #1",
+      "description": "An M2 rubber vibration-dampening grommet slid down stack screw M3x22mm Pan Head Screw #1 so it rests on the frame, spacing the 4-in-1 ESC at least 2 mm above the frame."
+    },
+    {
+      "id": "b2e830f3-9c86-4d90-8fc5-5e0115ed5d7d",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "ESC Spacer Grommet #2",
+      "description": "An M2 rubber vibration-dampening grommet slid down stack screw M3x22mm Pan Head Screw #2 so it rests on the frame, spacing the 4-in-1 ESC at least 2 mm above the frame."
+    },
+    {
+      "id": "4f1d3bb7-362e-44aa-95ac-4b5da5d2fe13",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "ESC Spacer Grommet #3",
+      "description": "An M2 rubber vibration-dampening grommet slid down stack screw M3x22mm Pan Head Screw #3 so it rests on the frame, spacing the 4-in-1 ESC at least 2 mm above the frame."
+    },
+    {
+      "id": "a83feb95-a3f7-48c9-b766-34828a66e009",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "ESC Spacer Grommet #4",
+      "description": "An M2 rubber vibration-dampening grommet slid down stack screw M3x22mm Pan Head Screw #4 so it rests on the frame, spacing the 4-in-1 ESC at least 2 mm above the frame."
+    },
+    {
+      "id": "7ae2ce56-5a1e-45dc-8d57-2f2b8d111774",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "ESC Corner Grommet #1",
+      "description": "An M2 rubber vibration-dampening grommet pressed into corner mounting hole [1] of the 4-in-1 ESC, isolating the board from vibration and from the metal stack screws."
+    },
+    {
+      "id": "0902410d-d1b7-4be4-b299-7ba3f1957763",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "ESC Corner Grommet #2",
+      "description": "An M2 rubber vibration-dampening grommet pressed into corner mounting hole [2] of the 4-in-1 ESC, isolating the board from vibration and from the metal stack screws."
+    },
+    {
+      "id": "a7130d3f-4818-435c-978d-08fe671705cf",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "ESC Corner Grommet #3",
+      "description": "An M2 rubber vibration-dampening grommet pressed into corner mounting hole [3] of the 4-in-1 ESC, isolating the board from vibration and from the metal stack screws."
+    },
+    {
+      "id": "6444fa09-1bcb-40b7-be32-50ec6924dc6d",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "ESC Corner Grommet #4",
+      "description": "An M2 rubber vibration-dampening grommet pressed into corner mounting hole [4] of the 4-in-1 ESC, isolating the board from vibration and from the metal stack screws."
+    },
+    {
+      "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+      "type": "3af83cae-b9d4-46d8-a182-79d57b909cef",
+      "name": "4-in-1 ESC",
+      "description": "The XILO Stax V2 F4 45A BLHeli_32 3-6S 4-in-1 ESC, mounted on the four stack screws with solder pads facing up and the two large copper battery pads facing the front of the quadcopter."
+    },
+    {
+      "id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12",
+      "type": "e6489503-86a8-4003-bb8c-27d7c55038c8",
+      "name": "XT60 Battery Connector",
+      "description": "A male Amass XT60H battery connector with two friction-fit solder cups (+ and -). Forms the battery end of the battery lead."
+    },
+    {
+      "id": "4e5ebd48-891c-4448-90dd-51b0fdb8437a",
+      "type": "c9bf513c-f707-4401-9972-4006d7dce931",
+      "name": "XT60 Connector Sleeve",
+      "description": "The snap-on Amass XT60H protective sleeve that slides up the battery lead wires and over the connector, covering the solder cups."
+    },
+    {
+      "id": "59d0f141-2530-4ac5-aeeb-1944f37e1587",
+      "type": "21fec0b1-384e-48c6-8cce-9db1af629e40",
+      "name": "Battery Lead Red Wire",
+      "description": "A length of red 14 AWG wire soldered between the positive (+) solder cup of the XT60 connector and the positive (+) battery pad of the 4-in-1 ESC."
+    },
+    {
+      "id": "29afd74e-a588-4979-81e2-21dd73dca31b",
+      "type": "fb7aea5a-671d-4eb8-a120-eaded32248fe",
+      "name": "Battery Lead Black Wire",
+      "description": "A length of black 14 AWG wire soldered between the negative (-) solder cup of the XT60 connector and the negative (-) battery pad of the 4-in-1 ESC."
+    },
+    {
+      "id": "b7dee8a1-1a73-4b09-9b7d-b68f9d0da074",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "FC Spacer Grommet #1",
+      "description": "An M2 rubber vibration-dampening grommet slid down stack screw M3x22mm Pan Head Screw #1 so it rests on top of the 4-in-1 ESC, keeping the flight controller from contacting the ESC."
+    },
+    {
+      "id": "20a72d8d-6e40-4e44-904f-c1ba95c782c7",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "FC Spacer Grommet #2",
+      "description": "An M2 rubber vibration-dampening grommet slid down stack screw M3x22mm Pan Head Screw #2 so it rests on top of the 4-in-1 ESC, keeping the flight controller from contacting the ESC."
+    },
+    {
+      "id": "21709201-8ccf-499b-ac24-1b11e8b1a218",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "FC Spacer Grommet #3",
+      "description": "An M2 rubber vibration-dampening grommet slid down stack screw M3x22mm Pan Head Screw #3 so it rests on top of the 4-in-1 ESC, keeping the flight controller from contacting the ESC."
+    },
+    {
+      "id": "5e9678c2-f47d-4476-84ba-b6b374554761",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "FC Spacer Grommet #4",
+      "description": "An M2 rubber vibration-dampening grommet slid down stack screw M3x22mm Pan Head Screw #4 so it rests on top of the 4-in-1 ESC, keeping the flight controller from contacting the ESC."
+    },
+    {
+      "id": "3831e174-332f-4cf1-a6d5-e6100b45f886",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "FC Corner Grommet #1",
+      "description": "An M2 rubber vibration-dampening grommet pressed into corner mounting hole [1] of the flight controller, isolating the board from vibration and from the metal stack screws."
+    },
+    {
+      "id": "5c5d8f95-8ce3-44a0-afc5-a6780c0b0cb5",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "FC Corner Grommet #2",
+      "description": "An M2 rubber vibration-dampening grommet pressed into corner mounting hole [2] of the flight controller, isolating the board from vibration and from the metal stack screws."
+    },
+    {
+      "id": "d8fa3912-649b-4f3f-b887-80b9765f6555",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "FC Corner Grommet #3",
+      "description": "An M2 rubber vibration-dampening grommet pressed into corner mounting hole [3] of the flight controller, isolating the board from vibration and from the metal stack screws."
+    },
+    {
+      "id": "0b2798db-7377-479a-9c81-30e9176c4e80",
+      "type": "355148e4-2ce5-4cae-a657-02ac19acfe6d",
+      "name": "FC Corner Grommet #4",
+      "description": "An M2 rubber vibration-dampening grommet pressed into corner mounting hole [4] of the flight controller, isolating the board from vibration and from the metal stack screws."
+    },
+    {
+      "id": "c24d03dc-682b-48ad-b4bb-832ee2ee4011",
+      "type": "dc5b6b50-02be-4251-a93d-6f3f83418d9a",
+      "name": "Flight Controller",
+      "description": "The XILO Stax V2 F4 flight controller, mounted on the four stack screws above the ESC with its front-facing arrow pointing toward the front of the quadcopter."
+    },
+    {
+      "id": "750be7cf-d79d-46a1-9eb4-7bfa246ef1e0",
+      "type": "1c5c00b6-b6d2-4b95-9b20-c9c64c6fc056",
+      "name": "ESC-to-FC Wire Harness",
+      "description": "The keyed multi-pin wire harness included with the XILO Stax V2 stack; plugs the flight controller into the 4-in-1 ESC (Wire Harness 1 in the source YML)."
+    }
+  ],
+  "tools": [
+    {
+      "id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+      "type": "3bacd480-ca65-451a-93cc-03a293785ec8",
+      "name": "2.0mm Hex Screwdriver",
+      "description": "A 2.0 mm hex driver used to tighten M3 socket-cap and pan-head screws on the QAV-S 2 frame bottom."
+    },
+    {
+      "id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+      "type": "24e69809-aac0-482b-9acd-0d7585a60c12",
+      "name": "2.5mm Hex Screwdriver",
+      "description": "A 2.5 mm hex driver used to tighten M3 socket-cap and pan-head screws on the QAV-S 2 frame bottom."
+    },
+    {
+      "id": "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70",
+      "type": "e439aeac-e680-41f3-8101-ba1149edf6d0",
+      "name": "Diagonal Cutters",
+      "description": "Diagonal cutters used to trim the motor wires and battery lead wires to length."
+    },
+    {
+      "id": "4030b575-4917-4f56-8733-56cdce0fcc86",
+      "type": "9b5a0873-6d25-44e0-8a28-b76ed8d30443",
+      "name": "Wire Strippers",
+      "description": "Wire strippers used to remove ~2 mm of insulation from motor and battery lead wires before tinning."
+    },
+    {
+      "id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+      "type": "8a7196b1-fc3a-4a77-a278-bc0310cb23bc",
+      "name": "Soldering Iron",
+      "description": "A soldering iron used for every tinning and soldering joint in this build (ESC motor pads, battery pads, XT60 cups)."
+    },
+    {
+      "id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+      "type": "ea83082f-2e43-4857-bc23-fa1cd6b9b736",
+      "name": "Flux Pen",
+      "description": "A flux pen used to wet pads, wire ends, and solder cups before tinning and soldering."
+    },
+    {
+      "id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+      "type": "2a229311-c868-41d7-8d1e-3e3c66a81f9d",
+      "name": "Solder",
+      "description": "Rosin-core solder consumed across all tinning and soldering steps; treated as a tool per the source YML."
+    },
+    {
+      "id": "5059da65-bf9b-4195-bc54-059a1a8a7797",
+      "type": "96ec4786-9124-4bed-bb82-0a4faca65a5c",
+      "name": "Forceps or Small Pliers",
+      "description": "Forceps or small pliers used to rotate the XT60 connector's friction-fit solder cups so their openings face upward."
+    },
+    {
+      "id": "790b1014-0a4e-421d-8b38-16e729886698",
+      "type": "840892c3-1036-467f-87f7-515ae196b161",
+      "name": "Wire Harness Tape",
+      "description": "Adhesive wire-harness tape used to secure the soldered motor wires flat along the arms; treated as a tool per the source YML."
+    }
+  ],
+  "nodes": [
+    {
+      "id": "a456e085-00f3-4883-bc77-f6a8dffffc35",
+      "name": "Start Frame, ESC, Motors, and FC Assembly",
+      "action_type": "START",
+      "description": "Synthetic start anchor for the Frame, ESC, Motors, and FC Assembly task graph. No physical action.",
+      "parts": [],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": []
+    },
+    {
+      "id": "65ad97a4-76f9-4ddd-83e6-f2f73070cc21",
+      "name": "Feed Screw through Arm Wedge (A)",
+      "action_type": "FEED",
+      "description": "Feed screw end of [M3x16mm Socket Cap Screw #1] through hole of [5mm Arm Wedge #1] from channel side.",
+      "parts": [
+        {
+          "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+          "role": "introduced"
+        },
+        {
+          "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+          "role": "introduced"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_feed_wedge_a"
+      ]
+    },
+    {
+      "id": "3b3966f3-e84e-4a2b-a178-7b59e250d52d",
+      "name": "Feed Screw through Arm Wedge (B)",
+      "action_type": "FEED",
+      "description": "Feed screw end of [M3x16mm Socket Cap Screw #2] through hole of [5mm Arm Wedge #2] from channel side.",
+      "parts": [
+        {
+          "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+          "role": "introduced"
+        },
+        {
+          "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+          "role": "introduced"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_feed_wedge_b"
+      ]
+    },
+    {
+      "id": "972c5284-031e-44eb-883f-cc040168dac0",
+      "name": "Attach Arm Wedge Assembly to X-Lock (A)",
+      "action_type": "ATTACH",
+      "description": "Feed screw end of [M3x16mm Socket Cap Screw #1] into threaded hole of [Aluminum X-Lock] on left side. Tighten screw by rotating clockwise 2 -- 4 turns with [Hex Driver 2.0 mm] (not fully tightened — left loose so arms can be inserted later).",
+      "parts": [
+        {
+          "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+          "role": "introduced"
+        },
+        {
+          "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+          "role": "manipulated"
+        },
+        {
+          "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_attach_wedge_a"
+      ]
+    },
+    {
+      "id": "92f36455-5ebe-499b-8ef7-e87535890cf8",
+      "name": "Attach Arm Wedge Assembly to X-Lock (B)",
+      "action_type": "ATTACH",
+      "description": "Feed screw end of [M3x16mm Socket Cap Screw #2] into threaded hole of [Aluminum X-Lock] on right side. Tighten screw by rotating clockwise 2 -- 4 turns with [Hex Driver 2.0 mm] (not fully tightened — left loose so arms can be inserted later).",
+      "parts": [
+        {
+          "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+          "role": "introduced"
+        },
+        {
+          "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+          "role": "manipulated"
+        },
+        {
+          "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "d85dce0b-e605-4b4a-a310-3645d3b0deea"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_attach_wedge_b"
+      ]
+    },
+    {
+      "id": "a199bfeb-c45e-4ba0-9ede-6a183208cdec",
+      "name": "Place Assembly Aluminum X-Lock with Wedges on Rear Plate",
+      "action_type": "PLACE",
+      "description": "Place [Assembly Aluminum X-Lock with Wedges] on bottom of [Split Rear Plate], aligning holes [1 -- 8] of [Aluminum X-Lock] with holes [1 -- 8] of [Split Rear Plate].",
+      "parts": [
+        {
+          "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+          "role": "introduced"
+        },
+        {
+          "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+          "role": "manipulated"
+        },
+        {
+          "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+          "role": "manipulated"
+        },
+        {
+          "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+          "role": "manipulated"
+        },
+        {
+          "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+          "role": "manipulated"
+        },
+        {
+          "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_place_xlock_on_rear_plate"
+      ]
+    },
+    {
+      "id": "8e6bfe19-0d08-4471-87f6-09053b939d57",
+      "name": "Feed Screw through X-Lock and Rear Plate (A)",
+      "action_type": "FEED",
+      "description": "Feed end of [M3x22mm Pan Screw #1] through hole [1] of [Aluminum X-Lock] into threaded hole [1] of [Split Rear Plate]. Tighten screw by rotating clockwise with [Hex Driver 2.0 mm] until fully tightened.",
+      "parts": [
+        {
+          "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+          "role": "introduced"
+        },
+        {
+          "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+          "role": "manipulated"
+        },
+        {
+          "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_feed_xlock_screw_a"
+      ]
+    },
+    {
+      "id": "5eec8bdd-a094-45d3-b190-d8df90e3b92c",
+      "name": "Feed Screw through X-Lock and Rear Plate (B)",
+      "action_type": "FEED",
+      "description": "Feed end of [M3x22mm Pan Screw #2] through hole [2] of [Aluminum X-Lock] into threaded hole [2] of [Split Rear Plate]. Tighten screw by rotating clockwise with [Hex Driver 2.0 mm] until fully tightened.",
+      "parts": [
+        {
+          "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+          "role": "introduced"
+        },
+        {
+          "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+          "role": "manipulated"
+        },
+        {
+          "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "7b08adec-3703-453d-bb55-2e95c105edc3"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_feed_xlock_screw_b"
+      ]
+    },
+    {
+      "id": "874e9b51-a6e4-4374-9c9f-00a9edb0c46a",
+      "name": "Feed Screw through X-Lock and Rear Plate (C)",
+      "action_type": "FEED",
+      "description": "Feed end of [M3x22mm Pan Screw #3] through hole [3] of [Aluminum X-Lock] into threaded hole [3] of [Split Rear Plate]. Tighten screw by rotating clockwise with [Hex Driver 2.0 mm] until fully tightened.",
+      "parts": [
+        {
+          "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+          "role": "introduced"
+        },
+        {
+          "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+          "role": "manipulated"
+        },
+        {
+          "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_feed_xlock_screw_c"
+      ]
+    },
+    {
+      "id": "84de15af-a037-434b-877e-4fdbb64f22fb",
+      "name": "Feed Screw through X-Lock and Rear Plate (D)",
+      "action_type": "FEED",
+      "description": "Feed end of [M3x22mm Pan Screw #4] through hole [4] of [Aluminum X-Lock] into threaded hole [4] of [Split Rear Plate]. Tighten screw by rotating clockwise with [Hex Driver 2.0 mm] until fully tightened.",
+      "parts": [
+        {
+          "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+          "role": "introduced"
+        },
+        {
+          "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+          "role": "manipulated"
+        },
+        {
+          "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "ef8c0c00-0681-43bf-abd3-fd55137acd34"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_feed_xlock_screw_d"
+      ]
+    },
+    {
+      "id": "4a36727d-3c46-4cab-85e5-daa6c5f4ec09",
+      "name": "Insert Arm into X-Lock Assembly (A)",
+      "action_type": "INSERT",
+      "description": "Insert narrow tab of [5in Arm #1] between front-side of [5mm Arm Wedge #1] and [Aluminum X-Lock].",
+      "parts": [
+        {
+          "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+          "role": "introduced"
+        },
+        {
+          "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+          "role": "manipulated"
+        },
+        {
+          "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_insert_arm_a"
+      ]
+    },
+    {
+      "id": "89b94ace-2378-4b37-bc0e-cc7ea50c0eec",
+      "name": "Insert Arm into X-Lock Assembly (B)",
+      "action_type": "INSERT",
+      "description": "Insert narrow tab of [5in Arm #2] between rear-side of [5mm Arm Wedge #1] and [Aluminum X-Lock].",
+      "parts": [
+        {
+          "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+          "role": "introduced"
+        },
+        {
+          "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+          "role": "manipulated"
+        },
+        {
+          "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_insert_arm_b"
+      ]
+    },
+    {
+      "id": "dbba517f-91f2-480f-880b-03fe58838bb3",
+      "name": "Insert Arm into X-Lock Assembly (C)",
+      "action_type": "INSERT",
+      "description": "Insert narrow tab of [5in Arm #3] between front-side of [5mm Arm Wedge #2] and [Aluminum X-Lock].",
+      "parts": [
+        {
+          "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+          "role": "introduced"
+        },
+        {
+          "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+          "role": "manipulated"
+        },
+        {
+          "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_insert_arm_c"
+      ]
+    },
+    {
+      "id": "21830df6-67f7-488d-a921-91edf646ee7e",
+      "name": "Insert Arm into X-Lock Assembly (D)",
+      "action_type": "INSERT",
+      "description": "Insert narrow tab of [5in Arm #4] between rear-side of [5mm Arm Wedge #2] and [Aluminum X-Lock].",
+      "parts": [
+        {
+          "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+          "role": "introduced"
+        },
+        {
+          "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+          "role": "manipulated"
+        },
+        {
+          "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_insert_arm_d"
+      ]
+    },
+    {
+      "id": "3a8486fe-e0b3-437e-954b-a295932c29ff",
+      "name": "Tighten X-Lock Assembly for Arms AB",
+      "action_type": "TIGHTEN",
+      "description": "Hold [5in Arm #1] and [5in Arm #2] flat against [Split Rear Plate] and rotate [M3x16mm Socket Cap Screw #1] clockwise with [Hex Driver 2.0 mm] until fully tightened. (Note: YML line 626 lists Hex Driver 2.5 mm here; lines 661 / 722 / 783 use 2.0 mm for the same tighten operation, so 2.0 mm is used here as the consistent value — verify against the video.)",
+      "parts": [
+        {
+          "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+          "role": "manipulated"
+        },
+        {
+          "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+          "role": "manipulated"
+        },
+        {
+          "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+          "role": "manipulated"
+        },
+        {
+          "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+          "role": "manipulated"
+        },
+        {
+          "id": "92cf9ccb-73e0-4204-a6e7-eef13c3c8260",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_tighten_arms_ab"
+      ]
+    },
+    {
+      "id": "c89e1d6b-f144-4103-9cc3-3c0b7316b910",
+      "name": "Tighten X-Lock Assembly for Arms CD",
+      "action_type": "TIGHTEN",
+      "description": "Hold [5in Arm #3] and [5in Arm #4] flat against [Split Rear Plate] and rotate [M3x16mm Socket Cap Screw #2] clockwise with [Hex Driver 2.0 mm] until fully tightened.",
+      "parts": [
+        {
+          "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+          "role": "manipulated"
+        },
+        {
+          "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+          "role": "manipulated"
+        },
+        {
+          "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+          "role": "manipulated"
+        },
+        {
+          "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+          "role": "manipulated"
+        },
+        {
+          "id": "cb234cda-1e15-4933-b9cf-9571d4da561f",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "d85dce0b-e605-4b4a-a310-3645d3b0deea"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_tighten_arms_cd"
+      ]
+    },
+    {
+      "id": "209399c0-2b2b-4059-a22f-9bede07b6d8c",
+      "name": "Place Front Plate on Rear Plate and Arm Assembly",
+      "action_type": "PLACE",
+      "description": "Place [Split Front Plate] on top of [Assembly Rear Plate and Arms], aligning hole [1] of [Split Front Plate] with hole [1] of [5in Arm #1], hole [2] with hole [1] of [5in Arm #2], hole [3] with hole [1] of [5in Arm #3], hole [4] with hole [1] of [5in Arm #4], and hole [5] of [Split Front Plate] with threaded hole [5] of [Aluminum X-Lock].",
+      "parts": [
+        {
+          "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+          "role": "introduced"
+        },
+        {
+          "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+          "role": "manipulated"
+        },
+        {
+          "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+          "role": "manipulated"
+        },
+        {
+          "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+          "role": "manipulated"
+        },
+        {
+          "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+          "role": "manipulated"
+        },
+        {
+          "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_place_front_plate"
+      ]
+    },
+    {
+      "id": "87a09b07-d119-4529-9fc1-e1a76fef50f8",
+      "name": "Attach Front Plate on Rear Plate and Arm Assembly",
+      "action_type": "ATTACH",
+      "description": "Feed [M3x6mm Pan Screw #1] through hole [5] of [Split Front Plate] and into threaded hole [5] of [Aluminum X-Lock]. Rotate clockwise with [Hex Driver 2.0 mm] 2 -- 4 rotations (not fully tightened).",
+      "parts": [
+        {
+          "id": "52e5ae62-8d7f-4975-95fd-28611d677d39",
+          "role": "introduced"
+        },
+        {
+          "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+          "role": "manipulated"
+        },
+        {
+          "id": "33ee88b1-9980-4e0b-ade6-1052789ff327",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "52e5ae62-8d7f-4975-95fd-28611d677d39"
+        }
+      ],
+      "videos": []
+    },
+    {
+      "id": "46abdf3d-5177-45d3-98f3-e38ca0478e74",
+      "name": "Loosen X-Lock Screw A",
+      "action_type": "LOOSEN",
+      "description": "Rotate [M3x16mm Socket Cap Screw #1] counterclockwise 1/2 -- 1 rotation with [Hex Driver 2.0 mm] to create clearance for the standoff screws on the A/B side.",
+      "parts": [
+        {
+          "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464"
+        }
+      ],
+      "videos": []
+    },
+    {
+      "id": "77f1ccf4-bd4d-4b1f-b567-1922141d2aae",
+      "name": "Feed Standoff Screw through Frame Bottom (A)",
+      "action_type": "FEED",
+      "description": "Feed screw end of [M3x16mm Pan Screw #1] through hole [] of [], hole [] of [], and hole [] of []. (YML annotation incomplete — hole indices and component names are not specified.)",
+      "parts": [
+        {
+          "id": "06151b08-07be-444d-b6c1-e960a3a90528",
+          "role": "introduced"
+        },
+        {
+          "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+          "role": "manipulated"
+        },
+        {
+          "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": []
+    },
+    {
+      "id": "3439423d-e6e6-4f54-86fa-f622d2bd10bd",
+      "name": "Attach Knurled Standoff to Frame Bottom (A)",
+      "action_type": "ATTACH",
+      "description": "Feed screw end of [M3x16mm Pan Screw #1] through threaded hole [1] of [Knurled Standoff #1]. Hold [Knurled Standoff #1] and rotate [M3x16mm Pan Screw #1] clockwise with [Hex Driver 2.0 mm] until tight.",
+      "parts": [
+        {
+          "id": "7ba6ea05-098b-4c62-9ae8-a203e41652fd",
+          "role": "introduced"
+        },
+        {
+          "id": "06151b08-07be-444d-b6c1-e960a3a90528",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "06151b08-07be-444d-b6c1-e960a3a90528"
+        }
+      ],
+      "videos": []
+    },
+    {
+      "id": "879b7276-1735-4721-ae9d-870ba1f4f8f3",
+      "name": "Feed Standoff Screw through Frame Bottom (B)",
+      "action_type": "FEED",
+      "description": "Feed screw end of [M3x16mm Pan Screw #2] through hole [] of [], hole [] of [], and hole [] of []. (YML annotation incomplete — hole indices and component names are not specified.)",
+      "parts": [
+        {
+          "id": "7f4f1096-48e3-4d5e-a753-2c777f78dd29",
+          "role": "introduced"
+        },
+        {
+          "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+          "role": "manipulated"
+        },
+        {
+          "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": []
+    },
+    {
+      "id": "8ed7c848-93ac-4452-b80c-be571384f186",
+      "name": "Attach Knurled Standoff to Frame Bottom (B)",
+      "action_type": "ATTACH",
+      "description": "Feed screw end of [M3x16mm Pan Screw #2] through threaded hole [1] of [Knurled Standoff #2]. Hold [Knurled Standoff #2] and rotate [M3x16mm Pan Screw #2] clockwise with [Hex Driver 2.0 mm] until tight. (YML line 876 says Standoff (A) and Screw (A) — corrected to (B) here.)",
+      "parts": [
+        {
+          "id": "b9d5fd44-1a47-4c0a-bdfb-c3a0b2925ca2",
+          "role": "introduced"
+        },
+        {
+          "id": "7f4f1096-48e3-4d5e-a753-2c777f78dd29",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "7f4f1096-48e3-4d5e-a753-2c777f78dd29"
+        }
+      ],
+      "videos": []
+    },
+    {
+      "id": "bf03f45a-8419-453a-9fec-785b7dac1c78",
+      "name": "Tighten X-Lock Screw A",
+      "action_type": "TIGHTEN",
+      "description": "Rotate [M3x16mm Socket Cap Screw #1] clockwise with [Hex Driver 2.0 mm] until tight.",
+      "parts": [
+        {
+          "id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "3b8d1e48-6109-47fa-a12e-20c7bc89e464"
+        }
+      ],
+      "videos": []
+    },
+    {
+      "id": "f689a181-70eb-4fe1-8d2c-ed2060d647ac",
+      "name": "Loosen X-Lock Screw B",
+      "action_type": "LOOSEN",
+      "description": "Rotate [M3x16mm Socket Cap Screw #2] counterclockwise 1/2 -- 1 rotation with [Hex Driver 2.0 mm] to create clearance for the standoff screws on the C/D side.",
+      "parts": [
+        {
+          "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "d85dce0b-e605-4b4a-a310-3645d3b0deea"
+        }
+      ],
+      "videos": []
+    },
+    {
+      "id": "e1001af1-7d20-4c4d-9fc4-faa7da28eab8",
+      "name": "Feed Standoff Screw through Frame Bottom (C)",
+      "action_type": "FEED",
+      "description": "Feed screw end of [M3x16mm Pan Screw #3] through hole [] of [], hole [] of [], and hole [] of []. (YML annotation incomplete — hole indices and component names are not specified.)",
+      "parts": [
+        {
+          "id": "1901797f-ee02-43de-990e-817dfeef6ea8",
+          "role": "introduced"
+        },
+        {
+          "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+          "role": "manipulated"
+        },
+        {
+          "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": []
+    },
+    {
+      "id": "6ab4c59a-a687-45d4-a36a-242c24b271cc",
+      "name": "Attach Knurled Standoff to Frame Bottom (C)",
+      "action_type": "ATTACH",
+      "description": "Feed screw end of [M3x16mm Pan Screw #3] through threaded hole [1] of [Knurled Standoff #3]. Hold [Knurled Standoff #3] and rotate [M3x16mm Pan Screw #3] clockwise with [Hex Driver 2.0 mm] until tight.",
+      "parts": [
+        {
+          "id": "56281c28-09d7-4519-aed3-6aeab2a1ac49",
+          "role": "introduced"
+        },
+        {
+          "id": "1901797f-ee02-43de-990e-817dfeef6ea8",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "1901797f-ee02-43de-990e-817dfeef6ea8"
+        }
+      ],
+      "videos": []
+    },
+    {
+      "id": "66d54e07-3ac1-4041-8612-2236b4525356",
+      "name": "Feed Standoff Screw through Frame Bottom (D)",
+      "action_type": "FEED",
+      "description": "Feed screw end of [M3x16mm Pan Screw #4] through hole [] of [], hole [] of [], and hole [] of []. (YML annotation incomplete — hole indices and component names are not specified.)",
+      "parts": [
+        {
+          "id": "f2460165-80e4-4c0e-ab99-5b877b8178fb",
+          "role": "introduced"
+        },
+        {
+          "id": "b4de5507-d10b-4784-bfa2-672125e804d6",
+          "role": "manipulated"
+        },
+        {
+          "id": "acb493f9-45c0-469c-a7ad-8a0bd429ab00",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": []
+    },
+    {
+      "id": "3958faae-2f47-4e21-9a64-889c1138d884",
+      "name": "Attach Knurled Standoff to Frame Bottom (D)",
+      "action_type": "ATTACH",
+      "description": "Feed screw end of [M3x16mm Pan Screw #4] through threaded hole [1] of [Knurled Standoff #4]. Hold [Knurled Standoff #4] and rotate [M3x16mm Pan Screw #4] clockwise with [Hex Driver 2.0 mm] until tight.",
+      "parts": [
+        {
+          "id": "9ef7451a-519d-44b6-b309-791f2deb2927",
+          "role": "introduced"
+        },
+        {
+          "id": "f2460165-80e4-4c0e-ab99-5b877b8178fb",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "f2460165-80e4-4c0e-ab99-5b877b8178fb"
+        }
+      ],
+      "videos": []
+    },
+    {
+      "id": "51e902d2-0123-4b10-a05b-7ede2360eee5",
+      "name": "Tighten X-Lock Screw B",
+      "action_type": "TIGHTEN",
+      "description": "Rotate [M3x16mm Socket Cap Screw #2] clockwise with [Hex Driver 2.0 mm] until tight. (YML line 967 says Screw (D) — corrected to Screw B here, since this step is 'Tighten X-Lock Screw B'.)",
+      "parts": [
+        {
+          "id": "d85dce0b-e605-4b4a-a310-3645d3b0deea",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "c13f5af7-8f85-451b-b3d1-cab5edb81e8f"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "c13f5af7-8f85-451b-b3d1-cab5edb81e8f",
+          "part_id": "d85dce0b-e605-4b4a-a310-3645d3b0deea"
+        }
+      ],
+      "videos": []
+    },
+    {
+      "id": "8b658ec1-bcdb-4b4e-9855-7388c6c11802",
+      "name": "Thread Prop Nut onto Motor (A)",
+      "action_type": "ATTACH",
+      "description": "Thread [Prop Nut #1] onto the prop shaft of [Motor #1] by hand, rotating clockwise until the nylon insert begins to grab. Do not fully tighten -- this only keeps the nut from being lost.",
+      "parts": [
+        {
+          "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+          "role": "introduced"
+        },
+        {
+          "id": "b4e6ca7b-0f42-48aa-96db-bdc272b153a5",
+          "role": "introduced"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_thread_prop_nut_a_6m40s"
+      ]
+    },
+    {
+      "id": "47ef6f0b-d0ca-46e5-b0f5-e146b93b3c9a",
+      "name": "Position Motor on Arm (A)",
+      "action_type": "PLACE",
+      "description": "Place [Motor #1] (with [Prop Nut #1] threaded on) on top of the motor mount pad of [5-inch Arm #1], orienting the motor so its three wires exit toward the center of the frame and run up the arm. Align motor base holes [1 -- 4] of [Motor #1] with motor mount holes [1 -- 4] of [5-inch Arm #1]. (The YML mounts motors strictly in order A -> B -> C -> D; that ordering is preserved here.)",
+      "parts": [
+        {
+          "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+          "role": "manipulated"
+        },
+        {
+          "id": "b4e6ca7b-0f42-48aa-96db-bdc272b153a5",
+          "role": "manipulated"
+        },
+        {
+          "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_position_motor_a_9m11s"
+      ]
+    },
+    {
+      "id": "5aaf0659-0500-41ea-8e87-292a1dcbfe3a",
+      "name": "Secure Motor to Arm (A)",
+      "action_type": "ATTACH",
+      "description": "Feed each [M3x8mm Motor Screw #1-1 -- #1-4] up through motor mount holes [1 -- 4] of [5-inch Arm #1] into motor base threaded holes [1 -- 4] of [Motor #1]. Start each screw loosely by hand, then rotate clockwise with [Hex Driver 2.5 mm] until snug. Do not overtighten -- the aluminum motor base will strip.",
+      "parts": [
+        {
+          "id": "c83c45d7-c6e4-4b7c-8184-135c528f9536",
+          "role": "introduced"
+        },
+        {
+          "id": "5ebe5814-3691-4844-ab81-e8462819fdbe",
+          "role": "introduced"
+        },
+        {
+          "id": "6d987065-3475-403c-8080-a4abc763f65b",
+          "role": "introduced"
+        },
+        {
+          "id": "26b9c19c-be5f-4543-8879-964cf24a865f",
+          "role": "introduced"
+        },
+        {
+          "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+          "role": "manipulated"
+        },
+        {
+          "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "79320834-f194-49be-94ed-d1b2c73b2f69"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "c83c45d7-c6e4-4b7c-8184-135c528f9536"
+        },
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "5ebe5814-3691-4844-ab81-e8462819fdbe"
+        },
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "6d987065-3475-403c-8080-a4abc763f65b"
+        },
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "26b9c19c-be5f-4543-8879-964cf24a865f"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_secure_motor_a_9m33s"
+      ]
+    },
+    {
+      "id": "b2bb0683-c942-4794-956d-93207705adf5",
+      "name": "Thread Prop Nut onto Motor (B)",
+      "action_type": "ATTACH",
+      "description": "Thread [Prop Nut #2] onto the prop shaft of [Motor #2] by hand, rotating clockwise until the nylon insert begins to grab. Do not fully tighten.",
+      "parts": [
+        {
+          "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+          "role": "introduced"
+        },
+        {
+          "id": "b0e480aa-818a-4eea-84d0-3000f13a6a23",
+          "role": "introduced"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_thread_prop_nut_b_6m40s"
+      ]
+    },
+    {
+      "id": "6d8f1bcf-8bc4-4b10-ae5d-f1ec1809489f",
+      "name": "Position Motor on Arm (B)",
+      "action_type": "PLACE",
+      "description": "Place [Motor #2] (with [Prop Nut #2] threaded on) on top of the motor mount pad of [5-inch Arm #2], orienting the motor so its three wires exit toward the center of the frame and run up the arm. Align motor base holes [1 -- 4] of [Motor #2] with motor mount holes [1 -- 4] of [5-inch Arm #2].",
+      "parts": [
+        {
+          "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+          "role": "manipulated"
+        },
+        {
+          "id": "b0e480aa-818a-4eea-84d0-3000f13a6a23",
+          "role": "manipulated"
+        },
+        {
+          "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_position_motor_b_9m11s"
+      ]
+    },
+    {
+      "id": "17f8304c-90b8-4a29-8a3e-9bd48a60f261",
+      "name": "Secure Motor to Arm (B)",
+      "action_type": "ATTACH",
+      "description": "Feed each [M3x8mm Motor Screw #2-1 -- #2-4] up through motor mount holes [1 -- 4] of [5-inch Arm #2] into motor base threaded holes [1 -- 4] of [Motor #2]. Start each screw loosely by hand, then rotate clockwise with [Hex Driver 2.5 mm] until snug. Do not overtighten -- the aluminum motor base will strip.",
+      "parts": [
+        {
+          "id": "39f5bc62-8bac-49f0-a886-e35c252f2f09",
+          "role": "introduced"
+        },
+        {
+          "id": "da36cc28-f889-4fbe-81f7-d68e1af38b91",
+          "role": "introduced"
+        },
+        {
+          "id": "3ff3d68e-54fd-454a-8a4f-802c7392d1cf",
+          "role": "introduced"
+        },
+        {
+          "id": "d62e2658-6a51-49cf-9d14-9506a004d84f",
+          "role": "introduced"
+        },
+        {
+          "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+          "role": "manipulated"
+        },
+        {
+          "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "79320834-f194-49be-94ed-d1b2c73b2f69"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "39f5bc62-8bac-49f0-a886-e35c252f2f09"
+        },
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "da36cc28-f889-4fbe-81f7-d68e1af38b91"
+        },
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "3ff3d68e-54fd-454a-8a4f-802c7392d1cf"
+        },
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "d62e2658-6a51-49cf-9d14-9506a004d84f"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_secure_motor_b_9m33s"
+      ]
+    },
+    {
+      "id": "7aa79f25-b00e-45a5-a3fa-4205a883053b",
+      "name": "Thread Prop Nut onto Motor (C)",
+      "action_type": "ATTACH",
+      "description": "Thread [Prop Nut #3] onto the prop shaft of [Motor #3] by hand, rotating clockwise until the nylon insert begins to grab. Do not fully tighten.",
+      "parts": [
+        {
+          "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+          "role": "introduced"
+        },
+        {
+          "id": "484cb3e1-4d98-4509-8c7d-35a83ae123ed",
+          "role": "introduced"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_thread_prop_nut_c_6m40s"
+      ]
+    },
+    {
+      "id": "97f911ff-796a-452e-9a0f-fe1a3248dd6e",
+      "name": "Position Motor on Arm (C)",
+      "action_type": "PLACE",
+      "description": "Place [Motor #3] (with [Prop Nut #3] threaded on) on top of the motor mount pad of [5-inch Arm #3], orienting the motor so its three wires exit toward the center of the frame and run up the arm. Align motor base holes [1 -- 4] of [Motor #3] with motor mount holes [1 -- 4] of [5-inch Arm #3].",
+      "parts": [
+        {
+          "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+          "role": "manipulated"
+        },
+        {
+          "id": "484cb3e1-4d98-4509-8c7d-35a83ae123ed",
+          "role": "manipulated"
+        },
+        {
+          "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_position_motor_c_9m11s"
+      ]
+    },
+    {
+      "id": "1000e029-3692-44d5-b529-624a97b492b7",
+      "name": "Secure Motor to Arm (C)",
+      "action_type": "ATTACH",
+      "description": "Feed each [M3x8mm Motor Screw #3-1 -- #3-4] up through motor mount holes [1 -- 4] of [5-inch Arm #3] into motor base threaded holes [1 -- 4] of [Motor #3]. Start each screw loosely by hand, then rotate clockwise with [Hex Driver 2.5 mm] until snug. Do not overtighten -- the aluminum motor base will strip.",
+      "parts": [
+        {
+          "id": "8a59e5bb-6e58-451c-a3c0-504fcfd7d032",
+          "role": "introduced"
+        },
+        {
+          "id": "250b1751-d5db-4cd6-86b8-9dfc5add0a30",
+          "role": "introduced"
+        },
+        {
+          "id": "f977e47d-b592-440f-b573-3484c52b1972",
+          "role": "introduced"
+        },
+        {
+          "id": "031286ef-09e1-4d25-9aa7-26fe1d1b5b34",
+          "role": "introduced"
+        },
+        {
+          "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+          "role": "manipulated"
+        },
+        {
+          "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "79320834-f194-49be-94ed-d1b2c73b2f69"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "8a59e5bb-6e58-451c-a3c0-504fcfd7d032"
+        },
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "250b1751-d5db-4cd6-86b8-9dfc5add0a30"
+        },
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "f977e47d-b592-440f-b573-3484c52b1972"
+        },
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "031286ef-09e1-4d25-9aa7-26fe1d1b5b34"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_secure_motor_c_9m33s"
+      ]
+    },
+    {
+      "id": "b746aeca-90a3-4d4d-a641-bf7ef5a82194",
+      "name": "Thread Prop Nut onto Motor (D)",
+      "action_type": "ATTACH",
+      "description": "Thread [Prop Nut #4] onto the prop shaft of [Motor #4] by hand, rotating clockwise until the nylon insert begins to grab. Do not fully tighten.",
+      "parts": [
+        {
+          "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+          "role": "introduced"
+        },
+        {
+          "id": "61970440-40d5-44f7-a718-a79591c70524",
+          "role": "introduced"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_thread_prop_nut_d_6m40s"
+      ]
+    },
+    {
+      "id": "35cab1e0-83bc-4986-b0f7-4cabfdc89b75",
+      "name": "Position Motor on Arm (D)",
+      "action_type": "PLACE",
+      "description": "Place [Motor #4] (with [Prop Nut #4] threaded on) on top of the motor mount pad of [5-inch Arm #4], orienting the motor so its three wires exit toward the center of the frame and run up the arm. Align motor base holes [1 -- 4] of [Motor #4] with motor mount holes [1 -- 4] of [5-inch Arm #4].",
+      "parts": [
+        {
+          "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+          "role": "manipulated"
+        },
+        {
+          "id": "61970440-40d5-44f7-a718-a79591c70524",
+          "role": "manipulated"
+        },
+        {
+          "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_position_motor_d_9m11s"
+      ]
+    },
+    {
+      "id": "185bf850-f9cc-4247-8a88-7775096f583f",
+      "name": "Secure Motor to Arm (D)",
+      "action_type": "ATTACH",
+      "description": "Feed each [M3x8mm Motor Screw #4-1 -- #4-4] up through motor mount holes [1 -- 4] of [5-inch Arm #4] into motor base threaded holes [1 -- 4] of [Motor #4]. Start each screw loosely by hand, then rotate clockwise with [Hex Driver 2.5 mm] until snug. Do not overtighten -- the aluminum motor base will strip.",
+      "parts": [
+        {
+          "id": "2e66311a-1399-4f92-87f4-a9368df68a36",
+          "role": "introduced"
+        },
+        {
+          "id": "63dcf032-2444-4962-b873-996f7ffa6b49",
+          "role": "introduced"
+        },
+        {
+          "id": "576d9adf-2736-4af3-8ddc-59e5de127737",
+          "role": "introduced"
+        },
+        {
+          "id": "d765d31b-ce11-4402-9c5f-b3763788820f",
+          "role": "introduced"
+        },
+        {
+          "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+          "role": "manipulated"
+        },
+        {
+          "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "79320834-f194-49be-94ed-d1b2c73b2f69"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "2e66311a-1399-4f92-87f4-a9368df68a36"
+        },
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "63dcf032-2444-4962-b873-996f7ffa6b49"
+        },
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "576d9adf-2736-4af3-8ddc-59e5de127737"
+        },
+        {
+          "tool_id": "79320834-f194-49be-94ed-d1b2c73b2f69",
+          "part_id": "d765d31b-ce11-4402-9c5f-b3763788820f"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_secure_motor_d_9m33s"
+      ]
+    },
+    {
+      "id": "cbafb506-bc49-4339-9158-c0f25880b136",
+      "name": "Spread Motor Wires",
+      "action_type": "ROUTE",
+      "description": "Remove any twist ties from the motor wires of [Motor #1 -- Motor #4] and spread the wires out flat along their arms so they are ready for soldering.",
+      "parts": [
+        {
+          "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+          "role": "manipulated"
+        },
+        {
+          "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+          "role": "manipulated"
+        },
+        {
+          "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+          "role": "manipulated"
+        },
+        {
+          "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_spread_motor_wires_10m40s"
+      ]
+    },
+    {
+      "id": "596da149-fabc-410b-a8f8-44853eef8341",
+      "name": "Place Spacer Grommets on Stack Screws",
+      "action_type": "PLACE",
+      "description": "Slide one [ESC Spacer Grommet #1 -- #4] down each of the four [M3x22mm Pan Head Screw #1 -- #4] stack screws so it rests on the frame. These grommets space the ESC up off the frame so the board cannot touch the metal press nuts or screws (minimum 2 mm of clearance).",
+      "parts": [
+        {
+          "id": "1f067ba6-468c-48d4-94dd-e9b65f5fe57d",
+          "role": "introduced"
+        },
+        {
+          "id": "b2e830f3-9c86-4d90-8fc5-5e0115ed5d7d",
+          "role": "introduced"
+        },
+        {
+          "id": "4f1d3bb7-362e-44aa-95ac-4b5da5d2fe13",
+          "role": "introduced"
+        },
+        {
+          "id": "a83feb95-a3f7-48c9-b766-34828a66e009",
+          "role": "introduced"
+        },
+        {
+          "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+          "role": "manipulated"
+        },
+        {
+          "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+          "role": "manipulated"
+        },
+        {
+          "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+          "role": "manipulated"
+        },
+        {
+          "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_place_esc_spacer_grommets_13m39s"
+      ]
+    },
+    {
+      "id": "baf52a19-08b3-4747-a01e-5da5688d6126",
+      "name": "Install ESC Corner Isolation Grommets",
+      "action_type": "INSERT",
+      "description": "Press one [ESC Corner Grommet #1 -- #4] into each of the four corner mounting holes of [4-in-1 ESC]. On many units these are pre-installed at the factory -- if so, confirm all four are seated. These grommets isolate the ESC from vibration and keep the board from contacting the metal stack screws.",
+      "parts": [
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "introduced"
+        },
+        {
+          "id": "7ae2ce56-5a1e-45dc-8d57-2f2b8d111774",
+          "role": "introduced"
+        },
+        {
+          "id": "0902410d-d1b7-4be4-b299-7ba3f1957763",
+          "role": "introduced"
+        },
+        {
+          "id": "a7130d3f-4818-435c-978d-08fe671705cf",
+          "role": "introduced"
+        },
+        {
+          "id": "6444fa09-1bcb-40b7-be32-50ec6924dc6d",
+          "role": "introduced"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_install_esc_corner_grommets_11m14s"
+      ]
+    },
+    {
+      "id": "9eb0df82-f1cb-45e4-9f37-fb0f469e219b",
+      "name": "Orient and Place ESC onto Stack Screws",
+      "action_type": "PLACE",
+      "description": "Orient [4-in-1 ESC] with the solder pads facing up and the two large copper battery pads facing the front (the camera-plate slit side) of the quadcopter. Lower the ESC onto the four [M3x22mm Pan Head Screw #1 -- #4] stack screws so its four corner mounting grommets seat on top of the spacer grommets. Confirm at least 2 mm of clearance between the ESC and the frame.",
+      "parts": [
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        },
+        {
+          "id": "7ae2ce56-5a1e-45dc-8d57-2f2b8d111774",
+          "role": "manipulated"
+        },
+        {
+          "id": "0902410d-d1b7-4be4-b299-7ba3f1957763",
+          "role": "manipulated"
+        },
+        {
+          "id": "a7130d3f-4818-435c-978d-08fe671705cf",
+          "role": "manipulated"
+        },
+        {
+          "id": "6444fa09-1bcb-40b7-be32-50ec6924dc6d",
+          "role": "manipulated"
+        },
+        {
+          "id": "1f067ba6-468c-48d4-94dd-e9b65f5fe57d",
+          "role": "manipulated"
+        },
+        {
+          "id": "b2e830f3-9c86-4d90-8fc5-5e0115ed5d7d",
+          "role": "manipulated"
+        },
+        {
+          "id": "4f1d3bb7-362e-44aa-95ac-4b5da5d2fe13",
+          "role": "manipulated"
+        },
+        {
+          "id": "a83feb95-a3f7-48c9-b766-34828a66e009",
+          "role": "manipulated"
+        },
+        {
+          "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+          "role": "manipulated"
+        },
+        {
+          "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+          "role": "manipulated"
+        },
+        {
+          "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+          "role": "manipulated"
+        },
+        {
+          "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_place_esc_13m54s"
+      ]
+    },
+    {
+      "id": "56d507e8-e5d8-41fc-b179-c9db91fbe3bd",
+      "name": "Prepare and Tin Motor (A) Wires and ESC Pads",
+      "action_type": "TIN",
+      "description": "Lay the three wires of [Motor #1] flat along [5-inch Arm #1] and cut each wire about one pad-width past its corresponding corner pad on [4-in-1 ESC]. Strip roughly 2 mm of insulation from each wire, twist the strands, and tin them. Apply flux and tin motor pads [A1 -- A3] of the ESC.",
+      "parts": [
+        {
+          "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70",
+        "4030b575-4917-4f56-8733-56cdce0fcc86",
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70",
+          "part_id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f"
+        },
+        {
+          "tool_id": "4030b575-4917-4f56-8733-56cdce0fcc86",
+          "part_id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_tin_motor_a_wires_17m18s"
+      ]
+    },
+    {
+      "id": "ef08c846-1cc5-456f-935c-cf15a0ed1f28",
+      "name": "Solder Motor (A) Wires to ESC",
+      "action_type": "SOLDER",
+      "description": "Solder the three tinned wires of [Motor #1] to motor pads [A1 -- A3] of [4-in-1 ESC]. Any of the three wires may go to any of the three pads -- motor spin direction is corrected later in software. Keep a little slack so the wires lie flat without tension.",
+      "parts": [
+        {
+          "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_solder_motor_a_19m31s"
+      ]
+    },
+    {
+      "id": "81094331-be9f-42e1-a734-18f2c6631893",
+      "name": "Tape Down Motor (A) Wires",
+      "action_type": "TAPE",
+      "description": "Lay the three soldered wires of [Motor #1] flat along [5-inch Arm #1] and secure them with a strip of [Wire Harness Tape].",
+      "parts": [
+        {
+          "id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f",
+          "role": "manipulated"
+        },
+        {
+          "id": "5862866f-f049-40fb-94a9-6d3b25d45e9d",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "790b1014-0a4e-421d-8b38-16e729886698"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "790b1014-0a4e-421d-8b38-16e729886698",
+          "part_id": "b4d32b6d-3c56-45c4-9c94-673a5c12273f"
+        },
+        {
+          "tool_id": "790b1014-0a4e-421d-8b38-16e729886698",
+          "part_id": "5862866f-f049-40fb-94a9-6d3b25d45e9d"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_tape_motor_a_wires_20m37s"
+      ]
+    },
+    {
+      "id": "ed0fc67f-b874-4e8e-af36-247b83593ef1",
+      "name": "Prepare and Tin Motor (B) Wires and ESC Pads",
+      "action_type": "TIN",
+      "description": "Lay the three wires of [Motor #2] flat along [5-inch Arm #2] and cut each wire about one pad-width past its corresponding corner pad on [4-in-1 ESC]. Strip roughly 2 mm of insulation from each wire, twist the strands, and tin them. Apply flux and tin motor pads [B1 -- B3] of the ESC.",
+      "parts": [
+        {
+          "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70",
+        "4030b575-4917-4f56-8733-56cdce0fcc86",
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70",
+          "part_id": "381fadc6-61ca-423b-8a1b-26d8359abd99"
+        },
+        {
+          "tool_id": "4030b575-4917-4f56-8733-56cdce0fcc86",
+          "part_id": "381fadc6-61ca-423b-8a1b-26d8359abd99"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "381fadc6-61ca-423b-8a1b-26d8359abd99"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "381fadc6-61ca-423b-8a1b-26d8359abd99"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "381fadc6-61ca-423b-8a1b-26d8359abd99"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_tin_motor_b_wires_17m18s"
+      ]
+    },
+    {
+      "id": "3e74fe8e-c5ae-4b54-a4a7-35855b817e0f",
+      "name": "Solder Motor (B) Wires to ESC",
+      "action_type": "SOLDER",
+      "description": "Solder the three tinned wires of [Motor #2] to motor pads [B1 -- B3] of [4-in-1 ESC]. Any of the three wires may go to any of the three pads. Keep a little slack so the wires lie flat without tension.",
+      "parts": [
+        {
+          "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "381fadc6-61ca-423b-8a1b-26d8359abd99"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "381fadc6-61ca-423b-8a1b-26d8359abd99"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "381fadc6-61ca-423b-8a1b-26d8359abd99"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_solder_motor_b_19m31s"
+      ]
+    },
+    {
+      "id": "8880caf0-283d-4379-aa49-c04114c93f19",
+      "name": "Tape Down Motor (B) Wires",
+      "action_type": "TAPE",
+      "description": "Lay the three soldered wires of [Motor #2] flat along [5-inch Arm #2] and secure them with a strip of [Wire Harness Tape].",
+      "parts": [
+        {
+          "id": "381fadc6-61ca-423b-8a1b-26d8359abd99",
+          "role": "manipulated"
+        },
+        {
+          "id": "f521bee8-6351-43c9-aebd-a883d7d0e991",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "790b1014-0a4e-421d-8b38-16e729886698"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "790b1014-0a4e-421d-8b38-16e729886698",
+          "part_id": "381fadc6-61ca-423b-8a1b-26d8359abd99"
+        },
+        {
+          "tool_id": "790b1014-0a4e-421d-8b38-16e729886698",
+          "part_id": "f521bee8-6351-43c9-aebd-a883d7d0e991"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_tape_motor_b_wires_20m37s"
+      ]
+    },
+    {
+      "id": "bd5f05b1-6702-46a2-9f2b-039e392f9e58",
+      "name": "Prepare and Tin Motor (C) Wires and ESC Pads",
+      "action_type": "TIN",
+      "description": "Lay the three wires of [Motor #3] flat along [5-inch Arm #3] and cut each wire about one pad-width past its corresponding corner pad on [4-in-1 ESC]. Strip roughly 2 mm of insulation from each wire, twist the strands, and tin them. Apply flux and tin motor pads [C1 -- C3] of the ESC.",
+      "parts": [
+        {
+          "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70",
+        "4030b575-4917-4f56-8733-56cdce0fcc86",
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70",
+          "part_id": "a3a24789-a2c6-4ab2-a264-381eae786870"
+        },
+        {
+          "tool_id": "4030b575-4917-4f56-8733-56cdce0fcc86",
+          "part_id": "a3a24789-a2c6-4ab2-a264-381eae786870"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a3a24789-a2c6-4ab2-a264-381eae786870"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "a3a24789-a2c6-4ab2-a264-381eae786870"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a3a24789-a2c6-4ab2-a264-381eae786870"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_tin_motor_c_wires_17m18s"
+      ]
+    },
+    {
+      "id": "0df5e28a-6f09-48b2-85fc-bce1feb9cec7",
+      "name": "Solder Motor (C) Wires to ESC",
+      "action_type": "SOLDER",
+      "description": "Solder the three tinned wires of [Motor #3] to motor pads [C1 -- C3] of [4-in-1 ESC]. Any of the three wires may go to any of the three pads. Keep a little slack so the wires lie flat without tension.",
+      "parts": [
+        {
+          "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a3a24789-a2c6-4ab2-a264-381eae786870"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "a3a24789-a2c6-4ab2-a264-381eae786870"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a3a24789-a2c6-4ab2-a264-381eae786870"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_solder_motor_c_19m31s"
+      ]
+    },
+    {
+      "id": "064b3d73-6fc8-4de1-acec-09d7f755206e",
+      "name": "Tape Down Motor (C) Wires",
+      "action_type": "TAPE",
+      "description": "Lay the three soldered wires of [Motor #3] flat along [5-inch Arm #3] and secure them with a strip of [Wire Harness Tape].",
+      "parts": [
+        {
+          "id": "a3a24789-a2c6-4ab2-a264-381eae786870",
+          "role": "manipulated"
+        },
+        {
+          "id": "5608b061-50d6-40cb-9b06-fae565a0ede8",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "790b1014-0a4e-421d-8b38-16e729886698"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "790b1014-0a4e-421d-8b38-16e729886698",
+          "part_id": "a3a24789-a2c6-4ab2-a264-381eae786870"
+        },
+        {
+          "tool_id": "790b1014-0a4e-421d-8b38-16e729886698",
+          "part_id": "5608b061-50d6-40cb-9b06-fae565a0ede8"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_tape_motor_c_wires_20m37s"
+      ]
+    },
+    {
+      "id": "5296a9a0-bf72-42ca-a4f5-7e4c9318486d",
+      "name": "Prepare and Tin Motor (D) Wires and ESC Pads",
+      "action_type": "TIN",
+      "description": "Lay the three wires of [Motor #4] flat along [5-inch Arm #4] and cut each wire about one pad-width past its corresponding corner pad on [4-in-1 ESC]. Strip roughly 2 mm of insulation from each wire, twist the strands, and tin them. Apply flux and tin motor pads [D1 -- D3] of the ESC.",
+      "parts": [
+        {
+          "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70",
+        "4030b575-4917-4f56-8733-56cdce0fcc86",
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70",
+          "part_id": "a653295b-2223-4121-8360-a1756a2a9c1e"
+        },
+        {
+          "tool_id": "4030b575-4917-4f56-8733-56cdce0fcc86",
+          "part_id": "a653295b-2223-4121-8360-a1756a2a9c1e"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a653295b-2223-4121-8360-a1756a2a9c1e"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "a653295b-2223-4121-8360-a1756a2a9c1e"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a653295b-2223-4121-8360-a1756a2a9c1e"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_tin_motor_d_wires_17m18s"
+      ]
+    },
+    {
+      "id": "a24d9e30-8d92-4151-b332-56a6e896e076",
+      "name": "Solder Motor (D) Wires to ESC",
+      "action_type": "SOLDER",
+      "description": "Solder the three tinned wires of [Motor #4] to motor pads [D1 -- D3] of [4-in-1 ESC]. Any of the three wires may go to any of the three pads. Keep a little slack so the wires lie flat without tension.",
+      "parts": [
+        {
+          "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a653295b-2223-4121-8360-a1756a2a9c1e"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "a653295b-2223-4121-8360-a1756a2a9c1e"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a653295b-2223-4121-8360-a1756a2a9c1e"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_solder_motor_d_19m31s"
+      ]
+    },
+    {
+      "id": "fccc045a-d60c-4ab2-aca4-9388aa50fd14",
+      "name": "Tape Down Motor (D) Wires",
+      "action_type": "TAPE",
+      "description": "Lay the three soldered wires of [Motor #4] flat along [5-inch Arm #4] and secure them with a strip of [Wire Harness Tape].",
+      "parts": [
+        {
+          "id": "a653295b-2223-4121-8360-a1756a2a9c1e",
+          "role": "manipulated"
+        },
+        {
+          "id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "790b1014-0a4e-421d-8b38-16e729886698"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "790b1014-0a4e-421d-8b38-16e729886698",
+          "part_id": "a653295b-2223-4121-8360-a1756a2a9c1e"
+        },
+        {
+          "tool_id": "790b1014-0a4e-421d-8b38-16e729886698",
+          "part_id": "04e26746-c21e-4738-96cf-8bf2b1d7aa38"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_tape_motor_d_wires_20m37s"
+      ]
+    },
+    {
+      "id": "8d1867cd-0842-4312-a659-f022b353344c",
+      "name": "Rotate XT60 Solder Cups Upward",
+      "action_type": "PLACE",
+      "description": "Orient [XT60 Battery Connector] so the side marked with the plus (+) and minus (-) symbols faces up. Using [Forceps or Small Pliers], rotate the two friction-fit solder cups so their openings face upward, making them easier to fill with solder.",
+      "parts": [
+        {
+          "id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12",
+          "role": "introduced"
+        }
+      ],
+      "tools": [
+        "5059da65-bf9b-4195-bc54-059a1a8a7797"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "5059da65-bf9b-4195-bc54-059a1a8a7797",
+          "part_id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_rotate_xt60_cups_22m20s"
+      ]
+    },
+    {
+      "id": "d36cf976-8e8f-460f-a042-029115107ecd",
+      "name": "Tin XT60 Solder Cups",
+      "action_type": "TIN",
+      "description": "Apply flux to both solder cups of [XT60 Battery Connector] and feed in solder until each cup is filled. The 14 AWG joint requires a generous amount of solder.",
+      "parts": [
+        {
+          "id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_tin_xt60_cups_23m24s"
+      ]
+    },
+    {
+      "id": "77e604d9-9702-4d4c-912a-6c920dc986b9",
+      "name": "Tin Battery Lead Wire Ends",
+      "action_type": "TIN",
+      "description": "Apply flux to the bare end of [Battery Lead Red Wire] and [Battery Lead Black Wire] and add fresh solder to each so the factory-tinned ends are bright and shiny.",
+      "parts": [
+        {
+          "id": "59d0f141-2530-4ac5-aeeb-1944f37e1587",
+          "role": "introduced"
+        },
+        {
+          "id": "29afd74e-a588-4979-81e2-21dd73dca31b",
+          "role": "introduced"
+        }
+      ],
+      "tools": [
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "59d0f141-2530-4ac5-aeeb-1944f37e1587"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "29afd74e-a588-4979-81e2-21dd73dca31b"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "59d0f141-2530-4ac5-aeeb-1944f37e1587"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "29afd74e-a588-4979-81e2-21dd73dca31b"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "59d0f141-2530-4ac5-aeeb-1944f37e1587"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "29afd74e-a588-4979-81e2-21dd73dca31b"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_tin_battery_wire_ends_24m05s"
+      ]
+    },
+    {
+      "id": "50ed641e-816f-493e-95fa-54c635c7b46a",
+      "name": "Solder Red Wire to XT60 Positive",
+      "action_type": "SOLDER",
+      "description": "Bring [Battery Lead Red Wire] to the positive (+) solder cup of [XT60 Battery Connector], apply heat until the cup solder becomes liquid, seat the wire into the cup, remove heat, and hold until the joint solidifies.",
+      "parts": [
+        {
+          "id": "59d0f141-2530-4ac5-aeeb-1944f37e1587",
+          "role": "manipulated"
+        },
+        {
+          "id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "59d0f141-2530-4ac5-aeeb-1944f37e1587"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "59d0f141-2530-4ac5-aeeb-1944f37e1587"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_solder_red_to_xt60_24m33s"
+      ]
+    },
+    {
+      "id": "4607b92b-726a-4c2c-9e44-4781d824b7cd",
+      "name": "Solder Black Wire to XT60 Negative",
+      "action_type": "SOLDER",
+      "description": "Bring [Battery Lead Black Wire] to the negative (-) solder cup of [XT60 Battery Connector], apply heat until the cup solder becomes liquid, seat the wire into the cup, remove heat, and hold until the joint solidifies. Confirm the red wire is on (+) and the black wire is on (-) with no bridging between cups.",
+      "parts": [
+        {
+          "id": "29afd74e-a588-4979-81e2-21dd73dca31b",
+          "role": "manipulated"
+        },
+        {
+          "id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "29afd74e-a588-4979-81e2-21dd73dca31b"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "29afd74e-a588-4979-81e2-21dd73dca31b"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_solder_black_to_xt60_25m26s"
+      ]
+    },
+    {
+      "id": "88d1dfec-e839-4fa1-9ee6-21f76cbc5582",
+      "name": "Install XT60 Sleeve",
+      "action_type": "ATTACH",
+      "description": "Slide [XT60 Connector Sleeve] up the wires and over [XT60 Battery Connector] until it snaps into place, covering the solder cups.",
+      "parts": [
+        {
+          "id": "4e5ebd48-891c-4448-90dd-51b0fdb8437a",
+          "role": "introduced"
+        },
+        {
+          "id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12",
+          "role": "manipulated"
+        },
+        {
+          "id": "59d0f141-2530-4ac5-aeeb-1944f37e1587",
+          "role": "manipulated"
+        },
+        {
+          "id": "29afd74e-a588-4979-81e2-21dd73dca31b",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_install_xt60_sleeve_26m38s"
+      ]
+    },
+    {
+      "id": "9c336f2b-7133-46e8-811a-c06e178a6c17",
+      "name": "Tin ESC Battery Pads",
+      "action_type": "TIN",
+      "description": "Apply flux to the large positive (+) and negative (-) battery pads at the front of [4-in-1 ESC] and feed in enough solder to fully tin each pad.",
+      "parts": [
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_tin_esc_battery_pads_26m49s"
+      ]
+    },
+    {
+      "id": "9fe8cf94-d53e-4249-9c8d-c342b4de894c",
+      "name": "Position and Route Battery Lead onto ESC",
+      "action_type": "ROUTE",
+      "description": "Route the battery lead so [XT60 Battery Connector] exits the front-side of the quadcopter. Lay [Battery Lead Black Wire] toward the negative (-) battery pad and [Battery Lead Red Wire] toward the positive (+) battery pad of [4-in-1 ESC], keeping both wires lying flat against the board so they are not under tension.",
+      "parts": [
+        {
+          "id": "59d0f141-2530-4ac5-aeeb-1944f37e1587",
+          "role": "manipulated"
+        },
+        {
+          "id": "29afd74e-a588-4979-81e2-21dd73dca31b",
+          "role": "manipulated"
+        },
+        {
+          "id": "b06f9926-3a85-4ab1-a57d-ddf4353ffb12",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_route_battery_lead_28m17s"
+      ]
+    },
+    {
+      "id": "a9f8385a-f04e-4be3-b3fc-b18f551044a1",
+      "name": "Trim Battery Lead Wires to Length",
+      "action_type": "CUT",
+      "description": "The black wire is soldered first and lies flat on the board, and the red wire lays over the top of it. Cut [Battery Lead Black Wire] slightly shorter than [Battery Lead Red Wire] so that each wire reaches only its own pad and the two line up correctly. Leave a little slack -- do not pull the wires tight across the board.",
+      "parts": [
+        {
+          "id": "59d0f141-2530-4ac5-aeeb-1944f37e1587",
+          "role": "manipulated"
+        },
+        {
+          "id": "29afd74e-a588-4979-81e2-21dd73dca31b",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70",
+          "part_id": "59d0f141-2530-4ac5-aeeb-1944f37e1587"
+        },
+        {
+          "tool_id": "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70",
+          "part_id": "29afd74e-a588-4979-81e2-21dd73dca31b"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_trim_battery_lead_28m35s"
+      ]
+    },
+    {
+      "id": "7e104366-7e06-47b1-89ff-4ac412f0576c",
+      "name": "Strip and Tin Battery Lead Black Wire",
+      "action_type": "STRIP",
+      "description": "Strip [Battery Lead Black Wire] back a little more than the usual 2 mm so the exposed metal is about the same length as the negative (-) battery pad. Apply flux and tin the exposed strands until they are bright and shiny.",
+      "parts": [
+        {
+          "id": "29afd74e-a588-4979-81e2-21dd73dca31b",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "4030b575-4917-4f56-8733-56cdce0fcc86",
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "4030b575-4917-4f56-8733-56cdce0fcc86",
+          "part_id": "29afd74e-a588-4979-81e2-21dd73dca31b"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "29afd74e-a588-4979-81e2-21dd73dca31b"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "29afd74e-a588-4979-81e2-21dd73dca31b"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "29afd74e-a588-4979-81e2-21dd73dca31b"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_strip_tin_black_wire_28m51s"
+      ]
+    },
+    {
+      "id": "e7826380-3bc1-4a07-bab8-557fc2d9d9a6",
+      "name": "Strip and Tin Battery Lead Red Wire",
+      "action_type": "STRIP",
+      "description": "Strip [Battery Lead Red Wire] so the exposed metal is about the same length as the positive (+) battery pad (cut the wire back a little extra first if only a very short length is exposed). Apply flux and tin the exposed strands.",
+      "parts": [
+        {
+          "id": "59d0f141-2530-4ac5-aeeb-1944f37e1587",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70",
+        "4030b575-4917-4f56-8733-56cdce0fcc86",
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "6cbf8726-4a9d-4cad-9cd1-bf576ae88c70",
+          "part_id": "59d0f141-2530-4ac5-aeeb-1944f37e1587"
+        },
+        {
+          "tool_id": "4030b575-4917-4f56-8733-56cdce0fcc86",
+          "part_id": "59d0f141-2530-4ac5-aeeb-1944f37e1587"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "59d0f141-2530-4ac5-aeeb-1944f37e1587"
+        },
+        {
+          "tool_id": "4faf7cb0-a7b9-4473-955b-532ea56c97db",
+          "part_id": "59d0f141-2530-4ac5-aeeb-1944f37e1587"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "59d0f141-2530-4ac5-aeeb-1944f37e1587"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_strip_tin_red_wire_29m14s"
+      ]
+    },
+    {
+      "id": "69048d51-92c3-4f41-a58c-3df433c527ea",
+      "name": "Solder Black Wire to ESC Negative Pad",
+      "action_type": "SOLDER",
+      "description": "Lay [Battery Lead Black Wire] flat and horizontal so it exits straight out the front-side of the quadcopter, sitting on the negative (-) battery pad of [4-in-1 ESC]. Apply heat until the tinned pad and the tinned wire flow together, remove the heat, and hold the wire still until the joint cools solid. This is the hardest joint of the build -- be patient and let it set before letting go.",
+      "parts": [
+        {
+          "id": "29afd74e-a588-4979-81e2-21dd73dca31b",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "29afd74e-a588-4979-81e2-21dd73dca31b"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "29afd74e-a588-4979-81e2-21dd73dca31b"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_solder_black_to_esc_29m47s"
+      ]
+    },
+    {
+      "id": "f2cd9460-5f33-4a25-898f-3702d4163a21",
+      "name": "Solder Red Wire to ESC Positive Pad",
+      "action_type": "SOLDER",
+      "description": "Lay [Battery Lead Red Wire] flat across the top so that its insulation fully covers the negative (-) battery pad -- only the insulation of the red wire may overlap the (-) pad, never its bare metal. Solder the exposed end of [Battery Lead Red Wire] to the positive (+) battery pad of [4-in-1 ESC], remove the heat, and hold until the joint cools solid.",
+      "parts": [
+        {
+          "id": "59d0f141-2530-4ac5-aeeb-1944f37e1587",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [
+        "64470ab3-ace1-4d63-9be6-cd81176f044e",
+        "5dbab925-077b-4c5c-aa3f-92af42e5139d"
+      ],
+      "tool_part_mapping": [
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "59d0f141-2530-4ac5-aeeb-1944f37e1587"
+        },
+        {
+          "tool_id": "64470ab3-ace1-4d63-9be6-cd81176f044e",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "59d0f141-2530-4ac5-aeeb-1944f37e1587"
+        },
+        {
+          "tool_id": "5dbab925-077b-4c5c-aa3f-92af42e5139d",
+          "part_id": "a0178832-67d9-4c41-96e0-021829fb2593"
+        }
+      ],
+      "videos": [
+        "TODO_UUID_clip_solder_red_to_esc_30m39s"
+      ]
+    },
+    {
+      "id": "35975add-f4dd-4afd-a19c-3963ff520959",
+      "name": "Verify Battery Lead Connection",
+      "action_type": "VERIFY",
+      "description": "Confirm that [Battery Lead Red Wire] is on the positive (+) pad and [Battery Lead Black Wire] is on the negative (-) pad of [4-in-1 ESC]. Check that the two joints are distinct with no solder bridging between (+) and (-), and that the red wire's insulation covers the (-) pad so the bare conductors cannot touch.",
+      "parts": [
+        {
+          "id": "59d0f141-2530-4ac5-aeeb-1944f37e1587",
+          "role": "manipulated"
+        },
+        {
+          "id": "29afd74e-a588-4979-81e2-21dd73dca31b",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_verify_battery_lead_31m05s"
+      ]
+    },
+    {
+      "id": "ec0a521e-afd2-4243-89da-45082205a222",
+      "name": "Place FC Isolation Grommets on Stack Screws",
+      "action_type": "PLACE",
+      "description": "Slide one [FC Spacer Grommet #1 -- #4] down each of the four [M3x22mm Pan Head Screw #1 -- #4] stack screws so it rests on top of [4-in-1 ESC]. These grommets keep the flight controller from contacting the ESC.",
+      "parts": [
+        {
+          "id": "b7dee8a1-1a73-4b09-9b7d-b68f9d0da074",
+          "role": "introduced"
+        },
+        {
+          "id": "20a72d8d-6e40-4e44-904f-c1ba95c782c7",
+          "role": "introduced"
+        },
+        {
+          "id": "21709201-8ccf-499b-ac24-1b11e8b1a218",
+          "role": "introduced"
+        },
+        {
+          "id": "5e9678c2-f47d-4476-84ba-b6b374554761",
+          "role": "introduced"
+        },
+        {
+          "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+          "role": "manipulated"
+        },
+        {
+          "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+          "role": "manipulated"
+        },
+        {
+          "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+          "role": "manipulated"
+        },
+        {
+          "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_place_fc_spacer_grommets_31m36s"
+      ]
+    },
+    {
+      "id": "354bf90b-910f-4e90-9580-6887f0a89845",
+      "name": "Install Flight Controller Corner Grommets",
+      "action_type": "INSERT",
+      "description": "Press one [FC Corner Grommet #1 -- #4] into each of the four corner mounting holes of [Flight Controller]. These may be pre-installed -- if so, confirm all four are seated. They isolate the flight controller from vibration and from the metal stack screws.",
+      "parts": [
+        {
+          "id": "c24d03dc-682b-48ad-b4bb-832ee2ee4011",
+          "role": "introduced"
+        },
+        {
+          "id": "3831e174-332f-4cf1-a6d5-e6100b45f886",
+          "role": "introduced"
+        },
+        {
+          "id": "5c5d8f95-8ce3-44a0-afc5-a6780c0b0cb5",
+          "role": "introduced"
+        },
+        {
+          "id": "d8fa3912-649b-4f3f-b887-80b9765f6555",
+          "role": "introduced"
+        },
+        {
+          "id": "0b2798db-7377-479a-9c81-30e9176c4e80",
+          "role": "introduced"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_install_fc_corner_grommets_31m30s"
+      ]
+    },
+    {
+      "id": "b8a42370-33db-42c4-9506-cd99788c3b9b",
+      "name": "Orient and Place Flight Controller",
+      "action_type": "PLACE",
+      "description": "Orient [Flight Controller] so the front-facing arrow on the top of the board points toward the front (the camera-plate slit side, where the XT60 lead exits) of the quadcopter. Lower the flight controller onto the four [M3x22mm Pan Head Screw #1 -- #4] stack screws so its corner grommets seat on the FC isolation grommets.",
+      "parts": [
+        {
+          "id": "c24d03dc-682b-48ad-b4bb-832ee2ee4011",
+          "role": "manipulated"
+        },
+        {
+          "id": "3831e174-332f-4cf1-a6d5-e6100b45f886",
+          "role": "manipulated"
+        },
+        {
+          "id": "5c5d8f95-8ce3-44a0-afc5-a6780c0b0cb5",
+          "role": "manipulated"
+        },
+        {
+          "id": "d8fa3912-649b-4f3f-b887-80b9765f6555",
+          "role": "manipulated"
+        },
+        {
+          "id": "0b2798db-7377-479a-9c81-30e9176c4e80",
+          "role": "manipulated"
+        },
+        {
+          "id": "b7dee8a1-1a73-4b09-9b7d-b68f9d0da074",
+          "role": "manipulated"
+        },
+        {
+          "id": "20a72d8d-6e40-4e44-904f-c1ba95c782c7",
+          "role": "manipulated"
+        },
+        {
+          "id": "21709201-8ccf-499b-ac24-1b11e8b1a218",
+          "role": "manipulated"
+        },
+        {
+          "id": "5e9678c2-f47d-4476-84ba-b6b374554761",
+          "role": "manipulated"
+        },
+        {
+          "id": "fce4fde7-4bd0-4b9b-81b0-c35aec9addcd",
+          "role": "manipulated"
+        },
+        {
+          "id": "7b08adec-3703-453d-bb55-2e95c105edc3",
+          "role": "manipulated"
+        },
+        {
+          "id": "f11e1f6b-6093-4e03-8672-3d4dd6c751d6",
+          "role": "manipulated"
+        },
+        {
+          "id": "ef8c0c00-0681-43bf-abd3-fd55137acd34",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_place_fc_31m53s"
+      ]
+    },
+    {
+      "id": "cb30d0e5-0d73-4ce6-9689-6cb0de0525a3",
+      "name": "Connect ESC-to-FC Harness",
+      "action_type": "CONNECT",
+      "description": "Plug one end of [ESC-to-FC Wire Harness] into the connector on [Flight Controller] and the other end into the matching connector on [4-in-1 ESC]. The plugs are keyed -- if there is resistance, flip the connector rather than forcing it. Give the harness a couple of gentle twists to take up slack without putting tension on it.",
+      "parts": [
+        {
+          "id": "750be7cf-d79d-46a1-9eb4-7bfa246ef1e0",
+          "role": "introduced"
+        },
+        {
+          "id": "c24d03dc-682b-48ad-b4bb-832ee2ee4011",
+          "role": "manipulated"
+        },
+        {
+          "id": "a0178832-67d9-4c41-96e0-021829fb2593",
+          "role": "manipulated"
+        }
+      ],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": [
+        "TODO_UUID_clip_connect_esc_fc_harness_33m01s"
+      ]
+    },
+    {
+      "id": "c00ad762-0d48-48d4-8062-c29af0f0addb",
+      "name": "End Frame, ESC, Motors, and FC Assembly",
+      "action_type": "END",
+      "description": "Synthetic end anchor for the Frame, ESC, Motors, and FC Assembly task graph. Reached once the ESC-to-FC harness is connected (Part 2 complete). No physical action.",
+      "parts": [],
+      "tools": [],
+      "tool_part_mapping": [],
+      "videos": []
+    }
+  ],
+  "start_node": "a456e085-00f3-4883-bc77-f6a8dffffc35",
+  "end_node": "c00ad762-0d48-48d4-8062-c29af0f0addb",
+  "requirements": {
+    "a456e085-00f3-4883-bc77-f6a8dffffc35": [],
+    "65ad97a4-76f9-4ddd-83e6-f2f73070cc21": [
+      "a456e085-00f3-4883-bc77-f6a8dffffc35"
+    ],
+    "3b3966f3-e84e-4a2b-a178-7b59e250d52d": [
+      "a456e085-00f3-4883-bc77-f6a8dffffc35"
+    ],
+    "972c5284-031e-44eb-883f-cc040168dac0": [
+      "65ad97a4-76f9-4ddd-83e6-f2f73070cc21"
+    ],
+    "92f36455-5ebe-499b-8ef7-e87535890cf8": [
+      "3b3966f3-e84e-4a2b-a178-7b59e250d52d"
+    ],
+    "a199bfeb-c45e-4ba0-9ede-6a183208cdec": [
+      "972c5284-031e-44eb-883f-cc040168dac0",
+      "92f36455-5ebe-499b-8ef7-e87535890cf8"
+    ],
+    "8e6bfe19-0d08-4471-87f6-09053b939d57": [
+      "a199bfeb-c45e-4ba0-9ede-6a183208cdec"
+    ],
+    "5eec8bdd-a094-45d3-b190-d8df90e3b92c": [
+      "a199bfeb-c45e-4ba0-9ede-6a183208cdec"
+    ],
+    "874e9b51-a6e4-4374-9c9f-00a9edb0c46a": [
+      "a199bfeb-c45e-4ba0-9ede-6a183208cdec"
+    ],
+    "84de15af-a037-434b-877e-4fdbb64f22fb": [
+      "a199bfeb-c45e-4ba0-9ede-6a183208cdec"
+    ],
+    "4a36727d-3c46-4cab-85e5-daa6c5f4ec09": [
+      "8e6bfe19-0d08-4471-87f6-09053b939d57",
+      "5eec8bdd-a094-45d3-b190-d8df90e3b92c",
+      "874e9b51-a6e4-4374-9c9f-00a9edb0c46a",
+      "84de15af-a037-434b-877e-4fdbb64f22fb"
+    ],
+    "89b94ace-2378-4b37-bc0e-cc7ea50c0eec": [
+      "8e6bfe19-0d08-4471-87f6-09053b939d57",
+      "5eec8bdd-a094-45d3-b190-d8df90e3b92c",
+      "874e9b51-a6e4-4374-9c9f-00a9edb0c46a",
+      "84de15af-a037-434b-877e-4fdbb64f22fb"
+    ],
+    "dbba517f-91f2-480f-880b-03fe58838bb3": [
+      "8e6bfe19-0d08-4471-87f6-09053b939d57",
+      "5eec8bdd-a094-45d3-b190-d8df90e3b92c",
+      "874e9b51-a6e4-4374-9c9f-00a9edb0c46a",
+      "84de15af-a037-434b-877e-4fdbb64f22fb"
+    ],
+    "21830df6-67f7-488d-a921-91edf646ee7e": [
+      "8e6bfe19-0d08-4471-87f6-09053b939d57",
+      "5eec8bdd-a094-45d3-b190-d8df90e3b92c",
+      "874e9b51-a6e4-4374-9c9f-00a9edb0c46a",
+      "84de15af-a037-434b-877e-4fdbb64f22fb"
+    ],
+    "3a8486fe-e0b3-437e-954b-a295932c29ff": [
+      "4a36727d-3c46-4cab-85e5-daa6c5f4ec09",
+      "89b94ace-2378-4b37-bc0e-cc7ea50c0eec"
+    ],
+    "c89e1d6b-f144-4103-9cc3-3c0b7316b910": [
+      "dbba517f-91f2-480f-880b-03fe58838bb3",
+      "21830df6-67f7-488d-a921-91edf646ee7e"
+    ],
+    "209399c0-2b2b-4059-a22f-9bede07b6d8c": [
+      "3a8486fe-e0b3-437e-954b-a295932c29ff",
+      "c89e1d6b-f144-4103-9cc3-3c0b7316b910"
+    ],
+    "87a09b07-d119-4529-9fc1-e1a76fef50f8": [
+      "209399c0-2b2b-4059-a22f-9bede07b6d8c"
+    ],
+    "46abdf3d-5177-45d3-98f3-e38ca0478e74": [
+      "87a09b07-d119-4529-9fc1-e1a76fef50f8"
+    ],
+    "77f1ccf4-bd4d-4b1f-b567-1922141d2aae": [
+      "46abdf3d-5177-45d3-98f3-e38ca0478e74"
+    ],
+    "3439423d-e6e6-4f54-86fa-f622d2bd10bd": [
+      "77f1ccf4-bd4d-4b1f-b567-1922141d2aae"
+    ],
+    "879b7276-1735-4721-ae9d-870ba1f4f8f3": [
+      "3439423d-e6e6-4f54-86fa-f622d2bd10bd"
+    ],
+    "8ed7c848-93ac-4452-b80c-be571384f186": [
+      "879b7276-1735-4721-ae9d-870ba1f4f8f3"
+    ],
+    "bf03f45a-8419-453a-9fec-785b7dac1c78": [
+      "8ed7c848-93ac-4452-b80c-be571384f186"
+    ],
+    "f689a181-70eb-4fe1-8d2c-ed2060d647ac": [
+      "bf03f45a-8419-453a-9fec-785b7dac1c78"
+    ],
+    "e1001af1-7d20-4c4d-9fc4-faa7da28eab8": [
+      "f689a181-70eb-4fe1-8d2c-ed2060d647ac"
+    ],
+    "6ab4c59a-a687-45d4-a36a-242c24b271cc": [
+      "e1001af1-7d20-4c4d-9fc4-faa7da28eab8"
+    ],
+    "66d54e07-3ac1-4041-8612-2236b4525356": [
+      "6ab4c59a-a687-45d4-a36a-242c24b271cc"
+    ],
+    "3958faae-2f47-4e21-9a64-889c1138d884": [
+      "66d54e07-3ac1-4041-8612-2236b4525356"
+    ],
+    "51e902d2-0123-4b10-a05b-7ede2360eee5": [
+      "3958faae-2f47-4e21-9a64-889c1138d884"
+    ],
+    "8b658ec1-bcdb-4b4e-9855-7388c6c11802": [
+      "a456e085-00f3-4883-bc77-f6a8dffffc35"
+    ],
+    "47ef6f0b-d0ca-46e5-b0f5-e146b93b3c9a": [
+      "51e902d2-0123-4b10-a05b-7ede2360eee5",
+      "8b658ec1-bcdb-4b4e-9855-7388c6c11802"
+    ],
+    "5aaf0659-0500-41ea-8e87-292a1dcbfe3a": [
+      "47ef6f0b-d0ca-46e5-b0f5-e146b93b3c9a"
+    ],
+    "b2bb0683-c942-4794-956d-93207705adf5": [
+      "a456e085-00f3-4883-bc77-f6a8dffffc35"
+    ],
+    "6d8f1bcf-8bc4-4b10-ae5d-f1ec1809489f": [
+      "5aaf0659-0500-41ea-8e87-292a1dcbfe3a",
+      "b2bb0683-c942-4794-956d-93207705adf5"
+    ],
+    "17f8304c-90b8-4a29-8a3e-9bd48a60f261": [
+      "6d8f1bcf-8bc4-4b10-ae5d-f1ec1809489f"
+    ],
+    "7aa79f25-b00e-45a5-a3fa-4205a883053b": [
+      "a456e085-00f3-4883-bc77-f6a8dffffc35"
+    ],
+    "97f911ff-796a-452e-9a0f-fe1a3248dd6e": [
+      "17f8304c-90b8-4a29-8a3e-9bd48a60f261",
+      "7aa79f25-b00e-45a5-a3fa-4205a883053b"
+    ],
+    "1000e029-3692-44d5-b529-624a97b492b7": [
+      "97f911ff-796a-452e-9a0f-fe1a3248dd6e"
+    ],
+    "b746aeca-90a3-4d4d-a641-bf7ef5a82194": [
+      "a456e085-00f3-4883-bc77-f6a8dffffc35"
+    ],
+    "35cab1e0-83bc-4986-b0f7-4cabfdc89b75": [
+      "1000e029-3692-44d5-b529-624a97b492b7",
+      "b746aeca-90a3-4d4d-a641-bf7ef5a82194"
+    ],
+    "185bf850-f9cc-4247-8a88-7775096f583f": [
+      "35cab1e0-83bc-4986-b0f7-4cabfdc89b75"
+    ],
+    "cbafb506-bc49-4339-9158-c0f25880b136": [
+      "185bf850-f9cc-4247-8a88-7775096f583f"
+    ],
+    "596da149-fabc-410b-a8f8-44853eef8341": [
+      "cbafb506-bc49-4339-9158-c0f25880b136"
+    ],
+    "baf52a19-08b3-4747-a01e-5da5688d6126": [
+      "a456e085-00f3-4883-bc77-f6a8dffffc35"
+    ],
+    "9eb0df82-f1cb-45e4-9f37-fb0f469e219b": [
+      "596da149-fabc-410b-a8f8-44853eef8341",
+      "baf52a19-08b3-4747-a01e-5da5688d6126"
+    ],
+    "56d507e8-e5d8-41fc-b179-c9db91fbe3bd": [
+      "9eb0df82-f1cb-45e4-9f37-fb0f469e219b"
+    ],
+    "ef08c846-1cc5-456f-935c-cf15a0ed1f28": [
+      "56d507e8-e5d8-41fc-b179-c9db91fbe3bd"
+    ],
+    "81094331-be9f-42e1-a734-18f2c6631893": [
+      "ef08c846-1cc5-456f-935c-cf15a0ed1f28"
+    ],
+    "ed0fc67f-b874-4e8e-af36-247b83593ef1": [
+      "81094331-be9f-42e1-a734-18f2c6631893"
+    ],
+    "3e74fe8e-c5ae-4b54-a4a7-35855b817e0f": [
+      "ed0fc67f-b874-4e8e-af36-247b83593ef1"
+    ],
+    "8880caf0-283d-4379-aa49-c04114c93f19": [
+      "3e74fe8e-c5ae-4b54-a4a7-35855b817e0f"
+    ],
+    "bd5f05b1-6702-46a2-9f2b-039e392f9e58": [
+      "8880caf0-283d-4379-aa49-c04114c93f19"
+    ],
+    "0df5e28a-6f09-48b2-85fc-bce1feb9cec7": [
+      "bd5f05b1-6702-46a2-9f2b-039e392f9e58"
+    ],
+    "064b3d73-6fc8-4de1-acec-09d7f755206e": [
+      "0df5e28a-6f09-48b2-85fc-bce1feb9cec7"
+    ],
+    "5296a9a0-bf72-42ca-a4f5-7e4c9318486d": [
+      "064b3d73-6fc8-4de1-acec-09d7f755206e"
+    ],
+    "a24d9e30-8d92-4151-b332-56a6e896e076": [
+      "5296a9a0-bf72-42ca-a4f5-7e4c9318486d"
+    ],
+    "fccc045a-d60c-4ab2-aca4-9388aa50fd14": [
+      "a24d9e30-8d92-4151-b332-56a6e896e076"
+    ],
+    "8d1867cd-0842-4312-a659-f022b353344c": [
+      "a456e085-00f3-4883-bc77-f6a8dffffc35"
+    ],
+    "d36cf976-8e8f-460f-a042-029115107ecd": [
+      "8d1867cd-0842-4312-a659-f022b353344c"
+    ],
+    "77e604d9-9702-4d4c-912a-6c920dc986b9": [
+      "d36cf976-8e8f-460f-a042-029115107ecd"
+    ],
+    "50ed641e-816f-493e-95fa-54c635c7b46a": [
+      "77e604d9-9702-4d4c-912a-6c920dc986b9"
+    ],
+    "4607b92b-726a-4c2c-9e44-4781d824b7cd": [
+      "50ed641e-816f-493e-95fa-54c635c7b46a"
+    ],
+    "88d1dfec-e839-4fa1-9ee6-21f76cbc5582": [
+      "4607b92b-726a-4c2c-9e44-4781d824b7cd"
+    ],
+    "9c336f2b-7133-46e8-811a-c06e178a6c17": [
+      "fccc045a-d60c-4ab2-aca4-9388aa50fd14"
+    ],
+    "9fe8cf94-d53e-4249-9c8d-c342b4de894c": [
+      "9c336f2b-7133-46e8-811a-c06e178a6c17",
+      "88d1dfec-e839-4fa1-9ee6-21f76cbc5582"
+    ],
+    "a9f8385a-f04e-4be3-b3fc-b18f551044a1": [
+      "9fe8cf94-d53e-4249-9c8d-c342b4de894c"
+    ],
+    "7e104366-7e06-47b1-89ff-4ac412f0576c": [
+      "a9f8385a-f04e-4be3-b3fc-b18f551044a1"
+    ],
+    "e7826380-3bc1-4a07-bab8-557fc2d9d9a6": [
+      "7e104366-7e06-47b1-89ff-4ac412f0576c"
+    ],
+    "69048d51-92c3-4f41-a58c-3df433c527ea": [
+      "e7826380-3bc1-4a07-bab8-557fc2d9d9a6"
+    ],
+    "f2cd9460-5f33-4a25-898f-3702d4163a21": [
+      "69048d51-92c3-4f41-a58c-3df433c527ea"
+    ],
+    "35975add-f4dd-4afd-a19c-3963ff520959": [
+      "f2cd9460-5f33-4a25-898f-3702d4163a21"
+    ],
+    "ec0a521e-afd2-4243-89da-45082205a222": [
+      "35975add-f4dd-4afd-a19c-3963ff520959"
+    ],
+    "354bf90b-910f-4e90-9580-6887f0a89845": [
+      "a456e085-00f3-4883-bc77-f6a8dffffc35"
+    ],
+    "b8a42370-33db-42c4-9506-cd99788c3b9b": [
+      "ec0a521e-afd2-4243-89da-45082205a222",
+      "354bf90b-910f-4e90-9580-6887f0a89845"
+    ],
+    "cb30d0e5-0d73-4ce6-9689-6cb0de0525a3": [
+      "b8a42370-33db-42c4-9506-cd99788c3b9b"
+    ],
+    "c00ad762-0d48-48d4-8062-c29af0f0addb": [
+      "cb30d0e5-0d73-4ce6-9689-6cb0de0525a3"
+    ]
+  }
+}

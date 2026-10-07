@@ -265,7 +265,9 @@
       // 翻面有区别的件: 打分照旧(不带符号, 落点不受影响), 但把"翻过来了"单独
       // 记一笔, 交给 isOk / 问题清单去报。
       if (FLIP_MATTERS[t.key] && flipped(t.key, _q2, _q)) reversed = true;
-      if (!best || score < best.score) best = { score: score, d: d, ang: ang.deg, reversed: reversed, nearAng: nearAng,
+      // symmetric candidates (a screw turned about its own axis) tie; only a clearly better one replaces the
+      // earlier, so the answer's own pose (identity, considered first) wins over float noise
+      if (!best || score < best.score - 1e-9) best = { score: score, d: d, ang: ang.deg, reversed: reversed, nearAng: nearAng,
         want: new THREE.Matrix4().multiplyMatrices(um.M, expected) };
     }
     symTransforms(m.key).forEach(function (Sm) {
@@ -851,14 +853,15 @@
         });
         ss.forEach(function (t) {
           if (t.ok || !t.part) return;
-          var msg = !baseSlot.part ? 'Bring the X-Lock into the workspace first.' :
-            !t.near.length ? 'Attach ' + t.ref.name + ' to its side of the X-Lock.' :
+          var baseName = baseSlot.ref.name;
+          var msg = !baseSlot.part ? 'Bring the ' + baseName + ' into the workspace first.' :
+            !t.near.length ? 'Attach ' + t.ref.name + ' to its side of the ' + baseName + '.' :
             // 装反时也要报当前偏差:方向说法把距离盖掉了,学员看不到自己差多少,
             // 追问第二次得到的还是同一句话。
-            t.err.e.reversed ? t.ref.name + ' is facing the wrong direction on the X-Lock — ' +
+            t.err.e.reversed ? t.ref.name + ' is facing the wrong direction on the ' + baseName + ' — ' +
               mm(t.err.e.d) + ' mm from where it belongs' :
-            t.err.e.d >= POS_TOL ? t.ref.name + ' is ' + mm(t.err.e.d) + ' mm off its place on the X-Lock.' :
-            t.err.e.ang >= ANG_TOL ? t.ref.name + ' is tilted ' + t.err.e.ang.toFixed(0) + '° on the X-Lock.' :
+            t.err.e.d >= POS_TOL ? t.ref.name + ' is ' + mm(t.err.e.d) + ' mm off its place on the ' + baseName + '.' :
+            t.err.e.ang >= ANG_TOL ? t.ref.name + ' is tilted ' + t.err.e.ang.toFixed(0) + '° on the ' + baseName + '.' :
             'Finish preparing ' + t.ref.name + ' and keep it fully inside the workspace.';
           issues.push({ severity: (!baseSlot.part || !t.near.length) ? 'hint' : 'error',
             kind: (!baseSlot.part || !t.near.length) ? 'hint' : t.err.e.reversed ? 'hole' : 'align',
@@ -1732,14 +1735,20 @@
     var basePlaced = (baseSlot && baseSlot.part && (!window.KBWorkspace || KBWorkspace.contains(baseSlot.part.node))) ||
       collectParts().some(function (n) { return levelPlaced[n.uuid] === base; });
     if (basePlaced) return null;
-    var group = st.assembly.groups.filter(function (g) { return g.indexOf(slotRef.id) >= 0; })[0];
+    var gi = st.assembly.groups.findIndex(function (g) { return g.indexOf(slotRef.id) >= 0; });
+    var group = st.assembly.groups[gi];
+    var W = refToWorld();
+    // where the recording left this group waiting (mm, reference frame), turned into the scene
+    if (st.assembly.stage && st.assembly.stage[gi]) {
+      var e = new THREE.Matrix3().setFromMatrix4(W);
+      return new THREE.Vector3().fromArray(st.assembly.stage[gi]).multiplyScalar(KBParts.unitScale() / 1000).applyMatrix3(e);
+    }
     var gc = new THREE.Vector3(), n = 0;
     group.forEach(function (id) { var r = ref.byId[id]; if (r) { gc.add(new THREE.Vector3().setFromMatrixPosition(r.M)); n++; } });
     if (!n) return null;
     gc.divideScalar(n);
     var dir = gc.sub(new THREE.Vector3().setFromMatrixPosition(base.M)); dir.y = 0;
     if (dir.lengthSq() < 1e-8) return null;
-    var W = refToWorld();
     return dir.transformDirection(W).setY(0).normalize().multiplyScalar(STAGE_MM * KBParts.unitScale() / 1000);
   }
   // 暂放的组件:基座放好之后,点它就整组装进基座

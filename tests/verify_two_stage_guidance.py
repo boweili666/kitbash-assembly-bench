@@ -59,12 +59,23 @@ def main():
               rw.position.set(2, 0, 9); rw.updateMatrixWorld(true);
               b.position.set(0, 0, 12); b.updateMatrixWorld(true);
               const top = node => { while (node.parent && node.parent !== KB.objectsRoot) node = node.parent; return node; };
+              // the mouth of the host hole the answer's screw goes in from (its head P2 stays on that side);
+              // a programmatic mate without it takes whichever mouth faces the camera, which depends on the tray pose
+              const entry = (part, partSlot, host, hostSlot, fid) => {
+                host.updateMatrixWorld(true);
+                const M = host.matrixWorld.clone().multiply(hostSlot.Minv).multiply(partSlot.M);
+                const f = KBParts.spec(host.userData.kbType.slice(5)).holes.find(h => h.id === fid);
+                const c = new THREE.Vector3().fromArray(f.c).applyMatrix4(host.matrixWorld);
+                const d = new THREE.Vector3().fromArray(f.d).transformDirection(host.matrixWorld);
+                const head = new THREE.Vector3().fromArray(KBParts.spec(part.userData.kbType.slice(5)).pegs.find(x => x.id === 'P2').c).applyMatrix4(M);
+                return head.sub(c).dot(d) > 0 ? 1 : -1;
+              };
               KBCheck.evaluate();
               const step3Id = ref.steps.find(s => s.i === 2).id;
               const beforeFirstScrew = KBCheck.state();
               if (beforeFirstScrew.issues.some(i => i.kind === 'hint' && i.step === step3Id))
                 throw new Error('blocked Step 3 emitted an attachment hint before its wedge+screw prerequisites');
-              if (!KBMate.mate(a, 'P1', w, 'H1')) throw new Error('Step 1 screw-to-wedge pair refused');
+              if (!KBMate.mate(a, 'P1', w, 'H1', 0, entry(a, screw, w, wedge, 'H1'))) throw new Error('Step 1 screw-to-wedge pair refused');
               await new Promise(resolve => setTimeout(resolve, 1800));
               KBCheck.evaluate();
               const step1 = KBCheck.state().steps.find(s => s.index === 0);
@@ -73,7 +84,7 @@ def main():
               if (top(a) !== top(w) && !KB.groupNodes([top(a), top(w)], 'Step 1 wedge and screw'))
                 throw new Error('Step 1 wedge and screw could not group');
               if (top(a) !== top(w)) throw new Error('Step 1 screw and wedge are not a grouped assembly');
-              if (!KBMate.mate(ra, 'P1', rw, 'H1')) throw new Error('Step 2 screw-to-wedge pair refused');
+              if (!KBMate.mate(ra, 'P1', rw, 'H1', 0, entry(ra, rightScrew, rw, rightWedge, 'H1'))) throw new Error('Step 2 screw-to-wedge pair refused');
               await new Promise(resolve => setTimeout(resolve, 1800));
               KBCheck.evaluate();
               const step2 = KBCheck.state().steps.find(s => s.index === 1);
