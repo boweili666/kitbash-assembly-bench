@@ -17,6 +17,9 @@ every keyframe of every step. Nothing about this particular product is written h
   kit         every part at its pose in the first keyframe (where the recording laid it out)
   start       when in its step the recording sets the part off (0..1): in one step, of two parts
               that go together the one that starts first goes in first (grommets before the board)
+  approach    from the recording; a hole slides onto a peg from the peg's tip, so a part that the
+              recording brings onto an earlier part's peg from the root side (through that part)
+              comes in mirrored along the peg axis instead
 
     python3 tools/answer_from_graph.py GRAPH.json PATHS.json FEATURES_DB MODELS_DIR \
         --out assets/parts/answer_graph77.json [--manifest assets/parts/manifest.json]
@@ -26,7 +29,7 @@ import numpy as np
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from features_db import (part_types, compute_mates, pose_matrix, matrix_pose,  # noqa: E402
-                         TRAY_JUMP_MM)
+                         load_mesh, TRAY_JUMP_MM)
 
 FIELDS = ("x", "y", "z", "roll", "pitch", "yaw")
 MOVE_EPS = 1e-6
@@ -57,8 +60,6 @@ def main():
     ap.add_argument("graph"); ap.add_argument("paths"); ap.add_argument("features_db"); ap.add_argument("models")
     ap.add_argument("--out", required=True)
     ap.add_argument("--manifest", help="also put the answer and the kit into this simulator manifest")
-    ap.add_argument("--nut-from-below", action="store_true", default=True,
-                    help="temporary: motor nuts approach from under the shaft (remove once the recording is fixed)")
     a = ap.parse_args()
 
     g = json.load(open(a.graph)); P = json.load(open(a.paths))
@@ -152,6 +153,49 @@ def main():
                 return round(float(f[k - 1][0]), 4)
         return 0.0
 
+    # where each peg's tip is: the side of the peg away from the middle of its part (model frame, mm);
+    # the axis in the feature data does not say (a screw's runs towards its head)
+    tips, bodies = {}, {}
+    def peg_tips(tid):
+        if tid in tips: return tips[tid]
+        t = by_tid[tid]
+        if tid not in bodies:
+            mesh, mm = load_mesh(t["file"]); bodies[tid] = (mesh.bounds[0] + mesh.bounds[1]) / 2 * mm; del mesh
+        out = {}
+        for name, cx, cy, cz, ax, ay, az in db.execute(
+                "SELECT name, centerX, centerY, centerZ, axisX, axisY, axisZ FROM PartTypeFeatures "
+                "WHERE partTypeId=? AND kind='peg'", (tid,)):
+            d = np.array([ax, ay, az]); side = float(np.dot(np.array([cx, cy, cz]) - bodies[tid], d))
+            out[name] = d * np.sign(side) if abs(side) > 0.5 else None     # too close to the middle: no telling
+        tips[tid] = out
+        return out
+
+    def earlier(q, pid):
+        i, j = index[home[q]], index[home[pid]]
+        return i < j or (i == j and start(q) < start(pid))
+
+    def from_tip_side(pid, path):
+        if len(path) < 2: return path
+        end = np.array(path[-1][:3]); off = np.array(path[0][:3]) - end
+        if np.linalg.norm(off) < 1e-6: return path
+        votes = []
+        for m in mates.get(pid, []):
+            q = m["pid"]
+            if m["kind"] != "feature" or q not in home or not earlier(q, pid): continue
+            for mine, other in m["features"]:
+                tip = peg_tips(parts_db[q]["type"]).get(other) if mine.startswith("H") else None
+                if tip is None: continue
+                tw = pose_matrix(final[q])[:3, :3] @ tip
+                votes.append((float(np.dot(off, tw)) / np.linalg.norm(off), tw))
+        if not votes or any(v > -0.5 for v, _ in votes): return path     # tip side (or across): as recorded
+        tw = votes[0][1]
+        out = []
+        for v in path[:-1]:
+            o = np.array(v[:3]) - end; o = o - 2 * np.dot(o, tw) * tw
+            out.append(tuple(round(float(x), 4) for x in (end + o)) + tuple(v[3:]))
+        print(f"  approach of {gparts[pid]['name']} mirrored to the tip side of the peg it slides onto")
+        return out + [path[-1]]
+
     # answer steps: graph order; prerequisites = graph requirements, transitively, among answer steps
     index = {sid: i for i, sid in enumerate(anim)}
     req = g.get("requirements", {})
@@ -175,8 +219,7 @@ def main():
             continue                      # recorded but never moves: nothing to do with it
         path = trajectory(pid)
         key = types[gparts[pid]["type"]]["key"]
-        if a.nut_from_below and key == "motor_nut_m5" and len(path) > 1:
-            seated = path[-1]; path = [tuple([seated[0], round(seated[1] - 36.0, 4)] + list(seated[2:])), seated]
+        path = from_tip_side(pid, path)
         out_parts.append({"id": pid, "key": key, "name": gparts[pid]["name"], "step": index[home[pid]],
                           "start": start(pid), "path": [pose_dict(v) for v in path],
                           "mates": [{"id": m["pid"], "kind": m["kind"], "features": m["features"],

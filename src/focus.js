@@ -198,7 +198,7 @@
       var hex = arrowTone(n);
       if (a.userData.kbTone !== hex) { KB.scene.remove(a); a = makeArrow(hex); arrows.set(n, a); }
       _hb.setFromObject(n); _hb.getCenter(_hc);
-      var size = Math.max(0.06, KB.camera.position.distanceTo(_hc) * 0.028);
+      var size = Math.max(L('arrowMin'), KB.camera.position.distanceTo(_hc) * 0.028);
       a.scale.setScalar(size);
       a.position.set(_hc.x, _hb.max.y + size * (0.35 + 0.45 * (0.5 + 0.5 * Math.sin(now / 180))), _hc.z);
       a.visible = true;
@@ -207,6 +207,36 @@
 
   /* ---------- 推荐视角 ---------- */
   var _b = new THREE.Box3(), _v = new THREE.Vector3();
+  /* Lengths for framing and the arrows are fractions of the size of the build (the radius of the finished
+     assembly's bounding sphere, in scene units), so a small product and a large one are framed alike.
+     The fractions are what was first tuned by eye on the FPV frame. */
+  var SIZE = {
+    partBox: 0.0814,     // stand-in box for a part without a bounding box
+    minRadius: 0.19,     // never frame tighter than this
+    floor: 0.0217,       // the camera may look up from below, but stays this far above the floor
+    camFloor: 0.0271,    // candidate views lower than this are skipped
+    around: 0.0325,      // context around the target spot (what it goes onto)
+    group: 0.0542,       // context around a whole group in the tray
+    closeUp: 0.0678,     // context around a part for a close-up
+    wide: 0.244,         // extra when every candidate view is blocked
+    rayTol: 0.0054,      // a ray stopping this short of its point is not blocked
+    arrowMin: 0.0163     // smallest arrow
+  };
+  var sized = null;      // { ref, r }
+  function buildRadius() {
+    var ref = window.KBCheck && KBCheck.ref && KBCheck.ref();
+    if (sized && sized.ref === ref && sized.ref) return sized.r;
+    var box = new THREE.Box3(), b = new THREE.Box3();
+    if (ref) ref.slots.forEach(function (sl) {
+      var sp = KBParts.spec(sl.key);
+      if (sp && sp.bbox) box.union(b.set(new THREE.Vector3().fromArray(sp.bbox.min), new THREE.Vector3().fromArray(sp.bbox.max)).applyMatrix4(sl.M));
+    });
+    else KB.objectsRoot.traverse(function (o) { if (KB.isPart(o)) box.union(b.setFromObject(o)); });
+    var r = box.isEmpty() ? 1 : box.getBoundingSphere(new THREE.Sphere()).radius;
+    sized = { ref: ref, r: r };
+    return r;
+  }
+  function L(name) { return SIZE[name] * buildRadius(); }
   function boxOfNodes(nodes) {
     var box = new THREE.Box3();
     nodes.forEach(function (n) { box.union(_b.setFromObject(n)); });
@@ -214,17 +244,17 @@
   }
   function boxAt(key, want) {
     var spec = KBParts.spec(key);
-    if (!spec || !spec.bbox) return new THREE.Box3().setFromCenterAndSize(_v.setFromMatrixPosition(want), new THREE.Vector3(0.3, 0.3, 0.3));
+    if (!spec || !spec.bbox) return new THREE.Box3().setFromCenterAndSize(_v.setFromMatrixPosition(want), new THREE.Vector3(L('partBox'), L('partBox'), L('partBox')));
     return new THREE.Box3(new THREE.Vector3().fromArray(spec.bbox.min), new THREE.Vector3().fromArray(spec.bbox.max)).applyMatrix4(want);
   }
   function framing(box, dir) {
     var c = box.getCenter(new THREE.Vector3());
     var sz = box.getSize(new THREE.Vector3());
-    var r = Math.max(Math.max(sz.x, sz.y, sz.z) * 0.62, sz.length() * 0.4, 0.7);
+    var r = Math.max(Math.max(sz.x, sz.y, sz.z) * 0.62, sz.length() * 0.4, L('minRadius'));
     var fov = THREE.MathUtils.degToRad(KB.camera.fov || 45);
     var dist = r / Math.tan(fov / 2) * 2.0;        // 留出周围零件,别贴太近
     var p = c.clone().addScaledVector(dir.normalize(), dist);
-    if (p.y < 0.08) p.y = 0.08;                   // 可以从下往上看,但别钻到地面以下
+    if (p.y < L('floor')) p.y = L('floor');
     return { p: p.toArray(), t: c.toArray() };
   }
   function suggest(step, nodes) {
@@ -250,23 +280,23 @@
     if (box.isEmpty()) return null;
     var at = lead || box.getCenter(new THREE.Vector3());
     var dir = bestDir(box, at, axis, nodes[0]);
-    if (lastBest && lastBest.wide) box.expandByScalar(0.9);
+    if (lastBest && lastBest.wide) box.expandByScalar(L('wide'));
     return { phase: 'fit', caption: 'Close-up: where ' + nodes.map(function (n) { return n.name; }).join(', ') + ' goes',
              view: framing(box, dir) };
   }
   /* 按零件在整机里的位置选看它的方向:
      - 它在整机哪一侧(左前、右后……),镜头就站在那一侧从外往里看,不被机架挡住;
-     - 偏下的零件从下往上看(这台是倒着装的,电机、桨、立柱、顶板都在下面),其余从上往下;
-     - 整机正中间的零件(X-Lock、中间的螺丝)站在它进来的那一侧看;
+     - parts low in the build are seen from below, the rest from above;
+     - a part in the middle of the build is seen from the side it comes in from;
      - 最后把沿插入方向的分量削掉一大半,插进去多深看得出来。 */
   var assembly = null;
   function assemblyShape() {
-    if (assembly) return assembly;
+    if (assembly && assembly.ref === KBCheck.ref()) return assembly;
     var box = new THREE.Box3(), p = new THREE.Vector3();
     (KBCheck.ref().slots || []).forEach(function (sl) { box.expandByPoint(p.setFromMatrixPosition(sl.M)); });
     var size = box.getSize(new THREE.Vector3());
-    assembly = { center: box.getCenter(new THREE.Vector3()),
-                 halfW: Math.max(size.x, size.z) / 2 || 1, halfH: size.y / 2 || 0.3 };
+    assembly = { ref: KBCheck.ref(), center: box.getCenter(new THREE.Vector3()),
+                 halfW: Math.max(size.x, size.z) / 2 || 0.271 * buildRadius(), halfH: size.y / 2 || 0.0814 * buildRadius() };
     return assembly;
   }
   function locationDir(partWorld, axis) {
@@ -332,7 +362,7 @@
       var l = _ray.direction.length();
       if (l < 1e-9) continue;
       _ray.direction.divideScalar(l);
-      if (_ray.intersectBox(occ[i].box, _hit) && _ray.origin.distanceTo(_hit) < l - 0.02) return true;
+      if (_ray.intersectBox(occ[i].box, _hit) && _ray.origin.distanceTo(_hit) < l - L('rayTol')) return true;
     }
     return false;
   }
@@ -348,7 +378,7 @@
     CANDIDATES.forEach(function (d0) {
       var v = framing(box, d0.clone());
       var cam = new THREE.Vector3().fromArray(v.p);
-      if (cam.y < 0.1) return;                            // 钻到地面下了
+      if (cam.y < L('camFloor')) return;
       var seen = 0;
       pts.forEach(function (pt) { if (!blocked(cam, pt, occ)) seen++; });
       var d = cam.clone().sub(c).normalize();
@@ -374,9 +404,9 @@
   function followTo(key, want, approach, except) {
     var box = boxAt(key, want);
     var at = box.getCenter(new THREE.Vector3());
-    box.expandByScalar(0.12);                         // 带上一点周围,看得出装在谁身上
+    box.expandByScalar(L('around'));                         // 带上一点周围,看得出装在谁身上
     var dir = bestDir(box, at, axisOf(want, approach), except);
-    if (lastBest && lastBest.wide) box.expandByScalar(0.9);
+    if (lastBest && lastBest.wide) box.expandByScalar(L('wide'));
     var v = framing(box, dir);
     KB.flyCamera(v.p, v.t);
   }
@@ -468,7 +498,7 @@
   function showDemoCard(c) {
     var key = 'tutorial|' + c.node.uuid;
     if (shown && shown.key === key) return;
-    var box = boxOfNodes([c.node]).expandByScalar(0.25);
+    var box = boxOfNodes([c.node]).expandByScalar(L('closeUp'));
     var view = framing(box, new THREE.Vector3(0.35, 1.0, 0.75));
     shown = { key: key, view: view };
     card.querySelector('.vt-img').src = snapshot(view);
@@ -481,7 +511,7 @@
       setLit(demo && demo.nodes ? demo.nodes.filter(Boolean) : []);
       if (demo && demo.fly && !demo.flown && demo.fly.parent) {
         demo.flown = true;
-        var fb = boxOfNodes([demo.fly]).expandByScalar(0.25), fv = framing(fb, new THREE.Vector3(0.35, 1.0, 0.75));
+        var fb = boxOfNodes([demo.fly]).expandByScalar(L('closeUp')), fv = framing(fb, new THREE.Vector3(0.35, 1.0, 0.75));
         KB.flyCamera(fv.p, fv.t);
       }
       if (demo && demo.card && demo.card.node) showDemoCard(demo.card); else hideCard();
@@ -521,7 +551,7 @@
     if (s && s.phase !== 'find' && window.KBLevel && KBLevel.get() === 1) {
       var top = nodes[0]; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
       s = { phase: 'find', caption: 'Close-up: ' + nodes[0].name, node: nodes[0],
-            view: framing(boxOfNodes([top]).expandByScalar(0.2), new THREE.Vector3(0.35, 1.0, 0.75)) };
+            view: framing(boxOfNodes([top]).expandByScalar(L('group')), new THREE.Vector3(0.35, 1.0, 0.75)) };
     }
     if (!s) { hideCard(); return; }
     // 同一步里放好了一个、还剩别的,换成剩下那个的特写 —— 所以把零件也算进键里
@@ -609,12 +639,12 @@
         new THREE.Quaternion().setFromEuler(new THREE.Euler(tr.r[0], tr.r[1], tr.r[2], 'XYZ')), new THREE.Vector3(1, 1, 1)));
     }
     var box = boxAt(sl.key, want), at = box.getCenter(new THREE.Vector3());
-    box.expandByScalar(0.12);
+    box.expandByScalar(L('around'));
     var self = null;
     KB.objectsRoot.traverse(function (o) { if (!self && KB.isPart(o) && o.name === sl.name) self = o; });
     var dir = bestDir(box, at, axisOf(want, approach), self);
     var wide = !!(lastBest && lastBest.wide);
-    if (wide) box.expandByScalar(0.9);
+    if (wide) box.expandByScalar(L('wide'));
     return { dir: dir.toArray(), view: framing(box, dir.clone()), seen: lastBest ? lastBest.seen : null, wide: wide };
   }
 
@@ -637,7 +667,7 @@
     var s = suggest(st, nodes);
     if (s && s.phase !== 'find' && window.KBLevel && KBLevel.get() === 1) {
       var top = nodes[0]; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
-      return framing(boxOfNodes([top]).expandByScalar(0.2), new THREE.Vector3(0.35, 1.0, 0.75));
+      return framing(boxOfNodes([top]).expandByScalar(L('group')), new THREE.Vector3(0.35, 1.0, 0.75));
     }
     return s ? s.view : null;
   }
@@ -703,6 +733,6 @@
                      suggestion: function () { return shown ? { key: shown.key, view: shown.view } : null; },
                      use: function () { answer(true); }, dismiss: function () { answer(false); },
                      // 某几个零件的特写视角(和推荐视角同一套取景),教程里镜头跟着零件走用
-                     viewOf: function (nodes) { var b = boxOfNodes(nodes.filter(Boolean)).expandByScalar(0.25); return framing(b, new THREE.Vector3(0.35, 1.0, 0.75)); },
+                     viewOf: function (nodes) { var b = boxOfNodes(nodes.filter(Boolean)).expandByScalar(L('closeUp')); return framing(b, new THREE.Vector3(0.35, 1.0, 0.75)); },
                      demo: function (d) { demo = d || null; if (!demo && shown && /^tutorial\|/.test(shown.key)) hideCard(); refresh(); } };
 })();
