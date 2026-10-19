@@ -16,6 +16,8 @@
   var cache = {};        // key → {prims:[{geometry, material}], spec, defaultColor}
   var manifest = null;
   var ready = false;
+  var MAX_METALNESS = 0.3;    // see bake()
+  var MIN_LUMINANCE = 0.2;    // linear; ~0.48 in sRGB, a mid grey against the 0x1a1e24 background
 
   /* ---------- 数据加载 ---------- */
   function b64ToBuf(b64) {
@@ -75,8 +77,16 @@
       var g = o.geometry.clone();
       g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(norm, o.matrixWorld));
       var mat = (Array.isArray(o.material) ? o.material[0] : o.material).clone();
-      mat.metalness = Math.min(mat.metalness !== undefined ? mat.metalness : 0.4, 0.85);
+      // No environment map in the scene: a metal surface only shows what it reflects, so the glTF default
+      // (metallic 1) on dark grey CAD colours comes out near-black against the dark background.
+      // Keep parts mostly diffuse and lift dark base colours (hue kept) so they stand off the backdrop.
+      mat.metalness = Math.min(mat.metalness !== undefined ? mat.metalness : 0.4, MAX_METALNESS);
       if (mat.roughness !== undefined && mat.roughness < 0.25) mat.roughness = 0.35;
+      if (mat.color) {
+        var lum = 0.2126 * mat.color.r + 0.7152 * mat.color.g + 0.0722 * mat.color.b;   // linear
+        if (lum < 0.01) mat.color.setScalar(MIN_LUMINANCE);
+        else if (lum < MIN_LUMINANCE) mat.color.multiplyScalar(MIN_LUMINANCE / lum);
+      }
       prims.push({ geometry: g, material: mat });
     });
     var defaultColor = prims.length ? '#' + prims[0].material.color.getHexString() : '#c8cfd6';
@@ -225,6 +235,34 @@
     return k;
   }
 
+  /* Which way is up on this part, in its own frame: world up at its pose in the reference assembly
+     (the first instance of the key), or without an answer the axis most of its holes run along.
+     null when the part has no holes to show it on. */
+  var faces = {};
+  function faceAxis(key) {
+    if (key in faces) return faces[key];
+    var s = (cache[key] && cache[key].spec) || (manifest && manifest.parts.filter(function (p) { return p.key === key; })[0]);
+    if (!s || !(s.holes && s.holes.length)) return null;
+    var axis = null;
+    var inst = assemblyAnswer() && (assemblyAnswer().parts || []).filter(function (p) { return p.key === key && p.path && p.path.length; })[0];
+    if (inst) {
+      var q = inst.path[inst.path.length - 1];
+      axis = new THREE.Vector3(0, 1, 0).applyQuaternion(
+        new THREE.Quaternion().setFromEuler(new THREE.Euler(q.roll || 0, q.pitch || 0, q.yaw || 0, 'XYZ')).invert());
+    } else {
+      var count = [0, 0, 0];
+      s.holes.forEach(function (h) {
+        var d = h.d.map(Math.abs), i = d.indexOf(Math.max.apply(null, d));
+        if (d[i] > 0.9) count[i] += 1;
+      });
+      var best = count.indexOf(Math.max.apply(null, count));
+      if (count[best]) axis = new THREE.Vector3().setComponent(best, 1);
+    }
+    var face = axis && { axis: axis.normalize() };
+    if (manifest) faces[key] = face || null;
+    return face || null;
+  }
+
   window.KBParts = {
     ready: function () { return ready; },
     unitScale: function () { return manifest ? manifest.unitScale : 24.77; },
@@ -237,6 +275,7 @@
     /* 参考装配(步骤顺序 / 每件的接近→落位轨迹 / 前置依赖),由 features_db.py answer 从任务图库生成;mm · GLB 原点 */
     answer: assemblyAnswer,
     kindOf: kindOf,
+    faceAxis: faceAxis,
     keyForModel: keyForModel,
     poseOf: poseOf,
     poseOfMatrix: poseOfMatrix,

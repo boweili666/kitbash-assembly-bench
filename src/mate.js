@@ -23,6 +23,9 @@
   // 圆片要和零件本身拉开色差:零件是白 / 灰 / 银,所以孔用亮品红、销用紫罗兰,
   // 也避开了选中绿、报错红、当前零件的青色高亮和 Next 的琥珀
   var COLOR_HOLE = 0xff2d95, COLOR_PEG = 0x8a4bff, COLOR_ARMED = 0x5ad35a, COLOR_BAD = 0xd9534f;
+  // 孔在上表面的孔口用品红(COLOR_HOLE),下表面的孔口用蓝色,一眼看出零件的上下两面。
+  // 孔不垂直于上下面的(侧孔),两头都是品红
+  var COLOR_HOLE_UNDER = 0x1a8cff;
   var OPACITY_IDLE = 0.55, OPACITY_HOVER = 1, OPACITY_ARMED = 1;
   var OPACITY_DIMMED = 0.22;   // 有孔被点亮(教程 / 二级引导)时,其余圆片压暗,让该点的那个跳出来
   var RIM_COLOR = 0x07080b;     // 每个圆片外面一圈深色描边:贴在白螺丝上也有清楚的边
@@ -93,6 +96,13 @@
     if (!spec) return;
     var group = new THREE.Group();
     group.matrixAutoUpdate = false;
+    var face = KBParts.faceAxis ? KBParts.faceAxis(node.userData.kbType.slice(5)) : null;
+    // 孔口朝外的方向是 end·d:跟零件的「上」同向就是上表面,反向就是下表面
+    function endColor(f, kind, end, color) {
+      if (kind !== 'hole' || !face) return color;
+      var dot = new THREE.Vector3().fromArray(f.d).normalize().dot(face.axis);
+      return Math.abs(dot) < 0.9 || end * dot > 0 ? color : COLOR_HOLE_UNDER;
+    }
     function add(list, kind, color) {
       list.forEach(function (f) {
         if (filterCtx && !filter.keep(filterCtx, node, f, kind)) return;
@@ -108,7 +118,9 @@
         ends.forEach(function (end) {
           if (filterCtx && filter.keepEnd && !filter.keepEnd(filterCtx, node, f, kind, end)) return;
           var mat = end === 1 ? material.clone() : material;
-          var m = { meshes: [], material: mat, node: node, f: f, kind: kind, color: color, end: end,
+          var c0 = endColor(f, kind, end, color);
+          mat.color.set(c0);
+          var m = { meshes: [], material: mat, node: node, f: f, kind: kind, color: c0, end: end,
             op: OPACITY_IDLE, r: Math.max(f.r * 1.25, 0.07), scale: 1, born: performance.now() };
           var mesh = new THREE.Mesh(discGeo, mat);
           mesh.scale.set(m.r, m.r, 1);
@@ -125,7 +137,7 @@
           group.add(rim);
           group.add(mesh);
           m.meshes.push(mesh, rim);
-          if (spot.length && !spotted(m) && m !== armed) style(m, color, OPACITY_DIMMED);
+          if (spot.length && !spotted(m) && m !== armed) style(m, c0, OPACITY_DIMMED);
           if (spotted(m)) {
             style(m, COLOR_SPOT, OPACITY_HOVER);      // 一建出来就是亮色,不用等鼠标悬停
             // 聚光:圆片外再套两圈亮环,一圈向外扩散,让人一眼看到该点哪里
