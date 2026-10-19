@@ -543,7 +543,9 @@
     if (pointed && nodes.indexOf(pointed) < 0) {
       pointed = pointsNow() ? null : (nodes.length ? nodes[0] : null);
     }
-    setLit(pointsNow() ? nodes : (pointed ? [pointed] : []));
+    // hints.nextPart off: nothing lit by the bench itself (a host's pointAt still shows)
+    var hinting = !window.KBConfig || KBConfig.get('hints.nextPart') !== false;
+    setLit(hinting && pointsNow() ? nodes : (pointed ? [pointed] : []));
     if (!nodes.length) { hideCard(); return; }
     var s = suggest(st, nodes);
     // 一级零件自己飞过去、镜头也跟着,不给装配位置的特写 —— 但要点的零件已经在装配区里时

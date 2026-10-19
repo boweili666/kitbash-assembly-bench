@@ -13,9 +13,20 @@
     [bounds.minX, bounds.maxZ], [bounds.minX, bounds.minZ]].map(function (p) { return new THREE.Vector3(p[0], .015, p[1]); });
   group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), new THREE.LineBasicMaterial({ color: 0x66d1ba })));
   var label = document.createElement('canvas'); label.width = 1024; label.height = 128;
-  var ctx = label.getContext('2d'); ctx.fillStyle = '#96ead7'; ctx.font = '600 52px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('ASSEMBLY WORKSPACE', 512, 60); ctx.font = '28px sans-serif'; ctx.fillText('Move the base here before connecting parts', 512, 106);
-  var mesh = new THREE.Mesh(new THREE.PlaneGeometry(7, .875), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(label), transparent: true, depthWrite: false, side: THREE.FrontSide }));
+  var ctx = label.getContext('2d'), texture = new THREE.CanvasTexture(label);
+  // the second line is a hint (hints.workspaceText); redrawn when the settings arrive
+  function drawLabel() {
+    ctx.clearRect(0, 0, label.width, label.height);
+    ctx.fillStyle = '#96ead7'; ctx.font = '600 52px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('ASSEMBLY WORKSPACE', 512, 60);
+    if (!window.KBConfig || KBConfig.get('hints.workspaceText') !== false) {
+      ctx.font = '28px sans-serif'; ctx.fillText('Move the base here before connecting parts', 512, 106);
+    }
+    texture.needsUpdate = true;
+  }
+  drawLabel();
+  KB.on('config', drawLabel);
+  var mesh = new THREE.Mesh(new THREE.PlaneGeometry(7, .875), new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, side: THREE.FrontSide }));
   mesh.rotation.x = -Math.PI / 2; mesh.position.set(center.x, .02, bounds.maxZ - .55); group.add(mesh); KB.scene.add(group);
 
   function box(node, position, quaternion) {

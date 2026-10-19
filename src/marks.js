@@ -76,6 +76,7 @@
   }
   function toneOf(m) {
     if (m.ai) return TONE[m.ai] || { color: m.ai, intensity: 0.70 };   // 'red' / 'green' / 任意 CSS 色
+    if (window.KBConfig && KBConfig.get('hints.placed') === false) return null;
     if (m.flash && m.flash > performance.now()) return TONE.just_ok;
     if (m.base === 'installed') return TONE.installed;
     return null;

@@ -58,7 +58,17 @@
     "debugButton": null,
     "checksButton": false,
     "hintsBar": false,
-    "answerBar": false
+    "answerBar": false,
+    "groupButtons": true,
+    "propsButton": true,
+    "settingsButton": true
+  },
+
+  "hints": {
+    "_help": "What the bench points out by itself; false = not shown. A host's explicit marks still show. nextPart: arrow + glow on the part the step needs. placed: installed parts tinted, the flash when one goes in right, the ring where it seats. workspaceText: 'Move the base here before connecting parts'.",
+    "nextPart": true,
+    "placed": true,
+    "workspaceText": true
   },
 
   "demo": {

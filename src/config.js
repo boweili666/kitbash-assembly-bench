@@ -52,10 +52,18 @@
       newButton: true,            // "New": all the parts back in the tray
       trayButton: true,           // jump between workspace and tray
       errorsButton: true,         // dev toolbar error switch (never shown on the public site)
+      groupButtons: true,         // Group / Ungroup
+      propsButton: true,          // the properties button and panel
+      settingsButton: true,       // the gear and its settings form
       debugButton: null,          // "Steps" jump-to-step list (stepdebug.js): null = its own default (?debugSteps=1); true / false = force
       checksButton: false,        // the old Checks shield
       hintsBar: false,            // the old bottom hints bar
       answerBar: false            // the old bottom ghost playback bar
+    },
+    hints: {                      // what the bench points out by itself (a host's explicit marks still show)
+      nextPart: true,             // arrow + glow on the part(s) the current step needs
+      placed: true,               // installed parts tinted, the flash when one goes in right, the ring where it seats
+      workspaceText: true         // "Move the base here before connecting parts" on the workspace
     },
     demo: {                       // see src/demo.js for what each one does
       autoplay: true, by: 'substep', speed: 1, gap: 450, substepGap: 700, stepGap: 1000,
@@ -71,7 +79,8 @@
     guideCard: '#nextGuide', levelButtons: '#levelSeg', demoButton: '#levelSeg button[data-demo]',
     tutorialButton: '#btnTutorial', helpButton: '#btnHelp, #helpPop', viewButton: '#btnView', newButton: '#btnDemo',
     trayButton: '#btnArea', errorsButton: '#btnErrors', checksButton: '#btnCheck, #checkNotice',
-    hintsBar: '#hints', answerBar: '#answerBar'
+    hintsBar: '#hints', answerBar: '#answerBar', groupButtons: '#btnGroup, #btnUngroup',
+    propsButton: '#btnProps, #panel', settingsButton: '#btnSettings, #kbSettingsPanel'
   };
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }

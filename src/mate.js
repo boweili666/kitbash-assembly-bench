@@ -547,7 +547,7 @@
 
   /* ---------- 落座时的光环:从孔口扩散出去的圆环 ---------- */
   function burst(c, d, r) {
-    if (KB.reducedMotion) return;
+    if (KB.reducedMotion || (window.KBConfig && KBConfig.get('hints.placed') === false)) return;
     var g = new THREE.Group();
     g.userData.kbOverlay = true;
     g.position.copy(c);
