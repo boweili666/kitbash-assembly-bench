@@ -223,7 +223,7 @@
           focus: function () { return { nodes: [parts.peg] }; },
           done: function () { return flags.selected === parts.peg; },
           lesson: { title: '1 \u00b7 First click the part you want to move', hint: 'Every connection is three clicks, always in this order: the part, its hole, then the hole it goes into. Start with the part: click the {peg}. Its connection discs appear on it.',
-            demo: 'arm', label: 'Click the {peg}', target: '{Peg}', actions: ['Click the yellow {peg}', 'Its discs appear \u2014 holes pink, pegs purple'] } },
+            demo: 'arm', label: 'Click the {peg}', target: '{Peg}', actions: ['Click the yellow {peg}', 'Its discs appear \u2014 holes pink (blue on the lower face), pegs purple'] } },
         { tag: 'armPeg', light: function () { return [parts.peg]; },
           expect: function () { return { source: [{ node: parts.peg, id: L().pegId, end: 0 }], target: [] }; },
           done: function () { var a = KBMate.armed(); return !!a && a.node === parts.peg && a.id === L().pegId; },
@@ -268,7 +268,7 @@
             if (turnedDeg() >= TURN_GOAL) return '';
             var held = window.KBMate && KBMate.hingeFor(parts.mover);
             if (!held) return 'Click the {mover} once to take hold of it again, then press \u2190 or \u2192.';
-            return 'Turned ' + Math.round(turnedDeg()) + '\u00b0 of ' + TURN_GOAL + '\u00b0 \u2014 press \u2190 or \u2192 (15\u00b0 a press, Shift = 1\u00b0).';
+            return 'Turned ' + Math.round(turnedDeg()) + '\u00b0 of ' + TURN_GOAL + '\u00b0 \u2014 press \u2190 or \u2192 (' + turnSteps() + ').';
           },
           lesson: { title: 'Turn it on the hole', hint: 'The {mover} is locked on that hole. \u2190 / \u2192 turn it around the hole, 15\u00b0 a press (Shift = 1\u00b0 fine steps). In the real build, once it is close to the right angle it snaps into place by itself.',
             demo: 'adjust', label: 'Turn \u2190 \u2192', target: '{mover}', actions: ['Press \u2190 or \u2192 (15\u00b0 a press, Shift = 1\u00b0)', 'Watch the {mover} swing around the hole'] } }
@@ -374,25 +374,62 @@
       demo: 'complete', label: 'Ready for the full assembly', target: '', actions: ['Click a part to select', 'Click hole \u2192 hole to assemble', 'Use arrow keys to adjust the fit'] } };
   // 展平:steps[i] 带 course 索引;换课时重建场景。按难度挑课,开课时重建
   var steps = [], lessons = [], level = 3;
+  // What the settings (kitbash-config.json) switched off is not taught, and the words name only what is there
+  function cfgOff(path) { return !!(window.KBConfig && KBConfig.get(path) === false); }
+  function cfgNum(path, fallback) { return window.KBConfig ? KBConfig.num(path, fallback) : fallback; }
+  function turnSteps() {
+    var step = cfgNum('level3.rotateStepDeg', 15), fine = cfgNum('level3.rotateFineDeg', 1);
+    return step + '\u00b0 a press' + (fine !== step ? ', Shift = ' + fine + '\u00b0' : '');
+  }
+  function settingsSkip() {
+    var skip = {};
+    if (cfgOff('hints.nextPart')) { skip.suggest = 1; skip.glow = 1; }   // no highlight, no suggested view in the build
+    return skip;
+  }
+  function wordForSettings() {
+    var areas = courses[0].steps.filter(function (st) { return st.tag === 'areas'; })[0];
+    if (areas) {
+      var button = !cfgOff('ui.trayButton');
+      areas.lesson.hint = 'Parts wait in the tray, sorted by kind; screws are split by length. You assemble in the workspace in front of it. ' +
+        (button ? 'The toolbar button jumps between them \u2014 or press B.' : 'Press B to jump between them.') +
+        ' Hop back and forth a few times so you know where each one is.';
+      areas.lesson.label = button ? 'Press B, or click Parts tray' : 'Press B';
+      areas.lesson.actions[0] = button ? 'Press B (or click the button in the toolbar)' : 'Press B';
+    }
+    var turn = courses[2].steps.filter(function (st) { return st.tag === 'turn'; })[0];
+    if (turn) {
+      var step = cfgNum('level3.rotateStepDeg', 15), fine = cfgNum('level3.rotateFineDeg', 1);
+      turn.lesson.hint = 'The {mover} is locked on that hole. \u2190 / \u2192 turn it around the hole, ' + step + '\u00b0 a press' +
+        (fine !== step ? ' (Shift = ' + fine + '\u00b0 fine steps)' : '') +
+        '. In the real build, once it is close to the right angle it snaps into place by itself.';
+      turn.lesson.actions[0] = 'Press \u2190 or \u2192 (' + turnSteps() + ')';
+    }
+  }
   function buildPlan(lv) {
     level = PLAN[lv] ? lv : 3;
-    var plan = PLAN[level];
+    var plan = PLAN[level], off = settingsSkip();
+    wordForSettings();
     // a product without a screw-into-part or a hole-on-hole joint keeps only the lessons that need no parts
     var list = plan.courses.filter(function (ci) { return !courses[ci].lesson || L().ok; });
     steps = []; lessons = [];
     list.forEach(function (ci) {
       courses[ci].steps.forEach(function (st) {
-        if (plan.skip[st.tag]) return;
+        if (plan.skip[st.tag] || off[st.tag]) return;
         st.course = ci; steps.push(st); lessons.push(st.lesson);
       });
     });
     courses[4].steps.forEach(function (st) { if (st.tag === 'glow') st.lesson.hint = level <= 2 ? GLOW_HINTS.auto : GLOW_HINTS.card; });
     GUIDE.course = HELP.course = list[list.length - 1];
-    steps.push(GUIDE); lessons.push(GUIDE.lesson);
-    steps.push(HELP); lessons.push(HELP.lesson);
+    if (!cfgOff('ui.guideCard')) { steps.push(GUIDE); lessons.push(GUIDE.lesson); }
+    if (!cfgOff('ui.helpButton')) { steps.push(HELP); lessons.push(HELP.lesson); }
     FINAL.course = list[list.length - 1];
     FINAL.lesson.hint = FINALS[level].hint;
-    FINAL.lesson.actions = FINALS[level].actions;
+    FINAL.lesson.actions = FINALS[level].actions.slice();
+    if (cfgOff('ui.helpButton')) {       // no Help button to point at
+      FINAL.lesson.hint = FINAL.lesson.hint.replace(/;? ?[Ss]tuck\? Press Help at the top for a short how-to\./, '.');
+      FINAL.lesson.actions = FINAL.lesson.actions.filter(function (a) { return !/Help/.test(a); });
+    }
+    if (cfgOff('ui.newButton')) FINAL.lesson.hint = FINAL.lesson.hint.replace(/ New puts the whole kit on the bench\./, '');
     steps.push(FINAL); lessons.push(FINAL.lesson);
   }
   buildPlan(3);
@@ -598,7 +635,9 @@
     var s = steps[i];
     if (s.tag === 'turn' && parts && parts.mover) flags.turnBase = parts.mover.quaternion.clone();
     if (s.tag === 'slide' && parts && parts.peg) flags.slideBase = parts.peg.position.clone();
-    stepEl.textContent = 'Lesson ' + (PLAN[level].courses.indexOf(steps[i].course) + 1) + ' \u00b7 ' + (i + 1) + ' / ' + steps.length;
+    // numbered among the lessons actually taught (a lesson whose steps were all left out does not count)
+    var taught = steps.map(function (st) { return st.course; }).filter(function (c, k, all) { return all.indexOf(c) === k; });
+    stepEl.textContent = 'Lesson ' + (taught.indexOf(steps[i].course) + 1) + ' \u00b7 ' + (i + 1) + ' / ' + steps.length;
     textEl.textContent = fill(lessons[i].title);
     hintEl.textContent = fill(lessons[i].hint);
     renderDemo();
@@ -925,7 +964,7 @@
     }
     else {
       if (window.KBLevel) KBLevel.set(3);          // 装过的人直接上三级
-      KB.toast('Tutorial done \u2014 stuck at any point? Press Help at the top');
+      KB.toast(cfgOff('ui.helpButton') ? 'Tutorial done' : 'Tutorial done \u2014 stuck at any point? Press Help at the top');
     }
   }
   var first = document.getElementById('ttFirst'), again = document.getElementById('ttAgain');
