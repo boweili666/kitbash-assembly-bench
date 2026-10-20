@@ -67,10 +67,12 @@
   },
 
   "hints": {
-    "_help": "What the bench points out by itself; false = not shown. A host's explicit marks still show. nextPart: arrow + glow on the part the step needs. placed: installed parts tinted, the flash when one goes in right, the ring where it seats. workspaceText: 'Move the base here before connecting parts'.",
+    "_help": "What the bench shows by itself; false = not shown. A host's explicit marks still show. nextPart: arrow + glow on the part the step needs (in the tutorial too). placed: installed parts tinted, the flash when one goes in right, the ring where it seats. workspaceText: 'Move the base here before connecting parts'. ghost: see-through copies of parts where they go (step guide, answer playback). collision: parts that run into each other while moving turn red.",
     "nextPart": true,
     "placed": true,
-    "workspaceText": true
+    "workspaceText": true,
+    "ghost": true,
+    "collision": true
   },
 
   "tutorial": {

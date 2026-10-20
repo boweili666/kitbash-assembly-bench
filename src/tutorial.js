@@ -386,7 +386,31 @@
     if (cfgOff('hints.nextPart')) { skip.suggest = 1; skip.glow = 1; }   // no highlight, no suggested view in the build
     return skip;
   }
+  function stepByTag(tag) {
+    for (var c = 0; c < courses.length; c++) {
+      var hit = courses[c].steps.filter(function (st) { return st.tag === tag; })[0];
+      if (hit) return hit;
+    }
+    return null;
+  }
+  // the words as written, before wordForSettings changes them, so a later plan can put them back
+  var ORIGINAL = {};
+  function original(st) {
+    if (!ORIGINAL[st.tag]) ORIGINAL[st.tag] = { hint: st.lesson.hint, actions: st.lesson.actions.slice() };
+    return ORIGINAL[st.tag];
+  }
   function wordForSettings() {
+    // hints.nextPart off: parts are not tinted, so no "yellow" / "glowing" part to look for
+    var plain = cfgOff('hints.nextPart');
+    ['pickPeg', 'select'].forEach(function (tag) {
+      var st = stepByTag(tag);
+      if (!st) return;
+      var o = original(st);
+      st.lesson.hint = plain ? o.hint.replace(/The glowing \{mover\} is your target\./, 'Your target is the {mover}.') : o.hint;
+      st.lesson.actions = o.actions.map(function (a) {
+        return plain ? a.replace(/^Click the yellow /, 'Click the ').replace(/^Find the glowing /, 'Find the ') : a;
+      });
+    });
     var areas = courses[0].steps.filter(function (st) { return st.tag === 'areas'; })[0];
     if (areas) {
       var button = !cfgOff('ui.trayButton');
@@ -450,6 +474,7 @@
 
   function light(nodes) {
     unlight();
+    if (cfgOff('hints.nextPart')) return;         // no tinted parts: the card and the discs point the way
     nodes.forEach(function (n) { if (n) { KB.highlight(n, HL); lit.push(n); } });
   }
   function unlight() {

@@ -63,9 +63,11 @@
       answerBar: false            // the old bottom ghost playback bar
     },
     hints: {                      // what the bench points out by itself (a host's explicit marks still show)
-      nextPart: true,             // arrow + glow on the part(s) the current step needs
+      nextPart: true,             // arrow + glow on the part(s) the current step needs (and in the tutorial)
       placed: true,               // installed parts tinted, the flash when one goes in right, the ring where it seats
-      workspaceText: true         // "Move the base here before connecting parts" on the workspace
+      workspaceText: true,        // "Move the base here before connecting parts" on the workspace
+      ghost: true,                // see-through copies of parts where they go (the step guide, the answer playback)
+      collision: true             // parts that run into each other while moving turn red
     },
     tutorial: {
       autoStart: false            // embedded: run the tutorial first, then the host's scene (practice is not reported)

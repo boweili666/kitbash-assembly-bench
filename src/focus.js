@@ -508,7 +508,9 @@
   function refresh() {
     timer = 0;
     if (tutorialOn()) {
-      setLit(demo && demo.nodes ? demo.nodes.filter(Boolean) : []);
+      // hints.nextPart off: the tutorial points with its card and discs, not by tinting parts
+      var tutorLit = !window.KBConfig || KBConfig.get('hints.nextPart') !== false;
+      setLit(tutorLit && demo && demo.nodes ? demo.nodes.filter(Boolean) : []);
       if (demo && demo.fly && !demo.flown && demo.fly.parent) {
         demo.flown = true;
         var fb = boxOfNodes([demo.fly]).expandByScalar(L('closeUp')), fv = framing(fb, new THREE.Vector3(0.35, 1.0, 0.75));

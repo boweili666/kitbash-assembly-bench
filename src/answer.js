@@ -289,6 +289,7 @@
      (学员不该一键看答案),留 KBAnswer.play() 和 Shift+A 给出题/验收的人用 */
   function play() {
     if (root) { destroy(); KB.toast('Assembly demo closed'); return false; }
+    if (ghostsOff()) return false;
     if (!build()) return false;
     if (btn) btn.classList.add('on');
     t = 0;
@@ -379,7 +380,9 @@
     return cand;
   }
 
+  function ghostsOff() { return !!(window.KBConfig && KBConfig.get('hints.ghost') === false); }
   function showStep(i) {
+    if (ghostsOff()) return false;
     if (!(window.KBParts && KBParts.ready() && window.KBCheck)) return false;
     var res = KBCheck.evaluate();
     if (!res || !res.ready || !res.steps[i]) return false;
@@ -521,7 +524,7 @@
   }
 
   function showNext() {
-    if (!window.KBCheck) return false;
+    if (!window.KBCheck || ghostsOff()) return false;
     KBCheck.evaluate();
     var nx = KBCheck.next();
     if (!nx) { KB.toast('Assembly complete \u2014 nothing left to do'); return false; }

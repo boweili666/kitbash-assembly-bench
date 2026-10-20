@@ -448,6 +448,7 @@
 
   function keyOf(a, b) { return a.uuid + '|' + b.uuid; }
   function tint(part, on) {
+    if (on && window.KBConfig && KBConfig.get('hints.collision') === false) return;
     part.traverse(function (o) {
       if (!o.isMesh || !o.material || !o.material.emissive) return;
       if (on) {
