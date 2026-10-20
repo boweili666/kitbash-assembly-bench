@@ -233,8 +233,9 @@ def check_arrows(page):
       const ax = new THREE.Vector3(d.x, d.y, d.z); if (ax.lengthSq() > 1e-12) ax.normalize();
       return { deg: THREE.MathUtils.radToDeg(ang), axisDot: Math.abs(ax.dot(new THREE.Vector3().fromArray(dir))) };
     }""", [base["pose0"], arrow_delta(page, "ArrowLeft"), base["dir"]])
-    if not (0.9 < r["deg"] < 1.1 and r["axisDot"] > 0.999):
-        raise AssertionError(f"ArrowLeft did not turn 1 deg about the hole axis: {r}")
+    step = page.evaluate("() => KBConfig.num('level3.rotateStepDeg', 15)")
+    if not (abs(r["deg"] - step) < 0.1 and r["axisDot"] > 0.999):
+        raise AssertionError(f"ArrowLeft did not turn {step} deg (level3.rotateStepDeg) about the hole axis: {r}")
     back = arrow_delta(page, "ArrowRight")
     r2 = page.evaluate("""([a, b]) => THREE.MathUtils.radToDeg(new THREE.Quaternion().fromArray(a.q).angleTo(new THREE.Quaternion().fromArray(b.q)))""",
                        [base["pose0"], back])
@@ -245,8 +246,9 @@ def check_arrows(page):
       const along = d.dot(new THREE.Vector3().fromArray(dir));
       return { alongMm: along * 1000 / KBParts.unitScale(), sideMm: d.sub(new THREE.Vector3().fromArray(dir).multiplyScalar(along)).length() * 1000 / KBParts.unitScale() }; }""",
                        [base["pose0"], up, base["dir"]])
-    if not (0.2 < r3["alongMm"] < 0.3 and r3["sideMm"] < 1e-3):
-        raise AssertionError(f"ArrowUp did not slide 0.25 mm along the hole axis: {r3}")
+    slide = page.evaluate("() => KBConfig.num('level3.slideStepMm', 0.25)")
+    if not (abs(r3["alongMm"] - slide) < 0.05 and r3["sideMm"] < 1e-3):
+        raise AssertionError(f"ArrowUp did not slide {slide} mm (level3.slideStepMm) along the hole axis: {r3}")
     arrow_delta(page, "ArrowDown")
     return {"turn_deg": round(r["deg"], 3), "slide_mm": round(r3["alongMm"], 3)}
 

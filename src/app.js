@@ -1297,7 +1297,8 @@
         if (!selection.length) break;
         e.preventDefault();
         beginInteraction('key', e.code);
-        yawSelection((e.shiftKey ? 90 : 1) * (e.code === 'ArrowLeft' ? 1 : -1));
+        yawSelection((window.KBConfig ? KBConfig.num(e.shiftKey ? 'level3.yawShiftDeg' : 'level3.yawStepDeg', e.shiftKey ? 90 : 1)
+                                      : (e.shiftKey ? 90 : 1)) * (e.code === 'ArrowLeft' ? 1 : -1));
         break;
       case 'Escape':
         if (modalEl.classList.contains('show')) modalEl.classList.remove('show');

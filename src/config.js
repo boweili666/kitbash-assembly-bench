@@ -22,6 +22,8 @@
     level3: {
       rotateStepDeg: 15,          // left / right arrow: turn around the hole axis
       rotateFineDeg: 1,           // with Shift
+      yawStepDeg: 1,              // left / right arrow on a part that is not on a hole: turn about the vertical
+      yawShiftDeg: 90,            // with Shift
       slideStepMm: 0.25,          // up / down arrow: slide along the hole axis
       slideFineMm: 0.05,          // with Shift
       autoSnap: true,             // snap into place when close enough

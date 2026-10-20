@@ -12,9 +12,11 @@
   },
 
   "level3": {
-    "_help": "Arrow keys once a part is mated on a hole, and snapping into place.",
+    "_help": "Arrow keys: on a hole, left / right turn about the hole axis (rotateStepDeg, Shift rotateFineDeg) and up / down slide along it; a part not on a hole turns about the vertical (yawStepDeg, Shift yawShiftDeg). autoSnap: a part put down within snapPosMm and snapAngDeg of its place snaps onto it (keep snapAngDeg at least half the turn step so a turn always lands within reach).",
     "rotateStepDeg": 15,
     "rotateFineDeg": 1,
+    "yawStepDeg": 1,
+    "yawShiftDeg": 90,
     "slideStepMm": 0.25,
     "slideFineMm": 0.05,
     "autoSnap": true,
