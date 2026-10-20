@@ -504,14 +504,61 @@
       });
       return n ? sum / n : Infinity;
     }
+    // how many of the slot's joints part u makes in place, against parts already placed in slots that
+    // come earlier in the answer -- the build's own order decides who is trusted, so two later groups that
+    // agree with each other (a nut and its propeller) cannot outvote the motor they both sit on
+    function fitCount(t, u) {
+      var n = 0;
+      t.ref.mates.forEach(function (m) {
+        var ms = slots[m.slot.i];
+        if (m.slot.i < t.ref.i && ms.part && ms.part !== u && isOk(relError(t.ref, u, m.slot, ms.part))) n += 1;
+      });
+      return n;
+    }
+    // Identical parts are interchangeable: a trainee who put screw #3 where the answer has #1 built it
+    // right. Within each group of one part type, hand the parts round so that as many of their joints as
+    // possible fit (in place against parts already placed) -- only when that is more than now, so parts
+    // lying in the tray, which fit nothing, keep their ids. Repeated: one group placed right lets the next fit.
+    function regroup() {
+      var changed = false, groups = {};
+      slots.forEach(function (t) { if (t.part) (groups[t.ref.ckey] = groups[t.ref.ckey] || []).push(t); });
+      Object.keys(groups).forEach(function (k) {
+        var g = groups[k];
+        if (g.length < 2) return;
+        var parts = g.map(function (t) { return t.part; }), now = 0, pairs = [];
+        g.forEach(function (t, i) {
+          now += fitCount(t, t.part);
+          parts.forEach(function (u, j) { var f = fitCount(t, u); if (f > 0) pairs.push({ i: i, j: j, f: f }); });
+        });
+        pairs.sort(function (a, b) { return b.f - a.f || (a.i === a.j ? -1 : 0) - (b.i === b.j ? -1 : 0); });
+        var to = [], usedT = {}, usedU = {};
+        pairs.forEach(function (p) {
+          if (usedT[p.i] || usedU[p.j]) return;
+          to[p.i] = p.j; usedT[p.i] = usedU[p.j] = true;
+        });
+        g.forEach(function (t, i) { if (to[i] === undefined && !usedU[i]) { to[i] = i; usedU[i] = true; } });
+        g.forEach(function (t, i) {
+          if (to[i] !== undefined) return;
+          for (var j = 0; j < parts.length; j++) if (!usedU[j]) { to[i] = j; usedU[j] = true; break; }
+        });
+        var next = 0;
+        g.forEach(function (t, i) { next += fitCount(t, parts[to[i]]); });
+        if (next <= now) return;
+        g.forEach(function (t, i) { t.part = parts[to[i]]; t.part.slot = t; });
+        changed = true;
+      });
+      return changed;
+    }
+    for (var round = 0; round < 12 && regroup(); round++) { /* until nothing improves */ }
     for (var swap = 0; swap < 40; swap++) {
       var improved = false;
       for (var ai = 0; ai < slots.length; ai++) {
         for (var bi = ai + 1; bi < slots.length; bi++) {
           var ta = slots[ai], tb = slots[bi];
           if (!ta.part || !tb.part || ta.ref.ckey !== tb.ref.ckey) continue;
-          // 第 1 步按 id 认下的不参与对调:料盘里随手摆的位置算出来的误差没有意义,
-          // 对调会把"左楔块"换到右楔块的槽位上,levelMateTarget 随即拒绝点对了的孔
+          // 第 1 步按 id 认下的不按误差对调:料盘里随手摆的位置算出来的误差没有意义,
+          // 对调会把"左楔块"换到右楔块的槽位上,levelMateTarget 随即拒绝点对了的孔。
+          // (identical parts held by their ids are handed round by regroup() above)
           if (ta.part.id === ta.ref.id || tb.part.id === tb.ref.id) continue;
           var now = costOf(ta, ta.part) + costOf(tb, tb.part);
           var alt = costOf(ta, tb.part) + costOf(tb, ta.part);
