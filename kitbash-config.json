@@ -73,6 +73,11 @@
     "workspaceText": true
   },
 
+  "tutorial": {
+    "_help": "autoStart: embedded in a host page, run the tutorial first; when it ends (done or skipped) the host's scene is laid out and the assembly starts. Practice is not reported to the host.",
+    "autoStart": false
+  },
+
   "demo": {
     "_help": "Demo mode defaults. autoplay: false = wait for Next at every unit. by: part | substep | step (what one Next plays). speed: multiplier. gap / substepGap / stepGap: pauses in ms. trajectory: approach | direct | answer (recorded path). camera: follow | fixed. from / to: step numbers (1-based) or step ids, null = whole build. steps: e.g. [1, 3, 5] or null. fresh: start from a full kit. loop: start over when done. restore: put the scene back on exit. hideTray: hide the tray. bar: show the playback bar.",
     "autoplay": true,

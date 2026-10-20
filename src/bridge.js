@@ -93,6 +93,8 @@
   var PROTOCOL = 1;
 
   var tutorialSession = false;
+  var selfTutorial = false;   // started by the settings (tutorial.autoStart), not by the host: we put its scene back
+  var initScene = null;       // the scene of the last kb:init (null: the product's own kit)
   var origin = '*';            // 首条宿主消息到达后记住其 origin
   var pendingInit = null;
   var options = { frames: false, fps: 10, width: 960, quality: 0.72, moveHz: 30 };
@@ -366,7 +368,13 @@
 
   KB.on('tutorialEnd', function (result) {
     if (tutorialSession) post({ type: 'kb:tutorialEnd', reason: result.reason, experience: result.experience || null, level: result.level || null });
-    // Keep practice isolated until the host mounts the actual task scene.
+    // Keep practice isolated until the host mounts the actual task scene -- or, when the settings started
+    // it, until we have put the host's scene back ourselves.
+    if (selfTutorial) {
+      selfTutorial = false;
+      tutorialSession = false;
+      setTimeout(mountTask, 0);
+    }
   });
 
   function applyInit(msg) {
@@ -381,7 +389,25 @@
       else warn('This simulator build does not include the tutorial.');
       return;
     }
-    if (msg.scene) { setScene(msg.scene); hostKit = msg.scene; }
+    if (msg.scene) hostKit = msg.scene;
+    initScene = msg.scene || null;
+    // tutorial.autoStart: practise first; the task scene follows when the tutorial ends
+    window.KBConfig ? KBConfig.whenSettled(begin) : begin();
+  }
+  function begin() {
+    if (window.KBTutorial && window.KBConfig && KBConfig.get('tutorial.autoStart') === true) {
+      selfTutorial = true;
+      tutorialSession = true;
+      stopFrames();
+      KBTutorial.start({ onboarding: true, level: options.level || KBConfig.get('level.start') || undefined });
+      return;
+    }
+    mountTask();
+  }
+  function mountTask() {
+    // no scene from the host: the product's own kit (manifest.kit), laid out in the tray; [] is an empty table
+    if (initScene) setScene(initScene);
+    else if (KB.loadKit) { seen = null; KB.loadKit(); }
     startFrames();
     var st = stateMsg();
     if (st) post(st);

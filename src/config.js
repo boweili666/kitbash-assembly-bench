@@ -67,6 +67,9 @@
       placed: true,               // installed parts tinted, the flash when one goes in right, the ring where it seats
       workspaceText: true         // "Move the base here before connecting parts" on the workspace
     },
+    tutorial: {
+      autoStart: false            // embedded: run the tutorial first, then the host's scene (practice is not reported)
+    },
     demo: {                       // see src/demo.js for what each one does
       autoplay: true, by: 'substep', speed: 1, gap: 450, substepGap: 700, stepGap: 1000,
       trajectory: 'approach', camera: 'follow', from: null, to: null, steps: null,
@@ -95,7 +98,7 @@
     });
     return dst;
   }
-  var cfg = clone(DEFAULTS), version = 0, loaded = false;
+  var cfg = clone(DEFAULTS), version = 0, loaded = false, settled = false;
 
   function get(path) {
     var v = cfg;
@@ -139,9 +142,11 @@
         throw { handled: true };
       }
       loaded = true;
+      settled = true;
       set(data, 'file');
     }).catch(function (e) {
       if (!e || (!e.missing && !e.handled)) console.warn('[Kitbash] could not read ' + url, e);
+      settled = true;
       KB.emit('config', { source: 'defaults', config: clone(cfg) });
     });
   }
@@ -151,6 +156,12 @@
     all: function () { return clone(cfg); },
     defaults: function () { return clone(DEFAULTS); },
     version: function () { return version; },
-    loaded: function () { return loaded; }
+    loaded: function () { return loaded; },
+    /* fn once the settings file has been read (or found missing / broken) */
+    whenSettled: function (fn) {
+      if (settled || location.protocol === 'file:' || !window.fetch) { fn(); return; }
+      var done = false;
+      KB.on('config', function (e) { if (!done && (e.source === 'file' || e.source === 'defaults')) { done = true; fn(); } });
+    }
   };
 })();
