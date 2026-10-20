@@ -38,7 +38,8 @@
     },
     checks: {
       posTolMm: 3.2,              // a part counts as in place within this distance
-      angTolDeg: 12               // ... and this angle
+      angTolDeg: 12,              // ... and this angle
+      workspaceOnly: true         // only what is built inside the workspace counts; false = anywhere
     },
     collision: {
       depthTolMm: 1.0             // interpenetration deeper than this is reported as a collision

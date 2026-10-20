@@ -571,10 +571,10 @@
 
     // 装配区里是不是只有这一件零件。只数零件, 不数辅助图形。
     function loneInWorkspace(node) {
-      if (!window.KBWorkspace || !KBWorkspace.contains(node)) return false;
+      if (!window.KBWorkspace || !KBWorkspace.counts(node)) return false;
       var n = 0;
       KB.objectsRoot.traverse(function (o) {
-        if (KB.isPart(o) && KBWorkspace.contains(o)) n++;
+        if (KB.isPart(o) && KBWorkspace.counts(o)) n++;
       });
       return n === 1;
     }
@@ -617,7 +617,7 @@
           if (worst) { t.err = worst; t.near.push(worst); }
         }
       }
-      if (t.part && window.KBWorkspace && !KBWorkspace.contains(t.part.node)) {
+      if (t.part && window.KBWorkspace && !KBWorkspace.counts(t.part.node)) {
         var assembled = t.ok || t.near.length;
         t.ok = false;
         // 还没搬进装配区不算装错,是"接下来该干什么"
@@ -725,7 +725,7 @@
           if (d >= NEAR * 6) return;
           // 位置之外还要看朝向:只比位置的话,装反会被说成"差了 8 毫米"
           var e = relError(t.ref, u, m.slot, host);
-          var out = window.KBWorkspace && !KBWorkspace.contains(u.node);
+          var out = window.KBWorkspace && !KBWorkspace.counts(u.node);
           if (!misplaced || e.score < misplaced.e.score) misplaced = { u: u, d: e.d, e: e, m: m, outside: out, host: host };
         });
       });
@@ -811,7 +811,7 @@
           if (u.slot) return;                      // 已经被认成别的位置(比如上一步装好的那对)
           if (levelPlaced[u.node.uuid]) return;    // 按难度级别自动摆的,位置就是答案
           if (!wasMated(u.node)) return;
-          if (window.KBWorkspace && !KBWorkspace.contains(u.node)) return;
+          if (window.KBWorkspace && !KBWorkspace.counts(u.node)) return;
           spoken[u.node.uuid] = true;
           issues.push({ severity: 'error', kind: 'hole', node: u.node, slot: t.ref,
             msg: u.node.name + ' is assembled, but not the way “' + cur.st.name +
@@ -829,7 +829,7 @@
         ss = [].concat.apply([], st.assembly.groups).map(function (id) {
           var source = slots[ref.byId[id].i];
           var e = source.part && baseSlot.part ? relError(source.ref, source.part, baseSlot.ref, baseSlot.part) : null;
-          var inside = source.part && baseSlot.part && (!window.KBWorkspace || (KBWorkspace.contains(source.part.node) && KBWorkspace.contains(baseSlot.part.node)));
+          var inside = source.part && baseSlot.part && (!window.KBWorkspace || (KBWorkspace.counts(source.part.node) && KBWorkspace.counts(baseSlot.part.node)));
           // 这一对配合的 feature id:没有它,"装错孔了"只能说出哪件错、说不出哪个孔。
           // 其余分支从 mates 里拿,这里以前直接造了个没有 features 的 m。
           var pair = (source.ref.mates || []).filter(function (m) { return m.slot === baseSlot.ref; })[0];
@@ -957,7 +957,7 @@
           objectId: (i.node && i.node.userData.kbId) || null,
           // 零件在装配区里吗。severity 分不出"还没搬进来"和"搬进来了但没装上",
           // 两者都是 hint,可前者不该被标错、后者该被标错。这一位就是那个区别。
-          inWorkspace: i.node ? KBWorkspace.contains(i.node) : null,
+          inWorkspace: i.node ? KBWorkspace.counts(i.node) : null,
           // 接收件和期望的特征配对:没有这两个, "装错孔了"只能说出哪件错, 说不出哪个孔
           hostId: (i.host && i.host.userData.kbId) || null,
           features: i.features || null,
@@ -1159,7 +1159,7 @@
   }
 
   function inWorkspace(pl) {
-    return !window.KBWorkspace || (KBWorkspace.contains(pl.node) && KBWorkspace.contains(pl.node, pl.pos, pl.quat));
+    return !window.KBWorkspace || (KBWorkspace.counts(pl.node) && KBWorkspace.counts(pl.node, pl.pos, pl.quat));
   }
   function applySnaps(plans, label) {
     plans = plans.filter(inWorkspace);
@@ -1220,7 +1220,7 @@
       if (canon(n.userData.kbType.slice(5)) !== t.ref.ckey) return false;
       var s = slotForNode(n);
       if (s && s.ok) return false;
-      return !window.KBWorkspace || KBWorkspace.contains(n);
+      return !window.KBWorkspace || KBWorkspace.counts(n);
     });
   }
   function slotForNode(node) {
@@ -1424,9 +1424,9 @@
     indices.forEach(function (index) {
       var step = results.steps[index], members = [], roots = [];
       var valid = step.slots.length && step.slots.every(function (t) {
-        if (!t.part || (window.KBWorkspace && !KBWorkspace.contains(top(t.part.node)))) return false;
+        if (!t.part || (window.KBWorkspace && !KBWorkspace.counts(top(t.part.node)))) return false;
         var links = t.near.filter(function (link) {
-          return close(link.e) && (!window.KBWorkspace || KBWorkspace.contains(top(link.ms.part.node)));
+          return close(link.e) && (!window.KBWorkspace || KBWorkspace.counts(top(link.ms.part.node)));
         });
         if (!links.length || (!t.ok && links.length <= t.near.length / 2)) return false;
         if (members.indexOf(t) < 0) members.push(t);
@@ -1466,7 +1466,7 @@
       }
       var ok = fixed.length === roots.length && results.steps[index].complete && expected.concat(protectedParts).every(function (n) {
         var t = slotForNode(n); return t && t.ok;
-      }) && roots.every(function (n) { return !window.KBWorkspace || KBWorkspace.contains(n); });
+      }) && roots.every(function (n) { return !window.KBWorkspace || KBWorkspace.counts(n); });
       if (!ok) { restore(); return; }
       if (KB.groupNodes(roots, step.name)) count++; else restore();
     });
@@ -1491,12 +1491,12 @@
       results.slots.some(function (t) {
         if (!t.part || !t.ok || staged[t.part.node.uuid]) return false;
         var ra = top(t.part.node);
-        if (window.KBWorkspace && !KBWorkspace.contains(ra)) return false;
+        if (window.KBWorkspace && !KBWorkspace.counts(ra)) return false;
         return t.near.some(function (link) {
           var ms = link.ms;
           if (!ms.part || !ms.ok || staged[ms.part.node.uuid] || !close(link.e)) return false;
           var rb = top(ms.part.node);
-          if (ra === rb || (window.KBWorkspace && !KBWorkspace.contains(rb))) return false;
+          if (ra === rb || (window.KBWorkspace && !KBWorkspace.counts(rb))) return false;
           if (!allOk(ra) || !allOk(rb)) return false;
           var st = ref.steps[Math.max(t.ref.step, ms.ref.step)];
           if (!KB.groupNodes([ra, rb], st ? st.name : 'Assembly')) return false;
@@ -1738,7 +1738,7 @@
     var base = ref.byId[st.assembly.base];
     if (!base) return null;
     var baseSlot = results && results.slots[base.i];
-    var basePlaced = (baseSlot && baseSlot.part && (!window.KBWorkspace || KBWorkspace.contains(baseSlot.part.node))) ||
+    var basePlaced = (baseSlot && baseSlot.part && (!window.KBWorkspace || KBWorkspace.counts(baseSlot.part.node))) ||
       collectParts().some(function (n) { return levelPlaced[n.uuid] === base; });
     if (basePlaced) return null;
     var gi = st.assembly.groups.findIndex(function (g) { return g.indexOf(slotRef.id) >= 0; });
@@ -1762,7 +1762,7 @@
     var nx = next();
     if (!nx || !nx.assembly || [].concat.apply([], nx.assembly.groups).indexOf(mine.ref.id) < 0) return { already: true };
     var base = nx.base;
-    var basePlaced = base && ((base.part && base.part.node && (!window.KBWorkspace || KBWorkspace.contains(base.part.node))) ||
+    var basePlaced = base && ((base.part && base.part.node && (!window.KBWorkspace || KBWorkspace.counts(base.part.node))) ||
       collectParts().some(function (n) { return levelPlaced[n.uuid] === base.ref; }));
     if (!basePlaced) return { reason: 'Place ' + (base ? base.ref.name : 'the base') + ' first \u2014 this goes into it' };
     var W = refToWorld(), want = new THREE.Matrix4().multiplyMatrices(W, mine.ref.M);
@@ -1849,7 +1849,7 @@
       var ms = results.slots[m.slot.i], pn = null;
       if (ms && ms.part && (ms.ok || levelPlaced[ms.part.node.uuid])) pn = ms.part.node;
       if (!pn) collectParts().forEach(function (n) { if (!pn && levelPlaced[n.uuid] === m.slot) pn = n; });
-      if (!pn && ms && ms.part && window.KBWorkspace && KBWorkspace.contains(ms.part.node)) pn = ms.part.node;
+      if (!pn && ms && ms.part && window.KBWorkspace && KBWorkspace.counts(ms.part.node)) pn = ms.part.node;
       if (pn && pn !== node) partners.push({ node: pn, step: m.slot.step });
     });
     // 2.5 mm:采来的参考位姿有一两毫米误差(机臂 #1/#2 对后板的孔偏了 1.7 / 1.5 mm),

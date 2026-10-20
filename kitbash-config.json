@@ -35,9 +35,10 @@
   },
 
   "checks": {
-    "_help": "A part counts as in place within posTolMm and angTolDeg of its reference pose.",
+    "_help": "A part counts as in place within posTolMm and angTolDeg of its reference pose. workspaceOnly: true = only what is built inside the assembly workspace counts (the base must be moved there first); false = an assembly counts wherever it is built.",
     "posTolMm": 3.2,
-    "angTolDeg": 12
+    "angTolDeg": 12,
+    "workspaceOnly": true
   },
 
   "collision": {

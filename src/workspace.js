@@ -90,7 +90,13 @@
     toggle();
   });
 
-  window.KBWorkspace = { contains: contains, destination: destination, bounds: bounds, center: center, overview: overview,
+  // What the checks count: inside the workspace, or anywhere when checks.workspaceOnly is false (an assembly
+  // finished in the tray then counts too -- nobody has to be told to move the base first)
+  function counts(node) {
+    if (window.KBConfig && KBConfig.get('checks.workspaceOnly') === false) return true;
+    return contains.apply(null, arguments);
+  }
+  window.KBWorkspace = { contains: contains, counts: counts, destination: destination, bounds: bounds, center: center, overview: overview,
     look: look, toggle: toggle,
     canConnect: function (source, target) { return contains(target); },
     message: function (node) { return 'Move ' + (node.name || 'the receiving part') + ' fully into the assembly workspace first.'; } };
