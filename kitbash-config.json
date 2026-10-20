@@ -11,6 +11,13 @@
     "background": null
   },
 
+  "stage": {
+    "_help": "A banner at the top naming which part of a study this is (e.g. a test, then the real task); null = none. While the tutorial runs it says TUTORIAL.",
+    "title": null,
+    "detail": null,
+    "colour": null
+  },
+
   "errors": {
     "_help": "enabled: null = keep the toolbar Errors switch as the user left it; false = no wrong-part / wrong-hole / not-aligned messages, toasts or events (Level 3 no longer undoes such moves); true = force them on.",
     "enabled": null

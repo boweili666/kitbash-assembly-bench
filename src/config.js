@@ -19,6 +19,9 @@
     scene: {
       background: null            // CSS colour of the background; null = the built-in dark one
     },
+    stage: {                      // the banner naming which part of a study this is (stage.js); null = none
+      title: null, detail: null, colour: null
+    },
     errors: {
       enabled: null               // null = keep the user's toolbar choice; true / false = force it on load
     },
