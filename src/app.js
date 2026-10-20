@@ -31,6 +31,9 @@
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // The light never moves, so the shadow map only needs redrawing when a part does (see shadowsStale)
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = true;
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -1380,6 +1383,25 @@
   }
 
   var clock = new THREE.Clock();
+  // A cheap fingerprint of where every part is: when it changes, the shadow map is redrawn this frame.
+  // Turning the camera leaves it alone, which spares a whole second pass over the scene.
+  var shadowPrint = null;
+  function shadowsStale() {
+    objectsRoot.updateMatrixWorld();
+    var sum = 0, n = 0;
+    objectsRoot.traverse(function (o) {
+      if (!o.isMesh || !o.castShadow) return;
+      var e = o.matrixWorld.elements;
+      n += o.visible ? 1 : 0.5;
+      sum += e[0] + 2 * e[1] + 3 * e[2] + 5 * e[4] + 7 * e[5] + 11 * e[6] + 13 * e[8] + 17 * e[9] + 19 * e[10]
+           + 23 * e[12] + 29 * e[13] + 31 * e[14];
+    });
+    var print = n + ':' + sum;
+    if (print === shadowPrint) return false;
+    shadowPrint = print;
+    return true;
+  }
+
   function animate() {
     requestAnimationFrame(animate);
     var dt = clock.getDelta();
@@ -1393,6 +1415,7 @@
     stepTweens(dt);
     orbit.update();
     helpers.forEach(function (h) { h.update(); });
+    if (shadowsStale()) renderer.shadowMap.needsUpdate = true;
     renderer.render(scene, camera);
   }
 

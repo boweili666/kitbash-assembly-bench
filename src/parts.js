@@ -64,6 +64,67 @@
     });
   }
 
+  /* One mesh per material: a CAD export splits a part into many bodies that share one look, and every
+     mesh is a draw call (twice, with the shadow pass) -- a kit of a few dozen parts came to over a
+     thousand. Geometries already sit in the part's frame, so they concatenate as they are. */
+  function materialKey(m) {
+    return [m.type, m.color ? m.color.getHexString() : '', m.metalness, m.roughness, m.opacity, m.transparent,
+            m.side, m.vertexColors, m.map ? m.map.uuid : '', m.normalMap ? m.normalMap.uuid : '',
+            m.emissive ? m.emissive.getHexString() : ''].join('|');
+  }
+  function mergeGeometries(list) {
+    var names = Object.keys(list[0].attributes).filter(function (n) {
+      return list.every(function (g) { return g.attributes[n] && g.attributes[n].itemSize === list[0].attributes[n].itemSize; });
+    });
+    if (names.indexOf('position') < 0 || list.some(function (g) { return g.morphAttributes && Object.keys(g.morphAttributes).length; })) return null;
+    var out = new THREE.BufferGeometry(), total = 0, indexCount = 0;
+    list.forEach(function (g) { total += g.attributes.position.count; indexCount += g.index ? g.index.count : g.attributes.position.count; });
+    names.forEach(function (n) {
+      var size = list[0].attributes[n].itemSize, arr = new Float32Array(total * size), at = 0;
+      list.forEach(function (g) {
+        var a = g.attributes[n];
+        for (var i = 0; i < a.count; i++) {
+          arr[at++] = a.getX(i);
+          if (size > 1) arr[at++] = a.getY(i);
+          if (size > 2) arr[at++] = a.getZ(i);
+          if (size > 3) arr[at++] = a.getW(i);
+        }
+      });
+      out.setAttribute(n, new THREE.BufferAttribute(arr, size));
+    });
+    var index = total > 65535 ? new Uint32Array(indexCount) : new Uint16Array(indexCount), ii = 0, base = 0;
+    list.forEach(function (g) {
+      var n = g.attributes.position.count;
+      if (g.index) for (var i = 0; i < g.index.count; i++) index[ii++] = g.index.getX(i) + base;
+      else for (var j = 0; j < n; j++) index[ii++] = j + base;
+      base += n;
+    });
+    out.setIndex(new THREE.BufferAttribute(index, 1));
+    out.computeBoundingBox();
+    out.computeBoundingSphere();
+    return out;
+  }
+  function mergeByMaterial(prims) {
+    var groups = [], byKey = {};
+    prims.forEach(function (pr) {
+      var k = materialKey(pr.material);
+      if (!byKey[k]) { byKey[k] = { material: pr.material, geometries: [] }; groups.push(byKey[k]); }
+      if (!pr.geometry.attributes.normal) pr.geometry.computeVertexNormals();
+      byKey[k].geometries.push(pr.geometry);
+    });
+    var out = [];
+    groups.forEach(function (gr) {
+      var merged = gr.geometries.length > 1 ? mergeGeometries(gr.geometries) : null;
+      if (merged) {
+        gr.geometries.forEach(function (g) { g.dispose(); });
+        out.push({ geometry: merged, material: gr.material });
+      } else {
+        gr.geometries.forEach(function (g) { out.push({ geometry: g, material: gr.material }); });
+      }
+    });
+    return out;
+  }
+
   /* 把 glTF 场景烘焙成零件几何:节点变换 → 顶点,再套 manifest 的归一变换 */
   function bake(spec, gltf) {
     gltf.scene.updateMatrixWorld(true);
@@ -89,6 +150,7 @@
       }
       prims.push({ geometry: g, material: mat });
     });
+    prims = mergeByMaterial(prims);
     var defaultColor = prims.length ? '#' + prims[0].material.color.getHexString() : '#c8cfd6';
     cache[spec.key] = { prims: prims, spec: spec, defaultColor: defaultColor,
       original: { holes: JSON.parse(JSON.stringify(spec.holes)), pegs: JSON.parse(JSON.stringify(spec.pegs)) } }; // 标注工具 Reset 用
