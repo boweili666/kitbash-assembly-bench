@@ -57,6 +57,7 @@
       groupButtons: true,         // Group / Ungroup
       propsButton: true,          // the properties button and panel
       settingsButton: true,       // the gear and its settings form
+      nameTags: 'off',            // part names in the scene: 'off' | 'selected' (the clicked part) | 'step' (tray + clicked) | 'all'
       debugButton: null,          // "Steps" jump-to-step list (stepdebug.js): null = its own default (?debugSteps=1); true / false = force
       checksButton: false,        // the old Checks shield
       hintsBar: false,            // the old bottom hints bar

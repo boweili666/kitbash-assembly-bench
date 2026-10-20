@@ -46,7 +46,7 @@
   },
 
   "ui": {
-    "_help": "true = shown, false = hidden. debugButton: null = the Steps jump list only with ?debugSteps=1; true / false = always shown / hidden.",
+    "_help": "true = shown, false = hidden. debugButton: null = the Steps jump list only with ?debugSteps=1; true / false = always shown / hidden. nameTags: part names in the scene, 'off' | 'selected' (the clicked part) | 'step' (tray + clicked) | 'all'.",
     "guideCard": true,
     "celebration": true,
     "levelButtons": true,
@@ -63,7 +63,8 @@
     "answerBar": false,
     "groupButtons": true,
     "propsButton": true,
-    "settingsButton": true
+    "settingsButton": true,
+    "nameTags": "off"
   },
 
   "hints": {

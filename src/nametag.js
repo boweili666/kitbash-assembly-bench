@@ -23,7 +23,7 @@
   'use strict';
 
   var KB = window.KB;
-  var ALL = 'all', STEP = 'step', OFF = 'off';
+  var ALL = 'all', STEP = 'step', OFF = 'off', SELECTED = 'selected';
   // 默认关闭 —— 现在用 bowei 的 tray zone 认零件。API 留着, 以后别的场景
   // 可以 KBNames.set('step'|'all') 打开。
   var mode = OFF;
@@ -81,6 +81,11 @@
     var set = [];
     if (mode === OFF) return set;   // 关闭: 一个标签都不画
     function add(n) { if (n && KB.isPart(n) && set.indexOf(n) < 0) set.push(n); }
+    // selected: only what was clicked (every part of a clicked assembly), nothing the bench points at
+    if (mode === SELECTED) {
+      selected.forEach(function (n) { if (n) n.traverse(add); });
+      return set;
+    }
 
     KB.objectsRoot.traverse(function (o) {
       if (!KB.isPart(o)) return;
@@ -115,6 +120,12 @@
     });
     tags = set.map(function (node) {
       var sp = sprite(textFor(node));
+      if (mode === SELECTED) {
+        // the clicked part's name: the same size on screen however far the camera is
+        sp.material.sizeAttenuation = false;
+        sp.scale.multiplyScalar(TAG_SCREEN_H / sp.scale.y);
+        sp.center.set(0, 0.5);           // anchored at its left end, so it starts beside the part
+      }
       root.add(sp);
       return { node: node, sprite: sp, text: textFor(node) };
     });
@@ -122,6 +133,34 @@
 
   /* 脚下 = 包围盒底面中心再往下一点。每帧重算,因为零件会被搬动、翻转、成组 */
   var box = new THREE.Box3(), c = new THREE.Vector3(), frame = 0;
+  var TAG_SCREEN_H = 0.045;              // selected mode: tag height, a fraction of the view's height
+  var corner = new THREE.Vector3(), ndc = new THREE.Vector3();
+  // the part's box in its own frame (tighter than a world box when it lies at an angle)
+  function localBox(node) {
+    var b = new THREE.Box3(), inv = new THREE.Matrix4();
+    node.updateMatrixWorld(true);
+    inv.copy(node.matrixWorld).invert();
+    node.traverse(function (o) {
+      if (!o.isMesh || !o.geometry) return;
+      if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+      b.union(o.geometry.boundingBox.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld)));
+    });
+    return b;
+  }
+  // selected mode: just right of the part as seen on screen, level with its middle
+  function beside(t) {
+    var cam = KB.camera, maxX = -Infinity, lb = t.local || (t.local = localBox(t.node));
+    if (lb.isEmpty()) return;
+    for (var i = 0; i < 8; i++) {
+      corner.set(i & 1 ? lb.max.x : lb.min.x, i & 2 ? lb.max.y : lb.min.y, i & 4 ? lb.max.z : lb.min.z)
+        .applyMatrix4(t.node.matrixWorld).project(cam);
+      if (corner.x > maxX) maxX = corner.x;
+    }
+    lb.getCenter(c).applyMatrix4(t.node.matrixWorld);
+    ndc.copy(c).project(cam);
+    ndc.x = Math.min(maxX + 0.02, 0.98);
+    t.sprite.position.copy(ndc.unproject(cam));
+  }
   (function tick() {
     requestAnimationFrame(tick);
     // 该写谁每 10 帧重算一次。82 个零件的遍历很便宜, 而且比挂一堆事件可靠 ——
@@ -134,7 +173,8 @@
       box.setFromObject(t.node);
       if (box.isEmpty()) return;
       box.getCenter(c);
-      t.sprite.position.set(c.x, box.min.y - 0.13, c.z);
+      if (mode === SELECTED) beside(t);
+      else t.sprite.position.set(c.x, box.min.y - 0.13, c.z);
     });
   })();
 
@@ -154,8 +194,15 @@
   });
   paint();
 
+  function setMode(m) { mode = m === ALL ? ALL : m === OFF ? OFF : m === SELECTED ? SELECTED : STEP; rebuild(wanted()); paint(); }
+  // the settings file: ui.nameTags 'off' | 'selected' | 'step' | 'all'
+  KB.on('config', function () {
+    var m = window.KBConfig && KBConfig.get('ui.nameTags');
+    if (m && m !== mode) setMode(m);
+  });
+
   window.KBNames = {
     mode: function () { return mode; },
-    set: function (m) { mode = m === ALL ? ALL : (m === OFF ? OFF : STEP); rebuild(wanted()); paint(); }
+    set: setMode
   };
 })();
