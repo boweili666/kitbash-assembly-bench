@@ -11,21 +11,25 @@
   // Boundary only: no filled surface between the camera and an underside assembly.
   var points = [[bounds.minX, bounds.minZ], [bounds.maxX, bounds.minZ], [bounds.maxX, bounds.maxZ],
     [bounds.minX, bounds.maxZ], [bounds.minX, bounds.minZ]].map(function (p) { return new THREE.Vector3(p[0], .015, p[1]); });
-  group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), new THREE.LineBasicMaterial({ color: 0x66d1ba })));
+  var lineMat = new THREE.LineBasicMaterial({ color: 0x66d1ba });
+  group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), lineMat));
   var label = document.createElement('canvas'); label.width = 1024; label.height = 128;
   var ctx = label.getContext('2d'), texture = new THREE.CanvasTexture(label);
   // the second line is a hint (hints.workspaceText); redrawn when the settings arrive
   function drawLabel() {
     ctx.clearRect(0, 0, label.width, label.height);
-    ctx.fillStyle = '#96ead7'; ctx.font = '600 52px sans-serif'; ctx.textAlign = 'center';
+    var ink = KB.ink ? KB.ink : function (d) { return d; };
+    lineMat.color.copy(KB.inkColor ? KB.inkColor(0x66d1ba, 0x1f7f6b) : new THREE.Color(0x66d1ba));
+    ctx.fillStyle = ink('#96ead7', '#1d6d5c'); ctx.font = '600 52px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('ASSEMBLY WORKSPACE', 512, 60);
     if (!window.KBConfig || KBConfig.get('hints.workspaceText') !== false) {
       ctx.font = '28px sans-serif'; ctx.fillText('Move the base here before connecting parts', 512, 106);
     }
-    texture.needsUpdate = true;
+    if (KB.inkTexture) KB.inkTexture(texture); else texture.needsUpdate = true;
   }
   drawLabel();
   KB.on('config', drawLabel);
+  KB.on('theme', drawLabel);
   var mesh = new THREE.Mesh(new THREE.PlaneGeometry(7, .875), new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, side: THREE.FrontSide }));
   mesh.rotation.x = -Math.PI / 2; mesh.position.set(center.x, .02, bounds.maxZ - .55); group.add(mesh); KB.scene.add(group);
 

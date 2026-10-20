@@ -118,23 +118,41 @@
       group.remove(o);
     });
   }
-  function drawZone(z) {
-    var pts = [[z.x0, z.z0], [z.x1, z.z0], [z.x1, z.z1], [z.x0, z.z1], [z.x0, z.z0]]
-      .map(function (p) { return new THREE.Vector3(p[0], 0.012, p[1]); });
-    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
-      new THREE.LineBasicMaterial({ color: 0x3f4a59, transparent: true, opacity: 0.9 })));
+  // the zone's name, in the ink for the background (KB.ink: dark words on a light background)
+  function zoneLabel(text) {
     var canvas = document.createElement('canvas');
     canvas.width = 512; canvas.height = 64;
     var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#8d97a5';
+    ctx.fillStyle = KB.ink ? KB.ink('#8d97a5', '#4e5966') : '#8d97a5';
     ctx.font = '600 34px sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(z.label.toUpperCase(), 6, 34);
+    ctx.fillText(text.toUpperCase(), 6, 34);
+    var tex = new THREE.CanvasTexture(canvas);
+    return KB.inkTexture ? KB.inkTexture(tex) : tex;
+  }
+  function zoneLineColor() { return KB.inkColor ? KB.inkColor(0x3f4a59, 0x8a929c) : new THREE.Color(0x3f4a59); }
+  KB.on('theme', function () {
+    group.traverse(function (o) {
+      if (o.userData.zoneLine) o.material.color.copy(zoneLineColor());
+      if (!o.userData.zoneLabel || !o.material || !o.material.map) return;
+      o.material.map.dispose();
+      o.material.map = zoneLabel(o.userData.zoneLabel);
+      o.material.needsUpdate = true;
+    });
+  });
+  function drawZone(z) {
+    var pts = [[z.x0, z.z0], [z.x1, z.z0], [z.x1, z.z1], [z.x0, z.z1], [z.x0, z.z0]]
+      .map(function (p) { return new THREE.Vector3(p[0], 0.012, p[1]); });
+    var line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({ color: zoneLineColor(), transparent: true, opacity: 0.9 }));
+    line.userData.zoneLine = true;
+    group.add(line);
     var w = Math.min(z.x1 - z.x0, 2.6);
     var mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, w / 8),
-      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true,
+      new THREE.MeshBasicMaterial({ map: zoneLabel(z.label), transparent: true,
         depthWrite: false, side: THREE.DoubleSide }));
+    mesh.userData.zoneLabel = z.label;
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(z.x0 + w / 2, 0.014, z.z0 + LABEL_H / 2);
     group.add(mesh);

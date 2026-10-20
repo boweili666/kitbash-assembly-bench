@@ -304,11 +304,49 @@
      seat-and-report / seat-and-undo 照几何插上,插完再判 —— 报出来,或者退回原位 */
   function rule(key) { return KBLevelRules.get(level, key); }
   var pendingCheck = null;
-  function stageCheck(src, dst, undo) {
+  function stageCheck(src, dst, undo, verdict) {
     var top = src.node; while (top.parent && top.parent !== KB.objectsRoot) top = top.parent;
-    pendingCheck = { node: src.node, src: src, dst: dst, top: top, undo: undo,
+    pendingCheck = { node: src.node, src: src, dst: dst, top: top, undo: undo, verdict: verdict || null,
                      p: top.position.clone(), q: top.quaternion.clone(), at: performance.now() };
   }
+
+  /* ---------- Mate errors for the host (KB 'mateError' -> kb:mateError), whatever the on-screen switch ----------
+     Classified when the second ring is clicked, from the rings and the answer, never from part names:
+       wrong_hole      a peg (a screw's shaft) put into a hole the answer does not pair it with
+       misaligned      two parts aligned on a hole pair the answer does not have
+       wrong_step      a right pair, but for a later step
+       wrong_rotation  a right pair, the part turned off its answer pose (more than checks.angTolDeg) --
+                       checked when it seats and after each turn on the hole; reported when it becomes wrong */
+  function mateError(src, dst, type) {
+    if (window.KBTutorial && KBTutorial.active()) return;
+    KB.emit('mateError', { a: src, b: dst, type: type });
+  }
+  function wrongPairType(src, dst, reason) {
+    if (/^Not yet/.test(reason || '')) return 'wrong_step';
+    return src.kind === 'peg' || dst.kind === 'peg' ? 'wrong_hole' : 'misaligned';
+  }
+  var onHole = {};     // part uuid -> {src, dst, want, wrong}: a right pair, watched for its turn
+  function watchTurn(src, dst, want) {
+    if (!want) return;
+    var rec = onHole[src.node.uuid] = { src: src, dst: dst, want: want, wrong: false };
+    checkTurn(rec);
+  }
+  function checkTurn(rec) {
+    var t = window.KBCheck && KBCheck.turnOff ? KBCheck.turnOff(rec.src.node, rec.want) : null;
+    if (!t) return;
+    if (t.wrong && !rec.wrong) mateError(rec.src, rec.dst, 'wrong_rotation');
+    rec.wrong = t.wrong;
+  }
+  KB.on('place', function (node) {
+    Object.keys(onHole).forEach(function (id) {
+      var rec = onHole[id], n = rec.src.node;
+      if (!n.parent || !(window.KBMate && KBMate.locked && KBMate.locked(n))) { delete onHole[id]; return; }
+      var hit = false;
+      if (node && node.traverse) node.traverse(function (x) { if (x === n) hit = true; });
+      if (hit) setTimeout(function () { checkTurn(rec); }, 0);
+    });
+  });
+  KB.on('restore', function () { onHole = {}; });
   /* 答案怎么看这一对:{r, mover, other} 或 {reason} */
   function judge(src, dst) {
     var r = KBCheck.levelMateTarget(src.node, src.id, dst.node, dst.id), mover = src, other = dst;
@@ -331,11 +369,25 @@
     if (!pc || !a || a.object1 !== pc.node) return;
     pendingCheck = null;
     if (!a.success) return;
+    var verdict = pc.verdict;
     // 等配合的补间落定、检查跑完,再看这个零件有没有被判错
     (function wait(n) {
       if (((KB.tweening && KB.tweening()) || KB.interacting()) && n < 40) { setTimeout(function () { wait(n + 1); }, 100); return; }
+      // the host hears about it whether or not the bench shows errors
+      if (verdict && verdict.wrong) mateError(pc.src, pc.dst, verdict.wrong);
       var res = KBCheck.evaluate();
       if (!res || !res.ready) return;
+      if (verdict && verdict.want) {
+        // a right pair: the part clicked may sit right (a screw turns freely about its own axis) while the
+        // part it carries is turned -- any part that moved with it judged turned off its place counts
+        var moved = {};
+        pc.top.traverse(function (x) { if (KB.isPart(x)) moved[x.uuid] = true; });
+        var turned = (res.allIssues || []).some(function (i) {
+          return i.kind === 'align' && !i.reversed && i.node && moved[i.node.uuid] && (i.ang || 0) >= KBConfig.num('checks.angTolDeg', 12);
+        });
+        if (turned) mateError(pc.src, pc.dst, 'wrong_rotation');
+        else watchTurn(pc.src, pc.dst, verdict.want);
+      }
       // the part that moved and the one it went into: a screw put in backwards is reported on the screw,
       // whichever of the two was clicked first
       var mine = {}, dtop = pc.dst && pc.dst.node; while (dtop && dtop.parent && dtop.parent !== KB.objectsRoot) dtop = dtop.parent;
@@ -371,12 +423,13 @@
         // 落座后把孔轴登记给 mate.js:三级的方向键(沿轴推拉、绕轴转)跟几何配合之后一样能用
         KBMate.hold(j.mover, j.other);
         KBCheck.evaluate();
+        watchTurn(j.mover, j.other, j.r.want);         // seated right; turning it off later is an error
       });
       return 'handled';
     }
     if (!j.reason) {                                   // seatCorrect: geometry
       KBCheck.noteHole(null);         // 上一次点错留下的那条先清掉,免得配合完被它误判
-      stageCheck(src, dst, rule('wrongMate') === 'seat-and-undo');
+      stageCheck(src, dst, rule('wrongMate') === 'seat-and-undo', { want: j.mover === src ? j.r.want : null });
       return null;
     }
     var wrong = rule('wrongMate');
@@ -387,7 +440,7 @@
       return j.reason;
     }
     KBCheck.noteHole(null);
-    stageCheck(src, dst, wrong === 'seat-and-undo');
+    stageCheck(src, dst, wrong === 'seat-and-undo', { wrong: wrongPairType(src, dst, j.reason) });
     return null;                                       // 交给 mate.js 照几何插上,插完再判
   }
 

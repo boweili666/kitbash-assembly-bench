@@ -63,6 +63,9 @@
  *                                                  点了某个零件上的孔 / 销(handle):选源、点目标都算。
  *                                                  handleId 是 H1 / P1 这类特征号;end:孔的哪个孔口(1 / -1),销是 0
  *     {type:'kb:handleMatch', object1, handle1, object2, handle2, success, error}
+ *     {type:'kb:mateError', errorType, part1, ring1, end1, part2, ring2, end2}
+ *                         errorType: wrong_hole | misaligned | wrong_step | wrong_rotation (levels.js); sent
+ *                         whether or not the bench shows errors on screen
  *                                                  点完目标后的结论:object1/handle1 是先点的(要动的),object2/handle2 是后点的。
  *                                                  success=false 时 error 是原因;三级配合后被判错撤销的,会再补一条 success=false
  *     {type:'kb:demoProgress', step, steps, stepId, stepName, substep, substeps, substepName, partId, partName}
@@ -207,6 +210,13 @@
     if (!m || !m.a || !m.b) return;
     post({ type: 'kb:handleMatch', object1: m.a.node.userData.kbId || null, handle1: m.a.id,
       object2: m.b.node.userData.kbId || null, handle2: m.b.id, success: !!m.success, error: m.success ? null : (m.error || null) });
+  });
+  // a mistake in putting two parts together (levels.js), sent whether or not the bench shows errors
+  KB.on('mateError', function (m) {
+    if (!m || !m.a || !m.b) return;
+    post({ type: 'kb:mateError', errorType: m.type,
+      part1: m.a.node.userData.kbId || null, ring1: m.a.id, end1: m.a.end || 0,
+      part2: m.b.node.userData.kbId || null, ring2: m.b.id, end2: m.b.end || 0 });
   });
   KB.on('snapAttempt', function (a) {
     post({ type: 'kb:snapAttempt', object1: a.object1.userData.kbId, object2: a.object2.userData.kbId,

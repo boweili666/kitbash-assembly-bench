@@ -6,6 +6,11 @@
     "start": null
   },
 
+  "scene": {
+    "_help": "background: CSS colour of the background (e.g. \"#d3d3d3\"); null = the built-in dark one. On a light background the bench's lines and words turn dark.",
+    "background": null
+  },
+
   "errors": {
     "_help": "enabled: null = keep the toolbar Errors switch as the user left it; false = no wrong-part / wrong-hole / not-aligned messages, toasts or events (Level 3 no longer undoes such moves); true = force them on.",
     "enabled": null

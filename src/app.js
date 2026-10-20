@@ -60,9 +60,15 @@
   fill.position.set(-5, 4, -5);
   scene.add(fill);
 
-  var grid = new THREE.GridHelper(14, 14, 0x39424e, 0x252c35);
-  grid.position.y = 0.001;
-  scene.add(grid);
+  var grid = null;
+  function makeGrid(light) {
+    if (grid) { scene.remove(grid); grid.geometry.dispose(); grid.material.dispose(); }
+    grid = light ? new THREE.GridHelper(14, 14, new THREE.Color(0x98a0a9).convertSRGBToLinear(), new THREE.Color(0xb6bcc3).convertSRGBToLinear())
+                 : new THREE.GridHelper(14, 14, 0x39424e, 0x252c35);
+    grid.position.y = 0.001;
+    scene.add(grid);
+  }
+  makeGrid(false);
   var shadowPlane = new THREE.Mesh(
     new THREE.PlaneGeometry(80, 80),
     new THREE.ShadowMaterial({ opacity: 0.28, depthWrite: false, side: THREE.FrontSide })
@@ -1518,6 +1524,34 @@
         .add(raycaster.ray.direction.clone().multiplyScalar(dist));
     }
   };
+
+  /* ---------- Background: scene.background in the settings (null: the built-in dark one) ----------
+     On a light background the bench's own lines and words switch to dark ink (KB.ink), and modules that
+     draw them listen to KB 'theme'. */
+  var BG_DARK = 0x1a1e24, lightBg = false;
+  function applyBackground() {
+    var want = window.KBConfig && KBConfig.get('scene.background');
+    var col = new THREE.Color(BG_DARK);
+    if (want) { try { col.set(want); } catch (e) { console.warn('[Kitbash] scene.background: not a colour', want); } }
+    scene.background.copy(col);
+    scene.fog.color.copy(col);
+    var light = col.getHSL({ h: 0, s: 0, l: 0 }).l > 0.5;
+    // fog into a light background washes the whole bench out: there it only starts well past the tray
+    scene.fog.near = light ? 80 : 24;
+    scene.fog.far = light ? 160 : 60;
+    if (light === lightBg) return;
+    lightBg = light;
+    makeGrid(light);
+    emit('theme', { light: light });
+  }
+  KB.lightBackground = function () { return lightBg; };
+  KB.ink = function (dark, light) { return lightBg ? light : dark; };
+  // A line colour for the background. The light-background ink is meant as written (sRGB), so it is converted
+  // to the renderer's linear working colour; the dark-background colours keep their long-standing look.
+  KB.inkColor = function (dark, light) { return lightBg ? new THREE.Color(light).convertSRGBToLinear() : new THREE.Color(dark); };
+  // A canvas drawn with KB.ink: on a light background its colours are sRGB as written
+  KB.inkTexture = function (texture) { texture.encoding = lightBg ? THREE.sRGBEncoding : THREE.LinearEncoding; texture.needsUpdate = true; return texture; };
+  KB.on('config', applyBackground);
 
   /* ---------- 嵌入模式:?embed=1(aristos 内嵌小窗)---------- */
   if (URLP.has('embed')) document.body.classList.add('embed');

@@ -16,6 +16,9 @@
     level: {
       start: null                 // null = the level the user picked last time; 1 | 2 | 3 | "demo" = always start there
     },
+    scene: {
+      background: null            // CSS colour of the background; null = the built-in dark one
+    },
     errors: {
       enabled: null               // null = keep the user's toolbar choice; true / false = force it on load
     },

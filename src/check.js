@@ -905,6 +905,7 @@
     // 二级的设定是"点对孔就自动摆正, 理论上不会偏", 可组件整体越界 / 点完孔被碰撞推开时
     // 真的会偏 —— 以前二级把 align 整条滤掉, 学员看不到任何提示, 是静默失败
     var lv = window.KBLevel ? KBLevel.get() : 3;
+    var allIssues = issues.slice();     // before the on-screen filter: what the host is told about
     issues = issues.filter(function (i) {
       var k = i.kind || 'hole';
       if (k === 'hint') return true;
@@ -919,7 +920,7 @@
     var RANK = { error: 0, warn: 1, hint: 2 };
     issues.sort(function (a, b) { return (RANK[a.severity] || 0) - (RANK[b.severity] || 0); });
 
-    results = { ready: true, issues: issues, correct: correct, total: slots.length,
+    results = { ready: true, issues: issues, allIssues: allIssues, correct: correct, total: slots.length,
       steps: steps, slots: slots, users: users,
       // stepsComplete:几何上做完的步(给用户看的进度);stepsSettled:且前置齐全的(任务图意义上的完成)
       stepsComplete: steps.filter(function (s) { return s.complete; }).length,
@@ -1698,6 +1699,21 @@
     return { slot: best.s.ref, want: best.want,
              approach: A0 ? new THREE.Matrix4().multiplyMatrices(W, A0) : fallbackApproach(best.s.ref.key, best.want, best.s.ref) };
   }
+  /* How far a part is turned from a target world pose, in degrees, over the turns that map it onto itself
+     (a screw about its own axis, a plate turned over), and whether that is beyond the in-place tolerance. */
+  function turnOff(node, want) {
+    if (!node || !want) return null;
+    node.updateMatrixWorld(true);
+    var key = node.userData.kbType.slice(5), v = new THREE.Vector3(), s = new THREE.Vector3();
+    var q = new THREE.Quaternion(), qw = new THREE.Quaternion(), best = 180;
+    node.matrixWorld.decompose(v, q, s);
+    symTransforms(key).forEach(function (St) {
+      new THREE.Matrix4().multiplyMatrices(want, St).decompose(v, qw, s);
+      var d = turns(key) ? axisAngle(key, q, qw).deg : angleBetween(q, qw);
+      if (d < best) best = d;
+    });
+    return { deg: best, wrong: best > ANG_TOL };
+  }
   function markLevelPlaced(node, slotRef) {
     if (!node || !slotRef) return;
     levelPlaced[node.uuid] = slotRef;
@@ -1982,6 +1998,7 @@
     /* 参考坐标 -> 世界(场上那台机器实际怎么摆的):focus.js 用它判断机头朝哪 */
     refToWorld: function () { evaluate(); return results && results.ready ? refToWorld() : new THREE.Matrix4(); },
     levelMateTarget: levelMateTarget,
+    turnOff: turnOff,
     markLevelPlaced: markLevelPlaced,
     level2Guide: function (node) { evaluate(); return results && results.ready ? level2Guide(node) : null; },
     occupied: function () { return (window.KBParts && KBParts.ready()) ? occupied() : {}; },

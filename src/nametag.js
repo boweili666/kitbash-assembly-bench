@@ -46,13 +46,15 @@
     ctx.font = '600 34px "IBM Plex Mono", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.strokeStyle = 'rgba(16,20,25,0.92)';
+    var ink = KB.ink || function (d) { return d; };      // dark words on a light background
+    ctx.strokeStyle = ink('rgba(16,20,25,0.92)', 'rgba(244,246,248,0.95)');
     ctx.lineWidth = 7;
     ctx.strokeText(text, w / 2, 27);
-    ctx.fillStyle = '#dfe7ef';
+    ctx.fillStyle = ink('#dfe7ef', '#1f2630');
     ctx.fillText(text, w / 2, 27);
+    var tex = new THREE.CanvasTexture(cv);
     var sp = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: new THREE.CanvasTexture(cv), depthTest: false, transparent: true
+      map: KB.inkTexture ? KB.inkTexture(tex) : tex, depthTest: false, transparent: true
     }));
     var h = 0.085;      // 全名比缩写长得多, 字小一点才排得开
     sp.scale.set(h * w / 52, h, 1);
