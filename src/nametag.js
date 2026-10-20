@@ -133,7 +133,7 @@
 
   /* 脚下 = 包围盒底面中心再往下一点。每帧重算,因为零件会被搬动、翻转、成组 */
   var box = new THREE.Box3(), c = new THREE.Vector3(), frame = 0;
-  var TAG_SCREEN_H = 0.045;              // selected mode: tag height, a fraction of the view's height
+  var TAG_SCREEN_H = 0.024;              // selected mode: tag height, a fraction of the view's height
   var corner = new THREE.Vector3(), ndc = new THREE.Vector3();
   // the part's box in its own frame (tighter than a world box when it lies at an angle)
   function localBox(node) {
